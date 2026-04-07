@@ -59,14 +59,14 @@
   tr:hover td { background: #f8fafc; }
 
   .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .badge-m { background: #dbeafe; color: #1e40af; }
+  .badge-f { background: #fce7f3; color: #9d174d; }
   .badge-areia { background: #fef3c7; color: #92400e; }
   .badge-agua { background: #dbeafe; color: #1e40af; }
-  .badge-individual { background: #f0fdf4; color: #166534; }
 
   .ficha-num { font-weight: 700; color: #1a56a0; font-size: 12px; }
   .ver-btn { padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; cursor: pointer; background: white; color: #475569; }
   .ver-btn:hover { border-color: #1a56a0; color: #1a56a0; }
-  .dupla-info { font-size: 11px; color: #64748b; margin-top: 2px; }
 
   .loading { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
   .vazio { text-align: center; padding: 32px; color: #94a3b8; font-size: 13px; }
@@ -76,28 +76,38 @@
   .vaga-nome { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 2px; }
   .vaga-sub { font-size: 11px; color: #64748b; margin-bottom: 8px; }
   .vaga-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
-  .vaga-fill { height: 100%; border-radius: 4px; background: #1a56a0; }
+  .vaga-fill { height: 100%; border-radius: 4px; background: #1a56a0; transition: width 0.4s; }
   .vaga-fill.cheio { background: #dc2626; }
   .vaga-fill.quase { background: #f59e0b; }
   .vaga-info { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
 
+  .quorum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px; }
+  .quorum-card { border-radius: 10px; padding: 14px; border: 1px solid #e2e8f0; }
+  .quorum-card.ok { background: #f0fdf4; border-color: #bbf7d0; }
+  .quorum-card.alerta { background: #fff7ed; border-color: #fed7aa; }
+  .quorum-titulo { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .quorum-info { font-size: 12px; color: #64748b; }
+  .quorum-count { font-size: 24px; font-weight: 700; margin: 6px 0; }
+  .quorum-count.ok { color: #16a34a; }
+  .quorum-count.alerta { color: #ea580c; }
+
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
   .modal-bg.aberto { display: flex; }
-  .modal { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+  .modal { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .modal-titulo { font-size: 16px; font-weight: 700; color: #1e293b; }
-  .modal-fechar { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+  .modal-fechar { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; line-height: 1; }
   .modal-ficha { text-align: center; background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
   .modal-ficha-num { font-size: 28px; font-weight: 800; color: #1a56a0; }
   .modal-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .modal-row:last-child { border-bottom: none; }
   .modal-label { color: #64748b; }
-  .modal-val { color: #1e293b; font-weight: 500; text-align: right; max-width: 60%; }
-  .modal-secao { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 8px; }
-  .modal-evento-item { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; }
-  .modal-evento-nome { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
-  .modal-parceiro { font-size: 12px; color: #475569; background: #f8faff; border-radius: 6px; padding: 8px 10px; margin-top: 6px; }
-  .modal-parceiro-label { font-size: 10px; font-weight: 600; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .modal-val { color: #1e293b; font-weight: 500; text-align: right; max-width: 65%; }
+  .modal-eventos { margin-top: 14px; }
+  .modal-eventos-titulo { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .modal-evento-item { padding: 8px 0; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+  .modal-evento-item:last-child { border-bottom: none; }
+  .modal-parceiro { font-size: 12px; color: #64748b; margin-top: 3px; }
   .imprimir-ficha { width: 100%; padding: 10px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 16px; }
   .imprimir-ficha:hover { background: #154794; }
 
@@ -109,7 +119,9 @@
   @media (max-width: 600px) {
     .metrics { grid-template-columns: 1fr 1fr; }
     .vagas-grid { grid-template-columns: 1fr 1fr; }
+    .quorum-grid { grid-template-columns: 1fr; }
     .filtros input { width: 100%; }
+    .filtros { width: 100%; }
     .topbar-divider { display: none; }
   }
 </style>
@@ -126,13 +138,14 @@
     <label>Usuário</label>
     <input type="text" id="login-user" placeholder="admin" autocomplete="username">
     <label>Senha</label>
-    <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter') entrar()">
+    <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') entrar()">
     <button class="login-btn" onclick="entrar()">Entrar</button>
     <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
   </div>
 </div>
 
 <div class="painel" id="painel">
+
   <div class="topbar">
     <div class="topbar-esq">
       <img src="10.png" alt="SEMESP" class="topbar-logo">
@@ -147,11 +160,21 @@
 
   <div class="metrics">
     <div class="metric"><div class="metric-label">Total de inscritos</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">participantes</div></div>
-    <div class="metric"><div class="metric-label">Duplas formadas</div><div class="metric-val" id="m-duplas">—</div><div class="metric-sub">em modalidades dupla</div></div>
-    <div class="metric"><div class="metric-label">Evento mais procurado</div><div class="metric-val" style="font-size:14px;padding-top:4px;" id="m-top">—</div><div class="metric-sub" id="m-top-qtd"></div></div>
+    <div class="metric"><div class="metric-label">Masculino / Feminino</div><div class="metric-val" id="m-sexo" style="font-size:18px;padding-top:4px;">—</div><div class="metric-sub">por sexo</div></div>
+    <div class="metric"><div class="metric-label">Evento mais procurado</div><div class="metric-val" style="font-size:15px;padding-top:4px;" id="m-top">—</div><div class="metric-sub" id="m-top-qtd"></div></div>
     <div class="metric"><div class="metric-label">Cidades diferentes</div><div class="metric-val" id="m-cidades">—</div><div class="metric-sub">municípios</div></div>
   </div>
 
+  <!-- QUORUM FEMININO -->
+  <div class="section" style="margin-bottom:16px;">
+    <div class="section-header">
+      <span class="section-titulo">Quórum feminino — Canoagem e Caiaque</span>
+      <span style="font-size:12px;color:#64748b;">Mínimo de 4 duplas/participantes para abertura da chave feminina</span>
+    </div>
+    <div class="quorum-grid" id="quorum-grid"></div>
+  </div>
+
+  <!-- VAGAS -->
   <div class="section" style="margin-bottom:16px;">
     <div class="section-header">
       <span class="section-titulo">Vagas por modalidade</span>
@@ -160,11 +183,12 @@
     <div class="vagas-grid" id="vagas-grid"><div class="loading">Carregando...</div></div>
   </div>
 
+  <!-- TABELA -->
   <div class="section">
     <div class="section-header">
       <span class="section-titulo">Inscritos</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="print-btn outline" onclick="imprimirLista()">Imprimir lista geral</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="print-btn outline" onclick="imprimirLista()">Imprimir lista</button>
         <button class="print-btn" onclick="imprimirPorEvento()">Imprimir por evento</button>
       </div>
     </div>
@@ -180,8 +204,10 @@
           <option value="5">Caiaque</option>
           <option value="6">Natação</option>
         </select>
-        <select id="filtro-uf" onchange="filtrar()">
-          <option value="">Todos os estados</option>
+        <select id="filtro-sexo" onchange="filtrar()">
+          <option value="">Todos os sexos</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
         </select>
       </div>
     </div>
@@ -190,26 +216,28 @@
         <thead>
           <tr>
             <th>Ficha</th>
-            <th>Participante 1</th>
+            <th>Nome</th>
+            <th>Sexo</th>
             <th>CPF</th>
             <th>Telefone</th>
-            <th>Cidade/UF</th>
-            <th>Evento / Dupla</th>
+            <th>Cidade</th>
+            <th>Eventos</th>
             <th>Data</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="tabela-body">
-          <tr><td colspan="8" class="loading">Carregando...</td></tr>
+          <tr><td colspan="9" class="loading">Carregando...</td></tr>
         </tbody>
       </table>
     </div>
     <div style="padding:12px 16px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;" id="contador-label"></div>
   </div>
+
 </div>
 
 <div class="modal-bg" id="modal-bg" onclick="fecharModal(event)">
-  <div class="modal">
+  <div class="modal" id="modal">
     <div class="modal-header">
       <span class="modal-titulo">Ficha do participante</span>
       <button class="modal-fechar" onclick="fecharModalBtn()">×</button>
@@ -218,10 +246,11 @@
       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Número da ficha</div>
       <div class="modal-ficha-num" id="m-ficha"></div>
     </div>
-    <div class="modal-secao">Participante 1</div>
     <div id="m-dados"></div>
-    <div class="modal-secao">Eventos inscritos</div>
-    <div id="m-eventos"></div>
+    <div class="modal-eventos">
+      <div class="modal-eventos-titulo">Eventos inscritos</div>
+      <div id="m-eventos"></div>
+    </div>
     <button class="imprimir-ficha" onclick="imprimirFicha()">Imprimir esta ficha</button>
   </div>
 </div>
@@ -293,22 +322,23 @@ async function carregarDados() {
 
   atualizarMetricas(todosInscritos, inscricoes);
   atualizarVagas(inscricoes);
-  preencherUFs(todosInscritos);
+  atualizarQuorum(todosInscritos, inscricoes);
   renderTabela(todosInscritos);
 }
 
 function atualizarMetricas(lista, inscricoes) {
   document.getElementById('m-total').textContent = lista.length;
-  const duplas = inscricoes.filter(i => MODALIDADES[i.modalidade_id]?.dupla && i.parceiro_nome).length;
-  document.getElementById('m-duplas').textContent = duplas;
+  const masc = lista.filter(p => p.sexo === 'M').length;
+  const fem  = lista.filter(p => p.sexo === 'F').length;
+  document.getElementById('m-sexo').textContent = `${masc}M / ${fem}F`;
   document.getElementById('m-cidades').textContent = new Set(lista.map(p => (p.cidade||'')+(p.uf||''))).size;
   const cont = {};
   inscricoes.forEach(i => { cont[i.modalidade_id] = (cont[i.modalidade_id]||0)+1; });
-  const top = Object.entries(cont).sort((a,b)=>b[1]-a[1])[0];
+  const top = Object.entries(cont).sort((a,b) => b[1]-a[1])[0];
   if (top) {
     const m = MODALIDADES[top[0]];
     document.getElementById('m-top').textContent = m ? m.nome : '—';
-    document.getElementById('m-top-qtd').textContent = top[1] + ' inscrições';
+    document.getElementById('m-top-qtd').textContent = top[1] + ' inscritos';
   }
 }
 
@@ -320,56 +350,73 @@ function atualizarVagas(inscricoes) {
     const preenchidas = inscricoes.filter(i => i.modalidade_id == id).length;
     const pct = Math.round((preenchidas/total)*100);
     const cls = pct >= 100 ? 'cheio' : pct >= 80 ? 'quase' : '';
-    grid.innerHTML += `<div class="vaga-card">
-      <div class="vaga-nome">${m.nome}</div>
-      <div class="vaga-sub">${m.sub}</div>
-      <div class="vaga-bar"><div class="vaga-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
-      <div class="vaga-info"><span>${preenchidas} / ${total}</span><span>${pct}%</span></div>
-    </div>`;
+    grid.innerHTML += `
+      <div class="vaga-card">
+        <div class="vaga-nome">${m.nome}</div>
+        <div class="vaga-sub">${m.sub}</div>
+        <div class="vaga-bar"><div class="vaga-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
+        <div class="vaga-info"><span>${preenchidas} / ${total} vagas</span><span>${pct}%</span></div>
+      </div>`;
   });
 }
 
-function preencherUFs(lista) {
-  const ufs = [...new Set(lista.map(p=>p.uf).filter(Boolean))].sort();
-  const sel = document.getElementById('filtro-uf');
-  sel.innerHTML = '<option value="">Todos os estados</option>';
-  ufs.forEach(uf => { const o = document.createElement('option'); o.value=uf; o.textContent=uf; sel.appendChild(o); });
+function atualizarQuorum(lista, inscricoes) {
+  const grid = document.getElementById('quorum-grid');
+  const femCanoagem = lista.filter(p => p.sexo === 'F' && p.inscricoes.some(i => i.modalidade_id == 4)).length;
+  const femCaiaque  = lista.filter(p => p.sexo === 'F' && p.inscricoes.some(i => i.modalidade_id == 5)).length;
+  const minCanoagem = 4;
+  const minCaiaque  = 4;
+  grid.innerHTML = `
+    <div class="quorum-card ${femCanoagem >= minCanoagem ? 'ok' : 'alerta'}">
+      <div class="quorum-titulo">Canoagem Feminina (duplas)</div>
+      <div class="quorum-count ${femCanoagem >= minCanoagem ? 'ok' : 'alerta'}">${femCanoagem} / ${minCanoagem}</div>
+      <div class="quorum-info">${femCanoagem >= minCanoagem ? 'Quórum atingido — chave confirmada!' : `Faltam ${minCanoagem - femCanoagem} dupla(s) para fechar a chave`}</div>
+    </div>
+    <div class="quorum-card ${femCaiaque >= minCaiaque ? 'ok' : 'alerta'}">
+      <div class="quorum-titulo">Caiaque Feminino (individual)</div>
+      <div class="quorum-count ${femCaiaque >= minCaiaque ? 'ok' : 'alerta'}">${femCaiaque} / ${minCaiaque}</div>
+      <div class="quorum-info">${femCaiaque >= minCaiaque ? 'Quórum atingido — chave confirmada!' : `Faltam ${minCaiaque - femCaiaque} participante(s) para fechar a chave`}</div>
+    </div>`;
 }
 
 function filtrar() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
-  const uf     = document.getElementById('filtro-uf').value;
+  const sexo   = document.getElementById('filtro-sexo').value;
   const filtrado = todosInscritos.filter(p => {
     const mb = !busca  || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
     const me = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const mu = !uf     || p.uf === uf;
-    return mb && me && mu;
+    const ms = !sexo   || p.sexo === sexo;
+    return mb && me && ms;
   });
   renderTabela(filtrado);
 }
 
 function renderTabela(lista) {
   const tbody = document.getElementById('tabela-body');
-  document.getElementById('contador-label').textContent = `Exibindo ${lista.length} participante${lista.length!==1?'s':''}`;
-  if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum participante encontrado.</td></tr>'; return; }
-
+  document.getElementById('contador-label').textContent = `Exibindo ${lista.length} participante${lista.length !== 1 ? 's' : ''}`;
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="vazio">Nenhum participante encontrado.</td></tr>';
+    return;
+  }
   tbody.innerHTML = lista.map(p => {
-    const ficha = p.inscricoes[0]?.numero_ficha || '—';
-    const data  = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
+    const ficha   = p.inscricoes[0]?.numero_ficha || '—';
+    const data    = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
+    const sexoBadge = p.sexo === 'M'
+      ? '<span class="badge badge-m">Masc.</span>'
+      : p.sexo === 'F' ? '<span class="badge badge-f">Fem.</span>' : '—';
     const eventos = p.inscricoes.map(i => {
       const m = MODALIDADES[i.modalidade_id];
-      if (!m) return '';
-      const dupla = i.parceiro_nome ? `<div class="dupla-info">Dupla: ${i.parceiro_nome}</div>` : '';
-      return `<div><span class="badge badge-${m.tipo === 'agua' ? (m.dupla ? 'agua' : 'individual') : 'areia'}">${m.nome} ${m.sub}</span>${dupla}</div>`;
-    }).join('');
+      return m ? `<span class="badge badge-${m.tipo}">${m.nome} ${m.sub}</span>` : '';
+    }).join(' ');
     return `<tr>
       <td><span class="ficha-num">${ficha}</span></td>
       <td>${p.nome_completo}</td>
+      <td>${sexoBadge}</td>
       <td>${p.cpf||'—'}</td>
       <td>${p.telefone||'—'}</td>
-      <td>${p.cidade||'—'} / ${p.uf||'—'}</td>
-      <td style="max-width:220px;">${eventos}</td>
+      <td>${p.cidade||'—'}</td>
+      <td style="max-width:200px;">${eventos}</td>
       <td style="white-space:nowrap;">${data}</td>
       <td><button class="ver-btn" onclick="abrirModal('${p.id}')">Ver ficha</button></td>
     </tr>`;
@@ -381,31 +428,27 @@ function abrirModal(id) {
   if (!p) return;
   participanteAtual = p;
   document.getElementById('m-ficha').textContent = p.inscricoes[0]?.numero_ficha || '—';
+  const sexoLabel = p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Feminino' : '—';
   document.getElementById('m-dados').innerHTML = `
     <div class="modal-row"><span class="modal-label">Nome</span><span class="modal-val">${p.nome_completo}</span></div>
+    <div class="modal-row"><span class="modal-label">Sexo</span><span class="modal-val">${sexoLabel}</span></div>
     <div class="modal-row"><span class="modal-label">CPF</span><span class="modal-val">${p.cpf||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Nascimento</span><span class="modal-val">${p.data_nascimento?new Date(p.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR'):'—'}</span></div>
+    <div class="modal-row"><span class="modal-label">Nascimento</span><span class="modal-val">${p.data_nascimento ? new Date(p.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : '—'}</span></div>
     <div class="modal-row"><span class="modal-label">Telefone</span><span class="modal-val">${p.telefone||'—'}</span></div>
     <div class="modal-row"><span class="modal-label">E-mail</span><span class="modal-val">${p.email||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Cidade / UF</span><span class="modal-val">${p.cidade||'—'} / ${p.uf||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Inscrito em</span><span class="modal-val">${p.criado_em?new Date(p.criado_em).toLocaleString('pt-BR'):'—'}</span></div>`;
-
+    <div class="modal-row"><span class="modal-label">Cidade / UF</span><span class="modal-val">${p.cidade||'—'} / ${p.uf||'RO'}</span></div>
+    <div class="modal-row"><span class="modal-label">Inscrito em</span><span class="modal-val">${p.criado_em ? new Date(p.criado_em).toLocaleString('pt-BR') : '—'}</span></div>`;
   document.getElementById('m-eventos').innerHTML = p.inscricoes.map(i => {
     const m = MODALIDADES[i.modalidade_id];
     if (!m) return '';
-    const parceiro = i.parceiro_nome ? `
-      <div class="modal-parceiro">
-        <div class="modal-parceiro-label">Parceiro(a)</div>
-        <div>${i.parceiro_nome}</div>
-        ${i.parceiro_cpf ? `<div style="font-size:11px;color:#64748b;">CPF: ${i.parceiro_cpf}</div>` : ''}
-        ${i.parceiro_telefone ? `<div style="font-size:11px;color:#64748b;">Tel: ${i.parceiro_telefone}</div>` : ''}
-      </div>` : '';
+    const parceiro = i.parceiro_nome
+      ? `<div class="modal-parceiro">Parceiro/a: ${i.parceiro_nome} · ${i.parceiro_cpf||''} · ${i.parceiro_telefone||''}</div>`
+      : '';
     return `<div class="modal-evento-item">
-      <div class="modal-evento-nome">${m.nome} — ${m.sub}</div>
+      <div><span class="badge badge-${m.tipo}">${m.tipo==='areia'?'Areia':'Aquático'}</span> <strong>${m.nome}</strong> — ${m.sub}</div>
       ${parceiro}
     </div>`;
   }).join('');
-
   document.getElementById('modal-bg').classList.add('aberto');
 }
 
@@ -416,39 +459,31 @@ function imprimirFicha() {
   const p = participanteAtual;
   if (!p) return;
   const ficha = p.inscricoes[0]?.numero_ficha || '—';
-
-  const eventosHtml = p.inscricoes.map(i => {
+  const sexoLabel = p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Feminino' : '—';
+  const eventos = p.inscricoes.map(i => {
     const m = MODALIDADES[i.modalidade_id];
     if (!m) return '';
-    const parceiro = i.parceiro_nome ? `
-      <div style="margin-top:6px;background:#f0f6ff;border-radius:6px;padding:8px 10px;font-size:12px;">
-        <div style="font-size:10px;font-weight:600;color:#1a56a0;text-transform:uppercase;margin-bottom:4px;">Parceiro(a)</div>
-        <div>${i.parceiro_nome}</div>
-        ${i.parceiro_cpf?`<div style="color:#64748b;">CPF: ${i.parceiro_cpf}</div>`:''}
-        ${i.parceiro_telefone?`<div style="color:#64748b;">Tel: ${i.parceiro_telefone}</div>`:''}
-      </div>` : '';
-    return `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-      <div style="font-weight:600;font-size:13px;">${m.nome} — ${m.sub}</div>
-      ${parceiro}
-    </div>`;
+    const parceiro = i.parceiro_nome ? `<br><small style="color:#64748b;">Parceiro/a: ${i.parceiro_nome} · CPF: ${i.parceiro_cpf||'—'} · Tel: ${i.parceiro_telefone||'—'}</small>` : '';
+    return `<li>${m.nome} — ${m.sub}${parceiro}</li>`;
   }).join('');
-
   const html = `<div style="font-family:system-ui,sans-serif;max-width:620px;margin:0 auto;padding:24px;">
     ${cabecalho}
     <div style="text-align:center;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:14px;margin-bottom:18px;">
       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Número da Ficha</div>
       <div style="font-size:32px;font-weight:800;color:#1a56a0;">${ficha}</div>
     </div>
-    <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Participante 1</div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
-      <tr><td style="padding:5px 0;color:#64748b;width:130px;">Nome</td><td style="padding:5px 0;font-weight:600;">${p.nome_completo}</td></tr>
-      <tr><td style="padding:5px 0;color:#64748b;">CPF</td><td style="padding:5px 0;">${p.cpf||'—'}</td></tr>
-      <tr><td style="padding:5px 0;color:#64748b;">Telefone</td><td style="padding:5px 0;">${p.telefone||'—'}</td></tr>
-      <tr><td style="padding:5px 0;color:#64748b;">Cidade / UF</td><td style="padding:5px 0;">${p.cidade||'—'} / ${p.uf||'—'}</td></tr>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <tr><td style="padding:6px 0;color:#64748b;width:140px;">Nome</td><td style="padding:6px 0;font-weight:600;">${p.nome_completo}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">Sexo</td><td style="padding:6px 0;">${sexoLabel}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">CPF</td><td style="padding:6px 0;">${p.cpf||'—'}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">Telefone</td><td style="padding:6px 0;">${p.telefone||'—'}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">Cidade</td><td style="padding:6px 0;">${p.cidade||'—'} / RO</td></tr>
     </table>
-    <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Eventos inscritos</div>
-    ${eventosHtml}
-    <div style="margin-top:20px;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Eventos inscritos</div>
+      <ul style="font-size:13px;padding-left:18px;line-height:2.2;">${eventos}</ul>
+    </div>
+    <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
       <span>Impresso em ${new Date().toLocaleString('pt-BR')}</span><span>Festival de Inverno 2026</span>
     </div>
   </div>`;
@@ -458,45 +493,41 @@ function imprimirFicha() {
 function imprimirLista() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
-  const uf     = document.getElementById('filtro-uf').value;
+  const sexo   = document.getElementById('filtro-sexo').value;
   const lista  = todosInscritos.filter(p => {
-    const mb = !busca  || p.nome_completo.toLowerCase().includes(busca)||(p.cpf||'').includes(busca);
-    const me = !evento || p.inscricoes.some(i=>i.modalidade_id==evento);
-    const mu = !uf     || p.uf===uf;
-    return mb&&me&&mu;
+    const mb = !busca  || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
+    const me = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
+    const ms = !sexo   || p.sexo === sexo;
+    return mb && me && ms;
   });
-
-  const linhas = lista.map((p,idx) => {
-    const ficha  = p.inscricoes[0]?.numero_ficha||'—';
-    const eventos = p.inscricoes.map(i=>{
-      const m=MODALIDADES[i.modalidade_id];
-      if(!m) return '';
-      const par = i.parceiro_nome ? ` + ${i.parceiro_nome}` : '';
-      return `${m.nome} ${m.sub}${par}`;
-    }).join(' / ');
+  const linhas = lista.map((p, idx) => {
+    const ficha   = p.inscricoes[0]?.numero_ficha || '—';
+    const eventos = p.inscricoes.map(i => { const m = MODALIDADES[i.modalidade_id]; return m ? `${m.nome} ${m.sub}` : ''; }).join(', ');
+    const sexoLabel = p.sexo === 'M' ? 'M' : p.sexo === 'F' ? 'F' : '—';
     return `<tr style="background:${idx%2===0?'white':'#f8fafc'}">
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${ficha}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.nome_completo}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cpf||'—'}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;font-size:11px;">${eventos}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${ficha}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.nome_completo}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;text-align:center;">${sexoLabel}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cpf||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cidade||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${eventos}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
     </tr>`;
   }).join('');
-
   const html = `<div style="font-family:system-ui,sans-serif;padding:20px;">
     ${cabecalho}
     <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Total: ${lista.length} participantes · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <thead><tr style="background:#1a56a0;color:white;">
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Ficha</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Nome</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">CPF</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Telefone</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Eventos / Duplas</th>
-        <th style="padding:7px 8px;text-align:center;border:1px solid #1447a0;">Check-in</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Ficha</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Nome</th>
+        <th style="padding:8px 10px;text-align:center;border:1px solid #1447a0;">Sexo</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">CPF</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Telefone</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Cidade</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Eventos</th>
+        <th style="padding:8px 10px;text-align:center;border:1px solid #1447a0;">Check-in</th>
       </tr></thead>
       <tbody>${linhas}</tbody>
     </table>
@@ -509,35 +540,37 @@ function imprimirPorEvento() {
   Object.entries(MODALIDADES).forEach(([id, m], idx) => {
     const lista = todosInscritos.filter(p => p.inscricoes.some(i => i.modalidade_id == id));
     if (lista.length === 0) return;
-
     const linhas = lista.map((p, i) => {
       const insc  = p.inscricoes.find(i => i.modalidade_id == id);
       const ficha = insc?.numero_ficha || '—';
-      const parceiro = insc?.parceiro_nome || '—';
+      const parceiroRow = insc?.parceiro_nome
+        ? `<tr style="background:${i%2===0?'#fffbeb':'#fef3c7'}">
+            <td style="padding:5px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b;" colspan="2">Parceiro/a: ${insc.parceiro_nome}</td>
+            <td style="padding:5px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b;">${insc.parceiro_cpf||'—'}</td>
+            <td style="padding:5px 10px;border:1px solid #e2e8f0;font-size:11px;color:#64748b;">${insc.parceiro_telefone||'—'}</td>
+            <td style="padding:5px 10px;border:1px solid #e2e8f0;"></td>
+           </tr>`
+        : '';
+      const sexoLabel = p.sexo === 'M' ? 'M' : p.sexo === 'F' ? 'F' : '—';
       return `<tr style="background:${i%2===0?'white':'#f8fafc'}">
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;">${ficha}</td>
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;font-weight:600;">${p.nome_completo}</td>
-        ${m.dupla ? `<td style="padding:7px 8px;border:1px solid #e2e8f0;">${parceiro}</td>` : ''}
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
-      </tr>`;
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${ficha}</td>
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.nome_completo}</td>
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;text-align:center;">${sexoLabel}</td>
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
+      </tr>${parceiroRow}`;
     }).join('');
-
-    const colParceiro = m.dupla ? `<th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Parceiro(a)</th>` : '';
-
     html += `<div style="page-break-before:${idx===0?'auto':'always'};padding:20px;">
       ${cabecalho}
-      <h3 style="color:#1a56a0;margin-bottom:2px;">${m.nome} — ${m.sub}</h3>
-      <p style="font-size:12px;color:#64748b;margin-bottom:12px;">${lista.length} inscrito${lista.length!==1?'s':''} · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
+      <h3 style="color:#1a56a0;margin-bottom:4px;">${m.nome} — ${m.sub}</h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px;">${lista.length} inscritos · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr style="background:#1a56a0;color:white;">
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Ficha</th>
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Participante 1</th>
-          ${colParceiro}
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Telefone</th>
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
-          <th style="padding:7px 8px;text-align:center;border:1px solid #1447a0;">Check-in</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Ficha</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Nome</th>
+          <th style="padding:7px 10px;text-align:center;border:1px solid #1447a0;">Sexo</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Telefone</th>
+          <th style="padding:7px 10px;text-align:center;border:1px solid #1447a0;">Check-in</th>
         </tr></thead>
         <tbody>${linhas}</tbody>
       </table>
@@ -548,12 +581,12 @@ function imprimirPorEvento() {
 }
 
 function imprimirVagas() {
-  const inscricoes = todosInscritos.flatMap(p=>p.inscricoes);
-  const linhas = Object.entries(MODALIDADES).map(([id,m])=>{
-    const total=30;
-    const preenchidas=inscricoes.filter(i=>i.modalidade_id==id).length;
-    const restam=total-preenchidas;
-    const pct=Math.round((preenchidas/total)*100);
+  const inscricoes = todosInscritos.flatMap(p => p.inscricoes);
+  const linhas = Object.entries(MODALIDADES).map(([id, m]) => {
+    const total = 30;
+    const preenchidas = inscricoes.filter(i => i.modalidade_id == id).length;
+    const restam = total - preenchidas;
+    const pct = Math.round((preenchidas/total)*100);
     return `<tr>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${m.nome}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${m.sub}</td>
@@ -563,7 +596,6 @@ function imprimirVagas() {
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${pct}%</td>
     </tr>`;
   }).join('');
-
   const html = `<div style="font-family:system-ui,sans-serif;padding:24px;max-width:700px;margin:0 auto;">
     ${cabecalho}
     <h3 style="color:#1a56a0;margin-bottom:12px;">Relatório de Vagas por Modalidade</h3>
