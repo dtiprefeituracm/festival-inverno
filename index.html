@@ -12,13 +12,12 @@
   .header-logos { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
   .logo-prefeitura { height: 110px; width: auto; object-fit: contain; }
   .logo-semesp { height: 100px; width: auto; object-fit: contain; }
-  .header-divider { width: 1px; height: 70px; background: rgba(255,255,255,0.3); }
+  .header-divider { width: 1px; height: 90px; background: rgba(255,255,255,0.3); }
   .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-bottom: 8px; letter-spacing: 0.03em; }
   .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
   .header p { font-size: 13px; opacity: 0.85; }
 
   .container { max-width: 560px; margin: 24px auto; padding: 0 16px 60px; }
-
   .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
   .card h2 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
 
@@ -36,20 +35,23 @@
 
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+  .cidade-wrap { position: relative; }
+  .cidade-wrap input { width: 100%; }
+  .cidade-lista { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 50; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .cidade-lista.aberta { display: block; }
+  .cidade-item { padding: 9px 12px; font-size: 13px; color: #1e293b; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+  .cidade-item:last-child { border-bottom: none; }
+  .cidade-item:hover, .cidade-item.ativo { background: #eff6ff; color: #1a56a0; }
+  .cidade-item strong { color: #1a56a0; }
+
   .section-cat { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
   .section-cat:first-of-type { margin-top: 0; }
-
   .eventos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-  .evento-card {
-    border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px;
-    cursor: pointer; transition: all 0.15s; user-select: none;
-    display: block; background: white;
-  }
+  .evento-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.15s; user-select: none; display: block; background: white; }
   .evento-card:hover { border-color: #93c5fd; background: #f8faff; }
   .evento-card.selecionado { border-color: #1a56a0; background: #eff6ff; }
   .evento-card.selecionado .check { opacity: 1; }
-
   .evento-header { display: flex; justify-content: space-between; align-items: flex-start; }
   .evento-nome { font-size: 13px; font-weight: 600; color: #1e293b; line-height: 1.3; }
   .evento-sub { font-size: 11px; color: #64748b; margin-top: 3px; }
@@ -59,20 +61,11 @@
   .check { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; opacity: 0; background: #1a56a0; }
   .check::after { content: ''; width: 5px; height: 9px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px); display: block; }
 
-  .btn {
-    width: 100%; padding: 14px; background: #1a56a0;
-    color: white; border: none; border-radius: 10px;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-    transition: background 0.2s; margin-top: 4px;
-  }
+  .btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
   .btn:hover { background: #154794; }
   .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-  .msg-erro {
-    background: #fef2f2; border: 1px solid #fecaca;
-    color: #dc2626; padding: 10px 14px; border-radius: 8px;
-    font-size: 13px; margin-bottom: 12px; display: none;
-  }
+  .msg-erro { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: none; }
 
   .sucesso { display: none; text-align: center; padding: 40px 20px; }
   .sucesso-icone { font-size: 56px; margin-bottom: 16px; }
@@ -80,12 +73,7 @@
   .sucesso p { font-size: 14px; color: #475569; line-height: 1.6; }
   .numero-ficha { font-size: 36px; font-weight: 800; color: #1a56a0; margin: 16px 0 8px; letter-spacing: 0.05em; }
   .ficha-box { background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 16px 0; }
-  .share-btn {
-    display: inline-block; margin-top: 16px; padding: 12px 24px;
-    background: #25d366; color: white; border-radius: 10px;
-    font-size: 14px; font-weight: 600; text-decoration: none;
-  }
-
+  .share-btn { display: inline-block; margin-top: 16px; padding: 12px 24px; background: #25d366; color: white; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; }
   .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 32px; }
 
   @media (max-width: 400px) {
@@ -103,15 +91,13 @@
     <div class="header-divider"></div>
     <img src="10.png" alt="SEMESP" class="logo-semesp">
   </div>
-  <div class="badge">01 e 02 de Maio de 2025</div>
+  <div class="badge">01 e 02 de Maio de 2026</div>
   <h1>Festival de Inverno</h1>
   <p>Secretaria Municipal de Esporte — Costa Marques / RO</p>
 </div>
 
 <div class="container">
-
   <div id="formulario">
-
     <div class="card">
       <h2>Dados pessoais</h2>
 
@@ -138,7 +124,11 @@
       <div class="row">
         <div>
           <label class="campo">Cidade <span class="obrigatorio">*</span></label>
-          <input type="text" id="cidade" placeholder="Sua cidade">
+          <div class="cidade-wrap">
+            <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off" oninput="filtrarCidades()" onkeydown="navegarCidades(event)" onfocus="filtrarCidades()">
+            <div class="cidade-lista" id="cidade-lista"></div>
+          </div>
+          <input type="hidden" id="cidade-valor">
         </div>
         <div>
           <label class="campo">UF <span class="obrigatorio">*</span></label>
@@ -212,7 +202,6 @@
 
     <div class="msg-erro" id="erro"></div>
     <button class="btn" id="btn-enviar" onclick="enviarInscricao()">Enviar inscrição</button>
-
   </div>
 
   <div class="sucesso" id="sucesso">
@@ -231,14 +220,112 @@
     SEMESP — Secretaria Municipal de Esporte<br>
     Prefeitura de Costa Marques / RO
   </div>
-
 </div>
 
 <script>
 const SUPABASE_URL = 'https://pjjqmoxccggsvfjjckhp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
 
+const MUNICIPIOS_RO = [
+  "Alta Floresta D'Oeste","Alto Alegre dos Parecis","Alto Paraíso","Alvorada D'Oeste",
+  "Ariquemes","Buritis","Cabixi","Cacaulândia","Cacoal","Campo Novo de Rondônia",
+  "Candeias do Jamari","Castanheiras","Cerejeiras","Chupinguaia","Colorado do Oeste",
+  "Corumbiara","Costa Marques","Cujubim","Espigão D'Oeste","Governador Jorge Teixeira",
+  "Guajará-Mirim","Itapuã do Oeste","Jaru","Ji-Paraná","Machadinho D'Oeste",
+  "Ministro Andreazza","Mirante da Serra","Monte Negro","Nova Brasilândia D'Oeste",
+  "Nova Mamoré","Nova União","Novo Horizonte do Oeste","Ouro Preto do Oeste",
+  "Parecis","Pimenta Bueno","Pimenteiras do Oeste","Porto Velho","Presidente Médici",
+  "Primavera de Rondônia","Rio Crespo","Rolim de Moura","Santa Luzia D'Oeste",
+  "São Felipe D'Oeste","São Francisco do Guaporé","São Miguel do Guaporé",
+  "Seringueiras","Teixeirópolis","Theobroma","Urupá","Vale do Anari","Vale do Paraíso",
+  "Vilhena"
+];
+
+let itemAtivo = -1;
 const selecionados = new Set();
+
+function normalizar(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+
+function filtrarCidades() {
+  const input = document.getElementById('cidade');
+  const lista = document.getElementById('cidade-lista');
+  const termo = input.value.trim();
+  itemAtivo = -1;
+
+  if (termo.length === 0) {
+    lista.classList.remove('aberta');
+    return;
+  }
+
+  const termoNorm = normalizar(termo);
+  const filtrados = MUNICIPIOS_RO.filter(m => normalizar(m).includes(termoNorm));
+
+  if (filtrados.length === 0) {
+    lista.classList.remove('aberta');
+    return;
+  }
+
+  lista.innerHTML = filtrados.map((m, i) => {
+    const idx = normalizar(m).indexOf(termoNorm);
+    const antes = m.slice(0, idx);
+    const meio  = m.slice(idx, idx + termo.length);
+    const depois= m.slice(idx + termo.length);
+    return `<div class="cidade-item" data-valor="${m}" data-idx="${i}" onmousedown="selecionarCidade('${m}')">${antes}<strong>${meio}</strong>${depois}</div>`;
+  }).join('');
+
+  lista.classList.add('aberta');
+}
+
+function selecionarCidade(cidade) {
+  document.getElementById('cidade').value = cidade;
+  document.getElementById('cidade-valor').value = cidade;
+  document.getElementById('cidade-lista').classList.remove('aberta');
+  if (cidade.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('rondonia') ||
+      MUNICIPIOS_RO.includes(cidade)) {
+    document.getElementById('uf').value = 'RO';
+  }
+}
+
+function navegarCidades(e) {
+  const lista = document.getElementById('cidade-lista');
+  const itens = lista.querySelectorAll('.cidade-item');
+  if (!lista.classList.contains('aberta') || itens.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo');
+    itemAtivo = Math.min(itemAtivo + 1, itens.length - 1);
+    itens[itemAtivo].classList.add('ativo');
+    itens[itemAtivo].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo');
+    itemAtivo = Math.max(itemAtivo - 1, 0);
+    itens[itemAtivo].classList.add('ativo');
+    itens[itemAtivo].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && itemAtivo >= 0) {
+    e.preventDefault();
+    selecionarCidade(itens[itemAtivo].dataset.valor);
+  } else if (e.key === 'Escape') {
+    lista.classList.remove('aberta');
+  }
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.cidade-wrap')) {
+    document.getElementById('cidade-lista').classList.remove('aberta');
+  }
+});
+
+document.getElementById('cpf').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/, '$1.$2');
+  this.value = v;
+});
 
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
@@ -250,14 +337,6 @@ function toggleEvento(id) {
     card.classList.add('selecionado');
   }
 }
-
-document.getElementById('cpf').addEventListener('input', function () {
-  let v = this.value.replace(/\D/g, '').slice(0, 11);
-  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
-  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/, '$1.$2');
-  this.value = v;
-});
 
 function gerarFicha() {
   return 'FI-' + String(Math.floor(Math.random() * 9000) + 1000);
@@ -281,7 +360,9 @@ async function enviarInscricao() {
   const nome     = document.getElementById('nome').value.trim();
   const cpf      = document.getElementById('cpf').value.trim();
   const telefone = document.getElementById('telefone').value.trim();
-  const cidade   = document.getElementById('cidade').value.trim();
+  const cidadeInput = document.getElementById('cidade').value.trim();
+  const cidadeValor = document.getElementById('cidade-valor').value.trim();
+  const cidade   = cidadeValor || cidadeInput;
   const uf       = document.getElementById('uf').value;
   const email    = document.getElementById('email').value.trim();
   const nasc     = document.getElementById('nascimento').value;
@@ -321,7 +402,7 @@ async function enviarInscricao() {
     const jaCadastrado = participante?.message?.includes('unique') || participante?.code === '23505';
     erro.textContent = jaCadastrado
       ? 'Este CPF já possui inscrição cadastrada.'
-      : 'Erro ao enviar inscrição. Verifique sua conexão e tente novamente.';
+      : 'Erro ao enviar. Verifique sua conexão e tente novamente.';
     erro.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Enviar inscrição';
@@ -329,7 +410,6 @@ async function enviarInscricao() {
   }
 
   const pid = participante[0].id;
-
   for (const mid of selecionados) {
     await post('inscricoes', {
       participante_id: pid,
@@ -340,15 +420,13 @@ async function enviarInscricao() {
   }
 
   document.getElementById('formulario').style.display = 'none';
-  const sucesso = document.getElementById('sucesso');
-  sucesso.style.display = 'block';
+  document.getElementById('sucesso').style.display = 'block';
   document.getElementById('numero-ficha').textContent = ficha;
 
   const nomesEventos = { 1:'Vôlei de Areia Masc.', 2:'Vôlei de Areia Fem.', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
   const eventos = Array.from(selecionados).map(id => nomesEventos[id]).join(', ');
-
   const msg = encodeURIComponent(
-    `Olá! Me inscrevi no Festival de Inverno — Costa Marques/RO (01 e 02 de Maio).\n` +
+    `Olá! Me inscrevi no Festival de Inverno — Costa Marques/RO (01 e 02 de Maio de 2026).\n` +
     `Meu número de ficha é *${ficha}*.\nEventos: ${eventos}.\n` +
     `Faça sua inscrição também!`
   );
