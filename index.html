@@ -99,37 +99,37 @@
     <div class="card">
       <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
       <div class="eventos-grid">
-        <label class="evento-card" onclick="toggleEvento(this, 1)">
+        <label class="evento-card" onclick="toggleEvento(event, this, 1)">
           <input type="checkbox" value="1">
           <div class="evento-nome">Vôlei de Areia</div>
           <div class="evento-sub">Masculino</div>
           <span class="evento-tipo tipo-areia">Esporte de Areia</span>
         </label>
-        <label class="evento-card" onclick="toggleEvento(this, 2)">
+        <label class="evento-card" onclick="toggleEvento(event, this, 2)">
           <input type="checkbox" value="2">
           <div class="evento-nome">Vôlei de Areia</div>
           <div class="evento-sub">Feminino</div>
           <span class="evento-tipo tipo-areia">Esporte de Areia</span>
         </label>
-        <label class="evento-card" onclick="toggleEvento(this, 3)">
+        <label class="evento-card" onclick="toggleEvento(event, this, 3)">
           <input type="checkbox" value="3">
           <div class="evento-nome">Futevôlei</div>
           <div class="evento-sub">Masculino</div>
           <span class="evento-tipo tipo-areia">Esporte de Areia</span>
         </label>
-        <label class="evento-card" onclick="toggleEvento(this, 4)">
+        <label class="evento-card" onclick="toggleEvento(event, this, 4)">
           <input type="checkbox" value="4">
           <div class="evento-nome">Canoagem</div>
           <div class="evento-sub">Aberto</div>
           <span class="evento-tipo tipo-agua">Esporte Aquático</span>
         </label>
-        <label class="evento-card" onclick="toggleEvento(this, 5)">
+        <label class="evento-card" onclick="toggleEvento(event, this, 5)">
           <input type="checkbox" value="5">
           <div class="evento-nome">Caiaque</div>
           <div class="evento-sub">Aberto</div>
           <span class="evento-tipo tipo-agua">Esporte Aquático</span>
         </label>
-        <label class="evento-card" onclick="toggleEvento(this, 6)">
+        <label class="evento-card" onclick="toggleEvento(event, this, 6)">
           <input type="checkbox" value="6">
           <div class="evento-nome">Natação</div>
           <div class="evento-sub">Aberto</div>
@@ -159,8 +159,8 @@ const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
 
 const eventosSelecionados = new Set();
 
-function toggleEvento(el, id) {
-  const cb = el.querySelector('input');
+function toggleEvento(event, el, id) {
+  event.preventDefault(); const cb = el.querySelector('input');
   if (eventosSelecionados.has(id)) {
     eventosSelecionados.delete(id);
     el.classList.remove('selecionado');
