@@ -36,13 +36,12 @@
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
   .cidade-wrap { position: relative; }
-  .cidade-wrap input { width: 100%; }
-  .cidade-lista { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 50; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .cidade-lista { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 99; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   .cidade-lista.aberta { display: block; }
-  .cidade-item { padding: 9px 12px; font-size: 13px; color: #1e293b; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+  .cidade-item { padding: 10px 12px; font-size: 13px; color: #1e293b; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
   .cidade-item:last-child { border-bottom: none; }
   .cidade-item:hover, .cidade-item.ativo { background: #eff6ff; color: #1a56a0; }
-  .cidade-item strong { color: #1a56a0; }
+  .cidade-item strong { color: #1a56a0; font-weight: 700; }
 
   .section-cat { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
   .section-cat:first-of-type { margin-top: 0; }
@@ -124,8 +123,16 @@
       <div class="row">
         <div>
           <label class="campo">Cidade <span class="obrigatorio">*</span></label>
-          <div class="cidade-wrap">
-            <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off" oninput="filtrarCidades()" onkeydown="navegarCidades(event)" onfocus="filtrarCidades()">
+          <div class="cidade-wrap" id="cidade-wrap">
+            <input
+              type="text"
+              id="cidade"
+              placeholder="Digite o nome da cidade..."
+              autocomplete="off"
+              oninput="filtrarCidades()"
+              onkeydown="navegarCidades(event)"
+              onfocus="filtrarCidades()"
+            >
             <div class="cidade-lista" id="cidade-lista"></div>
           </div>
           <input type="hidden" id="cidade-valor">
@@ -256,6 +263,7 @@ function filtrarCidades() {
 
   if (termo.length === 0) {
     lista.classList.remove('aberta');
+    lista.innerHTML = '';
     return;
   }
 
@@ -264,6 +272,7 @@ function filtrarCidades() {
 
   if (filtrados.length === 0) {
     lista.classList.remove('aberta');
+    lista.innerHTML = '';
     return;
   }
 
@@ -273,7 +282,8 @@ function filtrarCidades() {
     const antes  = m.slice(0, idx);
     const meio   = m.slice(idx, idx + termo.length);
     const depois = m.slice(idx + termo.length);
-    return `<div class="cidade-item" data-valor="${m}" data-idx="${i}" onmousedown="selecionarCidade('${m.replace(/'/g,"\\'")}'">${antes}<strong>${meio}</strong>${depois}</div>`;
+    const esc    = m.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="cidade-item" data-valor="${m}" data-idx="${i}" onmousedown="event.preventDefault();selecionarCidade('${esc}')">${antes}<strong>${meio}</strong>${depois}</div>`;
   }).join('');
 
   lista.classList.add('aberta');
@@ -283,6 +293,7 @@ function selecionarCidade(cidade) {
   document.getElementById('cidade').value = cidade;
   document.getElementById('cidade-valor').value = cidade;
   document.getElementById('cidade-lista').classList.remove('aberta');
+  document.getElementById('cidade-lista').innerHTML = '';
   if (MUNICIPIOS_RO.includes(cidade)) {
     document.getElementById('uf').value = 'RO';
   }
@@ -314,7 +325,7 @@ function navegarCidades(e) {
 }
 
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.cidade-wrap')) {
+  if (!e.target.closest('#cidade-wrap')) {
     document.getElementById('cidade-lista').classList.remove('aberta');
   }
 });
