@@ -13,7 +13,7 @@
   .logo-prefeitura { height: 110px; width: auto; object-fit: contain; }
   .logo-semesp { height: 100px; width: auto; object-fit: contain; }
   .header-divider { width: 1px; height: 90px; background: rgba(255,255,255,0.3); }
-  .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-bottom: 8px; letter-spacing: 0.03em; }
+  .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-bottom: 8px; }
   .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
   .header p { font-size: 13px; opacity: 0.85; }
 
@@ -47,7 +47,7 @@
   .section-cat:first-of-type { margin-top: 0; }
   .eventos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-  .evento-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.15s; user-select: none; display: block; background: white; }
+  .evento-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.15s; user-select: none; background: white; }
   .evento-card:hover { border-color: #93c5fd; background: #f8faff; }
   .evento-card.selecionado { border-color: #1a56a0; background: #eff6ff; }
   .evento-card.selecionado .check { opacity: 1; }
@@ -57,8 +57,16 @@
   .evento-tipo { font-size: 10px; padding: 3px 8px; border-radius: 10px; display: inline-block; margin-top: 8px; font-weight: 500; }
   .tipo-areia { background: #fef3c7; color: #92400e; }
   .tipo-agua { background: #dbeafe; color: #1e40af; }
+  .tipo-individual { background: #f0fdf4; color: #166534; }
   .check { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; opacity: 0; background: #1a56a0; }
   .check::after { content: ''; width: 5px; height: 9px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px); display: block; }
+
+  .parceiro-box { display: none; margin-top: 10px; background: #f8faff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; }
+  .parceiro-box.visivel { display: block; }
+  .parceiro-titulo { font-size: 11px; font-weight: 600; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .parceiro-box label.campo { font-size: 12px; margin-top: 8px; }
+  .parceiro-box label.campo:first-of-type { margin-top: 0; }
+  .parceiro-box input { font-size: 13px; padding: 8px 10px; }
 
   .btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
   .btn:hover { background: #154794; }
@@ -97,8 +105,9 @@
 
 <div class="container">
   <div id="formulario">
+
     <div class="card">
-      <h2>Dados pessoais</h2>
+      <h2>Dados pessoais — Participante 1</h2>
 
       <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
       <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name">
@@ -124,15 +133,7 @@
         <div>
           <label class="campo">Cidade <span class="obrigatorio">*</span></label>
           <div class="cidade-wrap" id="cidade-wrap">
-            <input
-              type="text"
-              id="cidade"
-              placeholder="Digite o nome da cidade..."
-              autocomplete="off"
-              oninput="filtrarCidades()"
-              onkeydown="navegarCidades(event)"
-              onfocus="filtrarCidades()"
-            >
+            <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off" oninput="filtrarCidades()" onkeydown="navegarCidades(event)" onfocus="filtrarCidades()">
             <div class="cidade-lista" id="cidade-lista"></div>
           </div>
           <input type="hidden" id="cidade-valor">
@@ -156,54 +157,106 @@
     <div class="card">
       <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
 
-      <div class="section-cat">Esportes de areia</div>
+      <div class="section-cat">Esportes de areia — duplas</div>
       <div class="eventos-grid">
-        <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
-          <div class="evento-header">
-            <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Masculino</div></div>
-            <div class="check"></div>
+
+        <div>
+          <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
+            <div class="evento-header">
+              <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Masculino · Dupla</div></div>
+              <div class="check"></div>
+            </div>
+            <span class="evento-tipo tipo-areia">Esporte de Areia</span>
           </div>
-          <span class="evento-tipo tipo-areia">Esporte de Areia</span>
-        </div>
-        <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
-          <div class="evento-header">
-            <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Feminino</div></div>
-            <div class="check"></div>
+          <div class="parceiro-box" id="parceiro-1">
+            <div class="parceiro-titulo">Dados do parceiro</div>
+            <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+            <input type="text" id="p1-nome" placeholder="Nome do parceiro">
+            <label class="campo">CPF <span class="obrigatorio">*</span></label>
+            <input type="text" id="p1-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+            <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+            <input type="tel" id="p1-tel" placeholder="(69) 9 0000-0000">
           </div>
-          <span class="evento-tipo tipo-areia">Esporte de Areia</span>
         </div>
-        <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
-          <div class="evento-header">
-            <div><div class="evento-nome">Futevôlei</div><div class="evento-sub">Masculino</div></div>
-            <div class="check"></div>
+
+        <div>
+          <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
+            <div class="evento-header">
+              <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Feminino · Dupla</div></div>
+              <div class="check"></div>
+            </div>
+            <span class="evento-tipo tipo-areia">Esporte de Areia</span>
           </div>
-          <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+          <div class="parceiro-box" id="parceiro-2">
+            <div class="parceiro-titulo">Dados da parceira</div>
+            <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+            <input type="text" id="p2-nome" placeholder="Nome da parceira">
+            <label class="campo">CPF <span class="obrigatorio">*</span></label>
+            <input type="text" id="p2-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+            <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+            <input type="tel" id="p2-tel" placeholder="(69) 9 0000-0000">
+          </div>
         </div>
+
+        <div style="grid-column: span 2;">
+          <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
+            <div class="evento-header">
+              <div><div class="evento-nome">Futevôlei</div><div class="evento-sub">Masculino · Dupla</div></div>
+              <div class="check"></div>
+            </div>
+            <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+          </div>
+          <div class="parceiro-box" id="parceiro-3">
+            <div class="parceiro-titulo">Dados do parceiro</div>
+            <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+            <input type="text" id="p3-nome" placeholder="Nome do parceiro">
+            <label class="campo">CPF <span class="obrigatorio">*</span></label>
+            <input type="text" id="p3-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+            <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+            <input type="tel" id="p3-tel" placeholder="(69) 9 0000-0000">
+          </div>
+        </div>
+
       </div>
 
       <div class="section-cat">Esportes aquáticos</div>
       <div class="eventos-grid">
-        <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
-          <div class="evento-header">
-            <div><div class="evento-nome">Canoagem</div><div class="evento-sub">Aberto</div></div>
-            <div class="check"></div>
+
+        <div style="grid-column: span 2;">
+          <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
+            <div class="evento-header">
+              <div><div class="evento-nome">Canoagem</div><div class="evento-sub">Dupla</div></div>
+              <div class="check"></div>
+            </div>
+            <span class="evento-tipo tipo-agua">Esporte Aquático</span>
           </div>
-          <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+          <div class="parceiro-box" id="parceiro-4">
+            <div class="parceiro-titulo">Dados do parceiro</div>
+            <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+            <input type="text" id="p4-nome" placeholder="Nome do parceiro">
+            <label class="campo">CPF <span class="obrigatorio">*</span></label>
+            <input type="text" id="p4-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+            <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+            <input type="tel" id="p4-tel" placeholder="(69) 9 0000-0000">
+          </div>
         </div>
+
         <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
           <div class="evento-header">
-            <div><div class="evento-nome">Caiaque</div><div class="evento-sub">Aberto</div></div>
+            <div><div class="evento-nome">Caiaque</div><div class="evento-sub">Individual</div></div>
             <div class="check"></div>
           </div>
-          <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+          <span class="evento-tipo tipo-individual">Individual</span>
         </div>
+
         <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
           <div class="evento-header">
-            <div><div class="evento-nome">Natação</div><div class="evento-sub">Aberto</div></div>
+            <div><div class="evento-nome">Natação</div><div class="evento-sub">Individual</div></div>
             <div class="check"></div>
           </div>
-          <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+          <span class="evento-tipo tipo-individual">Individual</span>
         </div>
+
       </div>
     </div>
 
@@ -233,6 +286,10 @@
 const SUPABASE_URL = 'https://pjjqmoxccggsvfjjckhp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
 
+const DUPLAS = new Set([1, 2, 3, 4]);
+const selecionados = new Set();
+let itemAtivo = -1;
+
 const MUNICIPIOS_RO = [
   "Alta Floresta D'Oeste","Alto Alegre dos Parecis","Alto Paraíso","Alvorada D'Oeste",
   "Ariquemes","Buritis","Cabixi","Cacaulândia","Cacoal","Campo Novo de Rondônia",
@@ -248,9 +305,6 @@ const MUNICIPIOS_RO = [
   "Vilhena"
 ];
 
-let itemAtivo = -1;
-const selecionados = new Set();
-
 function normalizar(str) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 }
@@ -260,32 +314,19 @@ function filtrarCidades() {
   const lista = document.getElementById('cidade-lista');
   const termo = input.value.trim();
   itemAtivo = -1;
-
-  if (termo.length === 0) {
-    lista.classList.remove('aberta');
-    lista.innerHTML = '';
-    return;
-  }
-
+  if (termo.length === 0) { lista.classList.remove('aberta'); lista.innerHTML = ''; return; }
   const termoNorm = normalizar(termo);
   const filtrados = MUNICIPIOS_RO.filter(m => normalizar(m).includes(termoNorm));
-
-  if (filtrados.length === 0) {
-    lista.classList.remove('aberta');
-    lista.innerHTML = '';
-    return;
-  }
-
+  if (filtrados.length === 0) { lista.classList.remove('aberta'); lista.innerHTML = ''; return; }
   lista.innerHTML = filtrados.map((m, i) => {
     const mNorm = normalizar(m);
-    const idx   = mNorm.indexOf(termoNorm);
-    const antes  = m.slice(0, idx);
-    const meio   = m.slice(idx, idx + termo.length);
+    const idx = mNorm.indexOf(termoNorm);
+    const antes = m.slice(0, idx);
+    const meio = m.slice(idx, idx + termo.length);
     const depois = m.slice(idx + termo.length);
-    const esc    = m.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="cidade-item" data-valor="${m}" data-idx="${i}" onmousedown="event.preventDefault();selecionarCidade('${esc}')">${antes}<strong>${meio}</strong>${depois}</div>`;
+    const esc = m.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="cidade-item" data-valor="${m}" onmousedown="event.preventDefault();selecionarCidade('${esc}')">${antes}<strong>${meio}</strong>${depois}</div>`;
   }).join('');
-
   lista.classList.add('aberta');
 }
 
@@ -294,58 +335,44 @@ function selecionarCidade(cidade) {
   document.getElementById('cidade-valor').value = cidade;
   document.getElementById('cidade-lista').classList.remove('aberta');
   document.getElementById('cidade-lista').innerHTML = '';
-  if (MUNICIPIOS_RO.includes(cidade)) {
-    document.getElementById('uf').value = 'RO';
-  }
+  if (MUNICIPIOS_RO.includes(cidade)) document.getElementById('uf').value = 'RO';
 }
 
 function navegarCidades(e) {
   const lista = document.getElementById('cidade-lista');
   const itens = lista.querySelectorAll('.cidade-item');
   if (!lista.classList.contains('aberta') || itens.length === 0) return;
-
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo');
-    itemAtivo = Math.min(itemAtivo + 1, itens.length - 1);
-    itens[itemAtivo].classList.add('ativo');
-    itens[itemAtivo].scrollIntoView({ block: 'nearest' });
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo');
-    itemAtivo = Math.max(itemAtivo - 1, 0);
-    itens[itemAtivo].classList.add('ativo');
-    itens[itemAtivo].scrollIntoView({ block: 'nearest' });
-  } else if (e.key === 'Enter' && itemAtivo >= 0) {
-    e.preventDefault();
-    selecionarCidade(itens[itemAtivo].dataset.valor);
-  } else if (e.key === 'Escape') {
-    lista.classList.remove('aberta');
-  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo'); itemAtivo = Math.min(itemAtivo + 1, itens.length - 1); itens[itemAtivo].classList.add('ativo'); itens[itemAtivo].scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo'); itemAtivo = Math.max(itemAtivo - 1, 0); itens[itemAtivo].classList.add('ativo'); itens[itemAtivo].scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter' && itemAtivo >= 0) { e.preventDefault(); selecionarCidade(itens[itemAtivo].dataset.valor); }
+  else if (e.key === 'Escape') lista.classList.remove('aberta');
 }
 
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('#cidade-wrap')) {
-    document.getElementById('cidade-lista').classList.remove('aberta');
-  }
+  if (!e.target.closest('#cidade-wrap')) document.getElementById('cidade-lista').classList.remove('aberta');
 });
 
-document.getElementById('cpf').addEventListener('input', function () {
-  let v = this.value.replace(/\D/g, '').slice(0, 11);
-  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
-  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/, '$1.$2');
-  this.value = v;
-});
+function mascararCPF(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/,'$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/,'$1.$2');
+  el.value = v;
+}
+
+document.getElementById('cpf').addEventListener('input', function() { mascararCPF(this); });
 
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
+  const parceiroBox = document.getElementById('parceiro-' + id);
   if (selecionados.has(id)) {
     selecionados.delete(id);
     card.classList.remove('selecionado');
+    if (parceiroBox) parceiroBox.classList.remove('visivel');
   } else {
     selecionados.add(id);
     card.classList.add('selecionado');
+    if (parceiroBox && DUPLAS.has(id)) parceiroBox.classList.add('visivel');
   }
 }
 
@@ -368,22 +395,22 @@ async function post(tabela, dados) {
 }
 
 async function enviarInscricao() {
-  const nome        = document.getElementById('nome').value.trim();
-  const cpf         = document.getElementById('cpf').value.trim();
-  const telefone    = document.getElementById('telefone').value.trim();
+  const nome     = document.getElementById('nome').value.trim();
+  const cpf      = document.getElementById('cpf').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
   const cidadeInput = document.getElementById('cidade').value.trim();
   const cidadeValor = document.getElementById('cidade-valor').value.trim();
-  const cidade      = cidadeValor || cidadeInput;
-  const uf          = document.getElementById('uf').value;
-  const email       = document.getElementById('email').value.trim();
-  const nasc        = document.getElementById('nascimento').value;
-  const erro        = document.getElementById('erro');
-  const btn         = document.getElementById('btn-enviar');
+  const cidade   = cidadeValor || cidadeInput;
+  const uf       = document.getElementById('uf').value;
+  const email    = document.getElementById('email').value.trim();
+  const nasc     = document.getElementById('nascimento').value;
+  const erro     = document.getElementById('erro');
+  const btn      = document.getElementById('btn-enviar');
 
   erro.style.display = 'none';
 
   if (!nome || !cpf || !telefone || !cidade || !uf) {
-    erro.textContent = 'Preencha todos os campos obrigatórios marcados com *.';
+    erro.textContent = 'Preencha todos os campos obrigatórios do Participante 1.';
     erro.style.display = 'block';
     window.scrollTo({ top: erro.offsetTop - 20, behavior: 'smooth' });
     return;
@@ -394,26 +421,34 @@ async function enviarInscricao() {
     return;
   }
 
+  for (const id of selecionados) {
+    if (DUPLAS.has(id)) {
+      const pNome = document.getElementById(`p${id}-nome`)?.value.trim();
+      const pCpf  = document.getElementById(`p${id}-cpf`)?.value.trim();
+      const pTel  = document.getElementById(`p${id}-tel`)?.value.trim();
+      const nomes = { 1:'Vôlei Masc.', 2:'Vôlei Fem.', 3:'Futevôlei', 4:'Canoagem' };
+      if (!pNome || !pCpf || !pTel) {
+        erro.textContent = `Preencha os dados do parceiro no evento ${nomes[id]}.`;
+        erro.style.display = 'block';
+        document.getElementById(`p${id}-nome`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+  }
+
   btn.disabled = true;
   btn.textContent = 'Enviando...';
 
   const ficha = gerarFicha();
 
   const participante = await post('participantes', {
-    nome_completo: nome,
-    cpf: cpf,
-    email: email || null,
-    telefone: telefone,
-    data_nascimento: nasc || null,
-    cidade: cidade,
-    uf: uf
+    nome_completo: nome, cpf, email: email || null,
+    telefone, data_nascimento: nasc || null, cidade, uf
   });
 
   if (!participante || participante.length === 0 || participante.code) {
     const jaCadastrado = participante?.message?.includes('unique') || participante?.code === '23505';
-    erro.textContent = jaCadastrado
-      ? 'Este CPF já possui inscrição cadastrada.'
-      : 'Erro ao enviar. Verifique sua conexão e tente novamente.';
+    erro.textContent = jaCadastrado ? 'Este CPF já possui inscrição cadastrada.' : 'Erro ao enviar. Tente novamente.';
     erro.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Enviar inscrição';
@@ -421,13 +456,20 @@ async function enviarInscricao() {
   }
 
   const pid = participante[0].id;
+
   for (const mid of selecionados) {
-    await post('inscricoes', {
+    const dadosInscricao = {
       participante_id: pid,
       modalidade_id: mid,
       numero_ficha: ficha,
       status: 'confirmado'
-    });
+    };
+    if (DUPLAS.has(mid)) {
+      dadosInscricao.parceiro_nome = document.getElementById(`p${mid}-nome`).value.trim();
+      dadosInscricao.parceiro_cpf  = document.getElementById(`p${mid}-cpf`).value.trim();
+      dadosInscricao.parceiro_telefone = document.getElementById(`p${mid}-tel`).value.trim();
+    }
+    await post('inscricoes', dadosInscricao);
   }
 
   document.getElementById('formulario').style.display = 'none';
