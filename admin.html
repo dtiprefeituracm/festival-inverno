@@ -505,6 +505,7 @@ function abrirModal(id) {
         <div>${i.parceiro_nome}</div>
         ${i.parceiro_cpf ? `<div style="font-size:11px;color:#64748b;">CPF: ${i.parceiro_cpf}</div>` : ''}
         ${i.parceiro_telefone ? `<div style="font-size:11px;color:#64748b;">Tel: ${i.parceiro_telefone}</div>` : ''}
+        ${i.parceiro_cidade ? `<div style="font-size:11px;color:#64748b;">Cidade: ${i.parceiro_cidade}</div>` : ''}
       </div>` : '';
     return `<div class="modal-evento-item">
       <div class="modal-evento-nome">${m.nome} — ${m.sub}</div>
@@ -536,6 +537,7 @@ function imprimirFicha() {
         <div>${i.parceiro_nome}</div>
         ${i.parceiro_cpf?`<div style="color:#64748b;">CPF: ${i.parceiro_cpf}</div>`:''}
         ${i.parceiro_telefone?`<div style="color:#64748b;">Tel: ${i.parceiro_telefone}</div>`:''}
+        ${i.parceiro_cidade?`<div style="color:#64748b;">Cidade: ${i.parceiro_cidade}</div>`:''}
       </div>` : '';
     return `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
       <div style="font-weight:600;font-size:13px;">${m.nome} — ${m.sub}</div>
