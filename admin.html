@@ -8,10 +8,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
 
-  /* LOGIN */
   .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
   .login-box { background: white; border-radius: 16px; padding: 32px 28px; width: 100%; max-width: 380px; border: 1px solid #e2e8f0; }
   .login-logo { text-align: center; margin-bottom: 24px; }
+  .login-logo img { height: 70px; width: auto; object-fit: contain; margin-bottom: 12px; }
   .login-logo h1 { font-size: 20px; font-weight: 700; color: #1a56a0; }
   .login-logo p { font-size: 13px; color: #64748b; margin-top: 4px; }
   .login-box label { display: block; font-size: 13px; color: #475569; margin-bottom: 4px; margin-top: 14px; }
@@ -21,11 +21,13 @@
   .login-btn:hover { background: #154794; }
   .login-erro { color: #dc2626; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
 
-  /* PAINEL */
   .painel { display: none; }
-  .topbar { background: #1a56a0; color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-  .topbar-titulo { font-size: 16px; font-weight: 700; }
-  .topbar-sub { font-size: 12px; opacity: 0.8; }
+  .topbar { background: #1a56a0; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .topbar-esq { display: flex; align-items: center; gap: 14px; }
+  .topbar-logo { height: 48px; width: auto; object-fit: contain; }
+  .topbar-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.3); }
+  .topbar-titulo { font-size: 15px; font-weight: 700; }
+  .topbar-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
   .sair-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
   .sair-btn:hover { background: rgba(255,255,255,0.25); }
 
@@ -78,7 +80,6 @@
   .vaga-fill.quase { background: #f59e0b; }
   .vaga-info { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
 
-  /* MODAL */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
   .modal-bg.aberto { display: flex; }
   .modal { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
@@ -98,7 +99,6 @@
   .imprimir-ficha { width: 100%; padding: 10px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 16px; }
   .imprimir-ficha:hover { background: #154794; }
 
-  /* IMPRESSAO */
   @media print {
     body * { visibility: hidden; }
     .print-area, .print-area * { visibility: visible; }
@@ -110,6 +110,7 @@
     .vagas-grid { grid-template-columns: 1fr 1fr; }
     .filtros input { width: 100%; }
     .filtros { width: 100%; }
+    .topbar-divider { display: none; }
   }
 </style>
 </head>
@@ -119,6 +120,7 @@
 <div class="login-wrap" id="login-wrap">
   <div class="login-box">
     <div class="login-logo">
+      <img src="10.png" alt="SEMESP">
       <h1>Festival de Inverno</h1>
       <p>Painel Administrativo — SEMESP</p>
     </div>
@@ -135,9 +137,13 @@
 <div class="painel" id="painel">
 
   <div class="topbar">
-    <div>
-      <div class="topbar-titulo">Painel — Festival de Inverno 2025</div>
-      <div class="topbar-sub">SEMESP — Costa Marques / RO</div>
+    <div class="topbar-esq">
+      <img src="10.png" alt="SEMESP" class="topbar-logo">
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-titulo">Painel — Festival de Inverno 2025</div>
+        <div class="topbar-sub">SEMESP — Costa Marques / RO</div>
+      </div>
     </div>
     <button class="sair-btn" onclick="sair()">Sair</button>
   </div>
@@ -165,7 +171,6 @@
     </div>
   </div>
 
-  <!-- VAGAS -->
   <div class="section" style="margin-bottom:16px;">
     <div class="section-header">
       <span class="section-titulo">Vagas por modalidade</span>
@@ -176,7 +181,6 @@
     </div>
   </div>
 
-  <!-- TABELA -->
   <div class="section">
     <div class="section-header">
       <span class="section-titulo">Inscritos</span>
@@ -185,7 +189,7 @@
         <button class="print-btn" onclick="imprimirPorEvento()">Imprimir por evento</button>
       </div>
     </div>
-    <div class="section-header" style="padding-top:10px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;">
+    <div class="section-header" style="padding-top:10px;padding-bottom:10px;">
       <div class="filtros">
         <input type="text" id="busca" placeholder="Buscar nome ou CPF..." oninput="filtrar()">
         <select id="filtro-evento" onchange="filtrar()">
@@ -226,7 +230,7 @@
 
 </div>
 
-<!-- MODAL FICHA -->
+<!-- MODAL -->
 <div class="modal-bg" id="modal-bg" onclick="fecharModal(event)">
   <div class="modal" id="modal">
     <div class="modal-header">
@@ -246,14 +250,15 @@
   </div>
 </div>
 
-<!-- AREA DE IMPRESSAO OCULTA -->
 <div class="print-area" id="print-area" style="display:none;"></div>
 
 <script>
 const SUPABASE_URL = 'https://pjjqmoxccggsvfjjckhp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
-const ADMIN_USER   = 'admin';
-const ADMIN_SENHA  = 'semesp2025';
+const ADMIN_USER  = 'admin';
+const ADMIN_SENHA = 'semesp@2026';
+
+const LOGO_URL = window.location.origin + '/10.png';
 
 const MODALIDADES = {
   1: { nome: 'Vôlei de Areia', sub: 'Masculino', tipo: 'areia' },
@@ -266,6 +271,16 @@ const MODALIDADES = {
 
 let todosInscritos = [];
 let participanteAtual = null;
+
+const cabecalhoRelatorio = `
+  <div style="display:flex;align-items:center;gap:16px;border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:18px;">
+    <img src="${LOGO_URL}" style="height:56px;width:auto;object-fit:contain;" alt="SEMESP">
+    <div>
+      <div style="font-size:17px;font-weight:700;color:#1a56a0;">Festival de Inverno 2025</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px;">SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO</div>
+      <div style="font-size:12px;color:#64748b;">01 e 02 de Maio de 2025</div>
+    </div>
+  </div>`;
 
 function entrar() {
   const u = document.getElementById('login-user').value.trim();
@@ -296,10 +311,10 @@ async function carregarDados() {
   const participantes = await get('participantes', 'order=criado_em.desc');
   const inscricoes    = await get('inscricoes', 'select=*');
 
-  todosInscritos = participantes.map(p => {
-    const insc = inscricoes.filter(i => i.participante_id === p.id);
-    return { ...p, inscricoes: insc };
-  });
+  todosInscritos = participantes.map(p => ({
+    ...p,
+    inscricoes: inscricoes.filter(i => i.participante_id === p.id)
+  }));
 
   atualizarMetricas(todosInscritos, inscricoes);
   atualizarVagas(inscricoes);
@@ -310,17 +325,15 @@ async function carregarDados() {
 function atualizarMetricas(lista, inscricoes) {
   document.getElementById('m-total').textContent = lista.length;
   document.getElementById('m-inscricoes').textContent = inscricoes.length;
+  document.getElementById('m-cidades').textContent = new Set(lista.map(p => (p.cidade||'') + (p.uf||''))).size;
 
-  const cidades = new Set(lista.map(p => p.cidade + p.uf)).size;
-  document.getElementById('m-cidades').textContent = cidades;
-
-  const contagem = {};
-  inscricoes.forEach(i => { contagem[i.modalidade_id] = (contagem[i.modalidade_id] || 0) + 1; });
-  const topId = Object.entries(contagem).sort((a,b) => b[1]-a[1])[0];
-  if (topId) {
-    const m = MODALIDADES[topId[0]];
+  const cont = {};
+  inscricoes.forEach(i => { cont[i.modalidade_id] = (cont[i.modalidade_id] || 0) + 1; });
+  const top = Object.entries(cont).sort((a,b) => b[1]-a[1])[0];
+  if (top) {
+    const m = MODALIDADES[top[0]];
     document.getElementById('m-top').textContent = m ? m.nome : '—';
-    document.getElementById('m-top-qtd').textContent = topId[1] + ' inscritos';
+    document.getElementById('m-top-qtd').textContent = top[1] + ' inscritos';
   }
 }
 
@@ -345,6 +358,7 @@ function atualizarVagas(inscricoes) {
 function preencherUFs(lista) {
   const ufs = [...new Set(lista.map(p => p.uf).filter(Boolean))].sort();
   const sel = document.getElementById('filtro-uf');
+  sel.innerHTML = '<option value="">Todos os estados</option>';
   ufs.forEach(uf => {
     const o = document.createElement('option');
     o.value = uf; o.textContent = uf;
@@ -356,41 +370,35 @@ function filtrar() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
   const uf     = document.getElementById('filtro-uf').value;
-
   const filtrado = todosInscritos.filter(p => {
-    const matchBusca = !busca || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
-    const matchEvento = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const matchUF = !uf || p.uf === uf;
-    return matchBusca && matchEvento && matchUF;
+    const mb = !busca  || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
+    const me = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
+    const mu = !uf     || p.uf === uf;
+    return mb && me && mu;
   });
-
   renderTabela(filtrado);
 }
 
 function renderTabela(lista) {
   const tbody = document.getElementById('tabela-body');
   document.getElementById('contador-label').textContent = `Exibindo ${lista.length} participante${lista.length !== 1 ? 's' : ''}`;
-
   if (lista.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum participante encontrado.</td></tr>';
     return;
   }
-
   tbody.innerHTML = lista.map(p => {
-    const ficha = p.inscricoes[0]?.numero_ficha || '—';
-    const data  = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
+    const ficha  = p.inscricoes[0]?.numero_ficha || '—';
+    const data   = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
     const eventos = p.inscricoes.map(i => {
       const m = MODALIDADES[i.modalidade_id];
-      if (!m) return '';
-      return `<span class="badge badge-${m.tipo}">${m.nome} ${m.sub}</span>`;
+      return m ? `<span class="badge badge-${m.tipo}">${m.nome} ${m.sub}</span>` : '';
     }).join(' ');
-
     return `<tr>
       <td><span class="ficha-num">${ficha}</span></td>
       <td>${p.nome_completo}</td>
-      <td>${p.cpf || '—'}</td>
-      <td>${p.telefone || '—'}</td>
-      <td>${p.cidade || '—'} / ${p.uf || '—'}</td>
+      <td>${p.cpf||'—'}</td>
+      <td>${p.telefone||'—'}</td>
+      <td>${p.cidade||'—'} / ${p.uf||'—'}</td>
       <td style="max-width:200px;">${eventos}</td>
       <td style="white-space:nowrap;">${data}</td>
       <td><button class="ver-btn" onclick="abrirModal('${p.id}')">Ver ficha</button></td>
@@ -402,184 +410,128 @@ function abrirModal(id) {
   const p = todosInscritos.find(x => x.id === id);
   if (!p) return;
   participanteAtual = p;
-
-  const ficha = p.inscricoes[0]?.numero_ficha || '—';
-  document.getElementById('m-ficha').textContent = ficha;
-
+  document.getElementById('m-ficha').textContent = p.inscricoes[0]?.numero_ficha || '—';
   document.getElementById('m-dados').innerHTML = `
     <div class="modal-row"><span class="modal-label">Nome</span><span class="modal-val">${p.nome_completo}</span></div>
-    <div class="modal-row"><span class="modal-label">CPF</span><span class="modal-val">${p.cpf || '—'}</span></div>
+    <div class="modal-row"><span class="modal-label">CPF</span><span class="modal-val">${p.cpf||'—'}</span></div>
     <div class="modal-row"><span class="modal-label">Nascimento</span><span class="modal-val">${p.data_nascimento ? new Date(p.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : '—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Telefone</span><span class="modal-val">${p.telefone || '—'}</span></div>
-    <div class="modal-row"><span class="modal-label">E-mail</span><span class="modal-val">${p.email || '—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Cidade / UF</span><span class="modal-val">${p.cidade || '—'} / ${p.uf || '—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Inscrição em</span><span class="modal-val">${p.criado_em ? new Date(p.criado_em).toLocaleString('pt-BR') : '—'}</span></div>
-  `;
-
+    <div class="modal-row"><span class="modal-label">Telefone</span><span class="modal-val">${p.telefone||'—'}</span></div>
+    <div class="modal-row"><span class="modal-label">E-mail</span><span class="modal-val">${p.email||'—'}</span></div>
+    <div class="modal-row"><span class="modal-label">Cidade / UF</span><span class="modal-val">${p.cidade||'—'} / ${p.uf||'—'}</span></div>
+    <div class="modal-row"><span class="modal-label">Inscrito em</span><span class="modal-val">${p.criado_em ? new Date(p.criado_em).toLocaleString('pt-BR') : '—'}</span></div>`;
   document.getElementById('m-eventos').innerHTML = p.inscricoes.map(i => {
     const m = MODALIDADES[i.modalidade_id];
-    if (!m) return '';
-    return `<div class="modal-evento-item">
-      <span class="badge badge-${m.tipo}">${m.tipo === 'areia' ? 'Areia' : 'Aquático'}</span>
-      <span>${m.nome} — ${m.sub}</span>
-    </div>`;
+    return m ? `<div class="modal-evento-item"><span class="badge badge-${m.tipo}">${m.tipo==='areia'?'Areia':'Aquático'}</span><span>${m.nome} — ${m.sub}</span></div>` : '';
   }).join('');
-
   document.getElementById('modal-bg').classList.add('aberto');
 }
 
-function fecharModal(e) {
-  if (e.target === document.getElementById('modal-bg')) fecharModalBtn();
-}
-function fecharModalBtn() {
-  document.getElementById('modal-bg').classList.remove('aberto');
-}
+function fecharModal(e) { if (e.target === document.getElementById('modal-bg')) fecharModalBtn(); }
+function fecharModalBtn() { document.getElementById('modal-bg').classList.remove('aberto'); }
 
 function imprimirFicha() {
   const p = participanteAtual;
   if (!p) return;
-  const ficha = p.inscricoes[0]?.numero_ficha || '—';
-  const eventos = p.inscricoes.map(i => {
-    const m = MODALIDADES[i.modalidade_id];
-    return m ? `<li>${m.nome} — ${m.sub}</li>` : '';
-  }).join('');
-
-  const html = `
-    <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-      <div style="text-align:center;border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:16px;">
-        <h2 style="color:#1a56a0;margin:0;">Festival de Inverno 2025</h2>
-        <p style="margin:4px 0;font-size:13px;color:#64748b;">SEMESP — Prefeitura de Costa Marques / RO</p>
-        <p style="margin:4px 0;font-size:13px;color:#64748b;">01 e 02 de Maio de 2025</p>
-      </div>
-      <div style="text-align:center;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:14px;margin-bottom:16px;">
-        <div style="font-size:12px;color:#64748b;">Número da Ficha</div>
-        <div style="font-size:32px;font-weight:800;color:#1a56a0;">${ficha}</div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <tr><td style="padding:6px 0;color:#64748b;width:140px;">Nome</td><td style="padding:6px 0;font-weight:600;">${p.nome_completo}</td></tr>
-        <tr><td style="padding:6px 0;color:#64748b;">CPF</td><td style="padding:6px 0;">${p.cpf || '—'}</td></tr>
-        <tr><td style="padding:6px 0;color:#64748b;">Telefone</td><td style="padding:6px 0;">${p.telefone || '—'}</td></tr>
-        <tr><td style="padding:6px 0;color:#64748b;">Cidade / UF</td><td style="padding:6px 0;">${p.cidade || '—'} / ${p.uf || '—'}</td></tr>
-      </table>
-      <div style="margin-top:14px;">
-        <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Eventos inscritos</div>
-        <ul style="font-size:13px;padding-left:18px;line-height:2;">${eventos}</ul>
-      </div>
-      <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;">
-        <span>Impresso em ${new Date().toLocaleString('pt-BR')}</span>
-        <span>Festival de Inverno 2025</span>
-      </div>
-    </div>`;
-
-  const area = document.getElementById('print-area');
-  area.innerHTML = html;
-  area.style.display = 'block';
-  window.print();
-  area.style.display = 'none';
+  const ficha   = p.inscricoes[0]?.numero_ficha || '—';
+  const eventos = p.inscricoes.map(i => { const m = MODALIDADES[i.modalidade_id]; return m ? `<li>${m.nome} — ${m.sub}</li>` : ''; }).join('');
+  const html = `<div style="font-family:system-ui,sans-serif;max-width:620px;margin:0 auto;padding:24px;">
+    ${cabecalhoRelatorio}
+    <div style="text-align:center;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:14px;margin-bottom:18px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Número da Ficha</div>
+      <div style="font-size:32px;font-weight:800;color:#1a56a0;">${ficha}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <tr><td style="padding:6px 0;color:#64748b;width:140px;">Nome</td><td style="padding:6px 0;font-weight:600;">${p.nome_completo}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">CPF</td><td style="padding:6px 0;">${p.cpf||'—'}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">Telefone</td><td style="padding:6px 0;">${p.telefone||'—'}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748b;">Cidade / UF</td><td style="padding:6px 0;">${p.cidade||'—'} / ${p.uf||'—'}</td></tr>
+    </table>
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Eventos inscritos</div>
+      <ul style="font-size:13px;padding-left:18px;line-height:2;">${eventos}</ul>
+    </div>
+    <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
+      <span>Impresso em ${new Date().toLocaleString('pt-BR')}</span><span>Festival de Inverno 2025</span>
+    </div>
+  </div>`;
+  imprimir(html);
 }
 
 function imprimirLista() {
-  const busca   = document.getElementById('busca').value.toLowerCase();
-  const evento  = document.getElementById('filtro-evento').value;
-  const uf      = document.getElementById('filtro-uf').value;
-
-  const lista = todosInscritos.filter(p => {
-    const matchBusca  = !busca || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
-    const matchEvento = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const matchUF     = !uf || p.uf === uf;
-    return matchBusca && matchEvento && matchUF;
+  const busca  = document.getElementById('busca').value.toLowerCase();
+  const evento = document.getElementById('filtro-evento').value;
+  const uf     = document.getElementById('filtro-uf').value;
+  const lista  = todosInscritos.filter(p => {
+    const mb = !busca  || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
+    const me = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
+    const mu = !uf     || p.uf === uf;
+    return mb && me && mu;
   });
-
-  const linhas = lista.map((p, idx) => {
-    const ficha   = p.inscricoes[0]?.numero_ficha || '—';
+  const linhas = lista.map((p,idx) => {
+    const ficha  = p.inscricoes[0]?.numero_ficha || '—';
     const eventos = p.inscricoes.map(i => { const m = MODALIDADES[i.modalidade_id]; return m ? `${m.nome} ${m.sub}` : ''; }).join(', ');
     return `<tr style="background:${idx%2===0?'white':'#f8fafc'}">
       <td style="padding:7px 10px;border:1px solid #e2e8f0;">${ficha}</td>
       <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.nome_completo}</td>
-      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cpf || '—'}</td>
-      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.telefone || '—'}</td>
-      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cidade || '—'} / ${p.uf || '—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cpf||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
       <td style="padding:7px 10px;border:1px solid #e2e8f0;">${eventos}</td>
       <td style="padding:7px 10px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
     </tr>`;
   }).join('');
-
-  const html = `
-    <div style="font-family:system-ui,sans-serif;padding:20px;">
-      <div style="text-align:center;border-bottom:2px solid #1a56a0;padding-bottom:10px;margin-bottom:16px;">
-        <h2 style="color:#1a56a0;margin:0;">Festival de Inverno 2025 — Lista de Inscritos</h2>
-        <p style="font-size:12px;color:#64748b;margin:4px 0;">SEMESP — Costa Marques / RO · 01 e 02 de Maio de 2025</p>
-        <p style="font-size:12px;color:#64748b;margin:0;">Total: ${lista.length} participantes · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead>
-          <tr style="background:#1a56a0;color:white;">
-            <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Ficha</th>
-            <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Nome</th>
-            <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">CPF</th>
-            <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Telefone</th>
-            <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
-            <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Eventos</th>
-            <th style="padding:8px 10px;text-align:center;border:1px solid #1447a0;">Check-in</th>
-          </tr>
-        </thead>
-        <tbody>${linhas}</tbody>
-      </table>
-    </div>`;
-
-  const area = document.getElementById('print-area');
-  area.innerHTML = html;
-  area.style.display = 'block';
-  window.print();
-  area.style.display = 'none';
+  const html = `<div style="font-family:system-ui,sans-serif;padding:20px;">
+    ${cabecalhoRelatorio}
+    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Total: ${lista.length} participantes · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="background:#1a56a0;color:white;">
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Ficha</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Nome</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">CPF</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Telefone</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
+        <th style="padding:8px 10px;text-align:left;border:1px solid #1447a0;">Eventos</th>
+        <th style="padding:8px 10px;text-align:center;border:1px solid #1447a0;">Check-in</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+  </div>`;
+  imprimir(html);
 }
 
 function imprimirPorEvento() {
   let html = `<div style="font-family:system-ui,sans-serif;">`;
-
-  Object.entries(MODALIDADES).forEach(([id, m]) => {
+  Object.entries(MODALIDADES).forEach(([id, m], idx) => {
     const lista = todosInscritos.filter(p => p.inscricoes.some(i => i.modalidade_id == id));
     if (lista.length === 0) return;
-
-    const linhas = lista.map((p, idx) => {
+    const linhas = lista.map((p, i) => {
       const ficha = p.inscricoes.find(i => i.modalidade_id == id)?.numero_ficha || '—';
-      return `<tr style="background:${idx%2===0?'white':'#f8fafc'}">
+      return `<tr style="background:${i%2===0?'white':'#f8fafc'}">
         <td style="padding:7px 10px;border:1px solid #e2e8f0;">${ficha}</td>
         <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.nome_completo}</td>
-        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.telefone || '—'}</td>
-        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cidade || '—'} / ${p.uf || '—'}</td>
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
+        <td style="padding:7px 10px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
         <td style="padding:7px 10px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
       </tr>`;
     }).join('');
-
-    html += `
-      <div style="page-break-before:${id == 1 ? 'auto' : 'always'};padding:20px;">
-        <div style="border-bottom:2px solid #1a56a0;padding-bottom:10px;margin-bottom:14px;">
-          <h2 style="color:#1a56a0;margin:0;">${m.nome} — ${m.sub}</h2>
-          <p style="font-size:12px;color:#64748b;margin:4px 0;">Festival de Inverno 2025 · Costa Marques / RO · 01 e 02 de Maio</p>
-          <p style="font-size:12px;color:#64748b;margin:0;">${lista.length} inscritos</p>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="background:#1a56a0;color:white;">
-              <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Ficha</th>
-              <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Nome</th>
-              <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Telefone</th>
-              <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
-              <th style="padding:7px 10px;text-align:center;border:1px solid #1447a0;">Check-in</th>
-            </tr>
-          </thead>
-          <tbody>${linhas}</tbody>
-        </table>
-      </div>`;
+    html += `<div style="page-break-before:${idx===0?'auto':'always'};padding:20px;">
+      ${cabecalhoRelatorio}
+      <h3 style="color:#1a56a0;margin-bottom:4px;">${m.nome} — ${m.sub}</h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px;">${lista.length} inscritos · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#1a56a0;color:white;">
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Ficha</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Nome</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Telefone</th>
+          <th style="padding:7px 10px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
+          <th style="padding:7px 10px;text-align:center;border:1px solid #1447a0;">Check-in</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>`;
   });
-
-  html += `</div>`;
-  const area = document.getElementById('print-area');
-  area.innerHTML = html;
-  area.style.display = 'block';
-  window.print();
-  area.style.display = 'none';
+  html += '</div>';
+  imprimir(html);
 }
 
 function imprimirVagas() {
@@ -598,28 +550,26 @@ function imprimirVagas() {
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${pct}%</td>
     </tr>`;
   }).join('');
+  const html = `<div style="font-family:system-ui,sans-serif;padding:24px;max-width:700px;margin:0 auto;">
+    ${cabecalhoRelatorio}
+    <h3 style="color:#1a56a0;margin-bottom:12px;">Relatório de Vagas por Modalidade</h3>
+    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Impresso em ${new Date().toLocaleString('pt-BR')}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:#1a56a0;color:white;">
+        <th style="padding:9px 12px;text-align:left;border:1px solid #1447a0;">Evento</th>
+        <th style="padding:9px 12px;text-align:left;border:1px solid #1447a0;">Modalidade</th>
+        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Vagas</th>
+        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Preenchidas</th>
+        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Restam</th>
+        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">%</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+  </div>`;
+  imprimir(html);
+}
 
-  const html = `
-    <div style="font-family:system-ui,sans-serif;padding:24px;max-width:700px;margin:0 auto;">
-      <div style="text-align:center;border-bottom:2px solid #1a56a0;padding-bottom:10px;margin-bottom:20px;">
-        <h2 style="color:#1a56a0;margin:0;">Relatório de Vagas — Festival de Inverno 2025</h2>
-        <p style="font-size:12px;color:#64748b;margin:4px 0;">SEMESP — Costa Marques / RO · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead>
-          <tr style="background:#1a56a0;color:white;">
-            <th style="padding:9px 12px;text-align:left;border:1px solid #1447a0;">Evento</th>
-            <th style="padding:9px 12px;text-align:left;border:1px solid #1447a0;">Modalidade</th>
-            <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Vagas</th>
-            <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Preenchidas</th>
-            <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Restam</th>
-            <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">%</th>
-          </tr>
-        </thead>
-        <tbody>${linhas}</tbody>
-      </table>
-    </div>`;
-
+function imprimir(html) {
   const area = document.getElementById('print-area');
   area.innerHTML = html;
   area.style.display = 'block';
