@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Inscrição — Festival de Inverno</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+  .header { background: #1a56a0; color: white; padding: 20px 16px 24px; text-align: center; }
+  .header-logos { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+  .logo-prefeitura { height: 80px; width: auto; object-fit: contain; }
+  .logo-semesp { height: 72px; width: auto; object-fit: contain; }
+  .header-divider { width: 1px; height: 64px; background: rgba(255,255,255,0.3); }
+  .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.85; }
+
+  .container { max-width: 500px; margin: 24px auto; padding: 0 16px 60px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+
+  label { display: block; font-size: 13px; color: #475569; margin-bottom: 6px; }
+  input[type=text] { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; color: #1e293b; outline: none; transition: border 0.2s; }
+  input:focus { border-color: #1a56a0; box-shadow: 0 0 0 3px rgba(26,86,160,0.1); }
+  input.campo-erro { border-color: #dc2626 !important; }
+
+  .btn { width: 100%; padding: 13px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 14px; transition: background 0.2s; }
+  .btn:hover { background: #154794; }
+  .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+  .msg { padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+  .msg.erro { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+  .msg.info  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+  /* Resultado */
+  .resultado { display: none; margin-top: 16px; }
+
+  .ficha-header { background: linear-gradient(135deg, #1a56a0, #2563eb); color: white; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+  .ficha-label { font-size: 11px; opacity: 0.8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ficha-num { font-size: 38px; font-weight: 800; letter-spacing: 0.05em; }
+  .ficha-status { display: inline-block; margin-top: 10px; background: rgba(255,255,255,0.2); padding: 3px 14px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+
+  .secao-titulo { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
+  .dado-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .dado-row:last-child { border-bottom: none; }
+  .dado-label { color: #64748b; }
+  .dado-val { color: #1e293b; font-weight: 500; text-align: right; max-width: 60%; }
+
+  .evento-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .evento-item:last-child { margin-bottom: 0; }
+  .evento-nome-txt { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .evento-tipo-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 600; margin-bottom: 8px; }
+  .badge-areia { background: #fef3c7; color: #92400e; }
+  .badge-agua  { background: #dbeafe; color: #1e40af; }
+  .badge-ind   { background: #f0fdf4; color: #166534; }
+  .parceiro-bloco { background: #f8faff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+  .parceiro-bloco-titulo { font-size: 10px; font-weight: 700; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .parceiro-dado { font-size: 12px; color: #475569; margin-bottom: 2px; }
+  .parceiro-dado:last-child { margin-bottom: 0; }
+
+  .share-btn { display: block; width: 100%; padding: 12px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; margin-top: 14px; text-decoration: none; }
+  .nova-btn { display: block; width: 100%; padding: 11px; background: white; color: #1a56a0; border: 1px solid #1a56a0; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; margin-top: 10px; text-decoration: none; }
+  .nova-btn:hover { background: #eff6ff; }
+
+  .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 32px; padding-bottom: 20px; }
+
+  @media print {
+    .btn, .share-btn, .nova-btn, .card:first-child, .msg { display: none !important; }
+    body { background: white; }
+    .resultado { display: block !important; }
+    .ficha-header { background: #1a56a0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logos">
+    <img src="logogestao.png" alt="Prefeitura de Costa Marques" class="logo-prefeitura">
+    <div class="header-divider"></div>
+    <img src="10.png" alt="SEMESP" class="logo-semesp">
+  </div>
+  <h1>Festival de Inverno 2026</h1>
+  <p>Consulta de Inscrição — Costa Marques / RO</p>
+</div>
+
+<div class="container">
+
+  <!-- Formulário de consulta -->
+  <div class="card" id="card-busca">
+    <h2 style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:4px;">Consultar minha inscrição</h2>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Digite seu CPF para ver seus eventos e número de ficha.</p>
+
+    <label>CPF do participante</label>
+    <input type="text" id="cpf-busca" placeholder="000.000.000-00" maxlength="14"
+      oninput="mascararCPF(this)" onkeydown="if(event.key==='Enter') buscar()">
+    <div class="msg erro" id="msg-erro"></div>
+    <div class="msg info" id="msg-info"></div>
+    <button class="btn" id="btn-buscar" onclick="buscar()">Buscar inscrição</button>
+  </div>
+
+  <!-- Resultado -->
+  <div class="resultado" id="resultado">
+
+    <div class="ficha-header">
+      <div class="ficha-label">Número da ficha</div>
+      <div class="ficha-num" id="r-ficha">—</div>
+      <div class="ficha-status">✅ Confirmado</div>
+    </div>
+
+    <div class="card" style="padding:16px 20px;">
+      <div class="secao-titulo">Participante</div>
+      <div id="r-dados"></div>
+
+      <div class="secao-titulo">Eventos inscritos</div>
+      <div id="r-eventos"></div>
+
+      <a class="share-btn" id="r-share" href="#" target="_blank">Compartilhar no WhatsApp</a>
+      <button class="btn" onclick="window.print()" style="background:#475569;margin-top:10px;">🖨️ Imprimir ficha</button>
+      <a class="nova-btn" href="index.html">← Voltar ao formulário de inscrição</a>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO<br>
+    Festival de Inverno 2026 · 01 e 02 de Maio de 2026
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://pjjqmoxccggsvfjjckhp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
+
+const MODALIDADES = {
+  1: { nome: 'Vôlei de Areia', sub: 'Masculino', tipo: 'areia', dupla: true  },
+  2: { nome: 'Vôlei de Areia', sub: 'Feminino',  tipo: 'areia', dupla: true  },
+  3: { nome: 'Futevôlei',      sub: 'Masculino', tipo: 'areia', dupla: true  },
+  4: { nome: 'Canoagem',       sub: 'Dupla',     tipo: 'agua',  dupla: true  },
+  5: { nome: 'Caiaque',        sub: 'Individual',tipo: 'agua',  dupla: false },
+  6: { nome: 'Natação',        sub: 'Individual',tipo: 'agua',  dupla: false },
+};
+
+function mascararCPF(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/,'$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/,'$1.$2');
+  el.value = v;
+  el.classList.remove('campo-erro');
+}
+
+async function get(tabela, params = '') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?${params}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  return r.json();
+}
+
+function ocultarMsgs() {
+  document.getElementById('msg-erro').style.display = 'none';
+  document.getElementById('msg-info').style.display = 'none';
+}
+
+function mostrarErro(txt) {
+  const el = document.getElementById('msg-erro');
+  el.textContent = txt; el.style.display = 'block';
+  document.getElementById('msg-info').style.display = 'none';
+}
+
+function mostrarInfo(txt) {
+  const el = document.getElementById('msg-info');
+  el.textContent = txt; el.style.display = 'block';
+  document.getElementById('msg-erro').style.display = 'none';
+}
+
+async function buscar() {
+  const cpfEl  = document.getElementById('cpf-busca');
+  const cpf    = cpfEl.value.trim();
+  const btn    = document.getElementById('btn-buscar');
+  ocultarMsgs();
+  document.getElementById('resultado').style.display = 'none';
+
+  if (!cpf || cpf.replace(/\D/g,'').length < 11) {
+    cpfEl.classList.add('campo-erro');
+    mostrarErro('Digite um CPF válido para continuar.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Buscando...';
+
+  try {
+    // Busca participante pelo CPF
+    const participantes = await get('participantes', `cpf=eq.${encodeURIComponent(cpf)}&limit=1`);
+
+    if (!participantes || participantes.length === 0) {
+      mostrarErro('Nenhuma inscrição encontrada para este CPF. Verifique os dígitos ou acesse o formulário para se inscrever.');
+      btn.disabled = false;
+      btn.textContent = 'Buscar inscrição';
+      return;
+    }
+
+    const p = participantes[0];
+    const inscricoes = await get('inscricoes', `participante_id=eq.${p.id}`);
+
+    if (!inscricoes || inscricoes.length === 0) {
+      mostrarInfo('Participante encontrado, mas sem inscrições em eventos. Entre em contato com a SEMESP.');
+      btn.disabled = false;
+      btn.textContent = 'Buscar inscrição';
+      return;
+    }
+
+    // Preenche o resultado
+    const ficha = inscricoes[0].numero_ficha || '—';
+    document.getElementById('r-ficha').textContent = ficha;
+
+    const sexoTxt = p.sexo === 'M' ? '♂ Masculino' : p.sexo === 'F' ? '♀ Feminino' : '—';
+    const nascTxt = p.data_nascimento ? new Date(p.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    const dataTxt = p.criado_em ? new Date(p.criado_em).toLocaleString('pt-BR') : '—';
+
+    document.getElementById('r-dados').innerHTML = `
+      <div class="dado-row"><span class="dado-label">Nome</span><span class="dado-val">${p.nome_completo}</span></div>
+      <div class="dado-row"><span class="dado-label">CPF</span><span class="dado-val">${p.cpf||'—'}</span></div>
+      <div class="dado-row"><span class="dado-label">Sexo</span><span class="dado-val">${sexoTxt}</span></div>
+      <div class="dado-row"><span class="dado-label">Nascimento</span><span class="dado-val">${nascTxt}</span></div>
+      <div class="dado-row"><span class="dado-label">Telefone</span><span class="dado-val">${p.telefone||'—'}</span></div>
+      <div class="dado-row"><span class="dado-label">Cidade / UF</span><span class="dado-val">${p.cidade||'—'} / ${p.uf||'—'}</span></div>
+      <div class="dado-row"><span class="dado-label">Inscrito em</span><span class="dado-val">${dataTxt}</span></div>`;
+
+    document.getElementById('r-eventos').innerHTML = inscricoes.map(i => {
+      const m = MODALIDADES[i.modalidade_id];
+      if (!m) return '';
+      const badgeCls = m.tipo === 'areia' ? 'badge-areia' : m.dupla ? 'badge-agua' : 'badge-ind';
+      const badgeTxt = m.tipo === 'areia' ? 'Esporte de Areia' : m.dupla ? 'Esporte Aquático' : 'Individual';
+
+      let parceiroHtml = '';
+      if (m.dupla && i.parceiro_nome) {
+        parceiroHtml = `<div class="parceiro-bloco">
+          <div class="parceiro-bloco-titulo">Parceiro(a)</div>
+          <div class="parceiro-dado"><strong>${i.parceiro_nome}</strong></div>
+          ${i.parceiro_cpf ? `<div class="parceiro-dado">CPF: ${i.parceiro_cpf}</div>` : ''}
+          ${i.parceiro_telefone ? `<div class="parceiro-dado">Tel: ${i.parceiro_telefone}</div>` : ''}
+          ${i.parceiro_cidade ? `<div class="parceiro-dado">Cidade: ${i.parceiro_cidade}</div>` : ''}
+        </div>`;
+      }
+
+      return `<div class="evento-item">
+        <div class="evento-nome-txt">${m.nome} — ${m.sub}</div>
+        <span class="evento-tipo-badge ${badgeCls}">${badgeTxt}</span>
+        ${parceiroHtml}
+      </div>`;
+    }).join('');
+
+    // Botão WhatsApp
+    const eventosStr = inscricoes.map(i => {
+      const m = MODALIDADES[i.modalidade_id];
+      return m ? `${m.nome} ${m.sub}` : '';
+    }).filter(Boolean).join(', ');
+    const msg = encodeURIComponent(
+      `Minha inscrição no Festival de Inverno 2026 — Costa Marques/RO\n` +
+      `Ficha: *${ficha}*\nEventos: ${eventosStr}\nData: 01 e 02 de Maio de 2026`
+    );
+    document.getElementById('r-share').href = `https://wa.me/?text=${msg}`;
+
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    mostrarErro('Erro na consulta. Verifique sua conexão e tente novamente.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Buscar inscrição';
+}
+</script>
+</body>
+</html>
