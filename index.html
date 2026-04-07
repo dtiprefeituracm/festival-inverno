@@ -87,7 +87,7 @@
 
 <div class="header">
   <div class="header-logos">
-    <img src="LOGO GESTÃO C SOMBRA.png" alt="Prefeitura de Costa Marques" class="logo-prefeitura">
+    <img src="logogestao.png" alt="Prefeitura de Costa Marques" class="logo-prefeitura">
     <div class="header-divider"></div>
     <img src="10.png" alt="SEMESP" class="logo-semesp">
   </div>
@@ -268,11 +268,12 @@ function filtrarCidades() {
   }
 
   lista.innerHTML = filtrados.map((m, i) => {
-    const idx = normalizar(m).indexOf(termoNorm);
-    const antes = m.slice(0, idx);
-    const meio  = m.slice(idx, idx + termo.length);
-    const depois= m.slice(idx + termo.length);
-    return `<div class="cidade-item" data-valor="${m}" data-idx="${i}" onmousedown="selecionarCidade('${m}')">${antes}<strong>${meio}</strong>${depois}</div>`;
+    const mNorm = normalizar(m);
+    const idx   = mNorm.indexOf(termoNorm);
+    const antes  = m.slice(0, idx);
+    const meio   = m.slice(idx, idx + termo.length);
+    const depois = m.slice(idx + termo.length);
+    return `<div class="cidade-item" data-valor="${m}" data-idx="${i}" onmousedown="selecionarCidade('${m.replace(/'/g,"\\'")}'">${antes}<strong>${meio}</strong>${depois}</div>`;
   }).join('');
 
   lista.classList.add('aberta');
@@ -282,8 +283,7 @@ function selecionarCidade(cidade) {
   document.getElementById('cidade').value = cidade;
   document.getElementById('cidade-valor').value = cidade;
   document.getElementById('cidade-lista').classList.remove('aberta');
-  if (cidade.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('rondonia') ||
-      MUNICIPIOS_RO.includes(cidade)) {
+  if (MUNICIPIOS_RO.includes(cidade)) {
     document.getElementById('uf').value = 'RO';
   }
 }
@@ -357,17 +357,17 @@ async function post(tabela, dados) {
 }
 
 async function enviarInscricao() {
-  const nome     = document.getElementById('nome').value.trim();
-  const cpf      = document.getElementById('cpf').value.trim();
-  const telefone = document.getElementById('telefone').value.trim();
+  const nome        = document.getElementById('nome').value.trim();
+  const cpf         = document.getElementById('cpf').value.trim();
+  const telefone    = document.getElementById('telefone').value.trim();
   const cidadeInput = document.getElementById('cidade').value.trim();
   const cidadeValor = document.getElementById('cidade-valor').value.trim();
-  const cidade   = cidadeValor || cidadeInput;
-  const uf       = document.getElementById('uf').value;
-  const email    = document.getElementById('email').value.trim();
-  const nasc     = document.getElementById('nascimento').value;
-  const erro     = document.getElementById('erro');
-  const btn      = document.getElementById('btn-enviar');
+  const cidade      = cidadeValor || cidadeInput;
+  const uf          = document.getElementById('uf').value;
+  const email       = document.getElementById('email').value.trim();
+  const nasc        = document.getElementById('nascimento').value;
+  const erro        = document.getElementById('erro');
+  const btn         = document.getElementById('btn-enviar');
 
   erro.style.display = 'none';
 
@@ -425,10 +425,12 @@ async function enviarInscricao() {
 
   const nomesEventos = { 1:'Vôlei de Areia Masc.', 2:'Vôlei de Areia Fem.', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
   const eventos = Array.from(selecionados).map(id => nomesEventos[id]).join(', ');
+
   const msg = encodeURIComponent(
     `Olá! Me inscrevi no Festival de Inverno — Costa Marques/RO (01 e 02 de Maio de 2026).\n` +
-    `Meu número de ficha é *${ficha}*.\nEventos: ${eventos}.\n` +
-    `Faça sua inscrição também!`
+    `Meu número de ficha é *${ficha}*.\nEventos: ${eventos}.\n\n` +
+    `Faça sua inscrição também pelo link abaixo:\n` +
+    `https://festival-inverno.vercel.app`
   );
   document.getElementById('share-link').href = `https://wa.me/?text=${msg}`;
   window.scrollTo({ top: 0, behavior: 'smooth' });
