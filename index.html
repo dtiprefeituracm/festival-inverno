@@ -458,8 +458,9 @@
       </p>
       <div class="consulta-busca-wrap">
         <input type="text" id="consulta-input" placeholder="000.000.000-00  ou  FI-0000"
+          maxlength="18"
           onkeydown="if(event.key==='Enter') buscarInscricao()"
-          oninput="limparResultadoConsulta()">
+          oninput="mascararConsultaInput(this)">
         <button class="btn-buscar" id="btn-buscar" onclick="buscarInscricao()">Buscar</button>
       </div>
       <div class="consulta-erro" id="consulta-erro"></div>
@@ -828,6 +829,25 @@ function irParaConsultaComCPF() {
 let participanteConsulta = null;
 let inscricoesConsulta   = [];
 
+// Máscara inteligente no campo de consulta:
+// — se parecer CPF (só dígitos até agora) → aplica máscara CPF
+// — se começar com letra (FI-...) → deixa como está em maiúsculas
+function mascararConsultaInput(el) {
+  limparResultadoConsulta();
+  const raw = el.value;
+  // Se começa com letra → provável ficha (FI-XXXX)
+  if (/^[a-zA-Z]/.test(raw.replace(/\s/g,''))) {
+    el.value = raw.toUpperCase();
+    return;
+  }
+  // Caso contrário trata como CPF
+  let v = raw.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/,'$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/,'$1.$2');
+  el.value = v;
+}
+
 function limparResultadoConsulta() {
   document.getElementById('consulta-resultado').style.display = 'none';
   document.getElementById('consulta-erro').style.display = 'none';
@@ -855,19 +875,29 @@ async function buscarInscricao() {
 
   let participante = null;
 
-  // Tentar por CPF
+  // ── Tentar por CPF ──
   const cpfLimpo = rawInput.replace(/\D/g, '');
   if (cpfLimpo.length === 11) {
+    // Formatar CPF igual ao formato salvo no banco: 000.000.000-00
     const cpfFormatado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    const res = await get('participantes', `cpf=eq.${encodeURIComponent(cpfFormatado)}&select=*`);
-    if (Array.isArray(res) && res.length > 0) participante = res[0];
+    // Tentar com CPF formatado
+    let res = await get('participantes', `cpf=eq.${encodeURIComponent(cpfFormatado)}&select=*`);
+    if (Array.isArray(res) && res.length > 0) {
+      participante = res[0];
+    } else {
+      // Fallback: tentar com CPF sem formatação (caso salvo sem máscara)
+      res = await get('participantes', `cpf=eq.${encodeURIComponent(cpfLimpo)}&select=*`);
+      if (Array.isArray(res) && res.length > 0) participante = res[0];
+    }
   }
 
-  // Tentar por número de ficha
+  // ── Tentar por número de ficha ──
   if (!participante) {
-    const fichaInput = rawInput.toUpperCase().trim();
-    if (fichaInput.startsWith('FI-') || /^FI/i.test(fichaInput)) {
-      const insc = await get('inscricoes', `numero_ficha=eq.${encodeURIComponent(fichaInput)}&select=participante_id&limit=1`);
+    const fichaInput = rawInput.toUpperCase().replace(/\s/g,'');
+    // Aceita FI4710, FI-4710, fi-4710 etc.
+    const fichaFormatada = fichaInput.replace(/^FI\-?(\d+)$/, 'FI-$1');
+    if (/^FI-\d+$/.test(fichaFormatada)) {
+      const insc = await get('inscricoes', `numero_ficha=eq.${encodeURIComponent(fichaFormatada)}&select=participante_id&limit=1`);
       if (Array.isArray(insc) && insc.length > 0) {
         const pid = insc[0].participante_id;
         const pRes = await get('participantes', `id=eq.${pid}&select=*`);
