@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel Admin — Festival de Inverno</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
@@ -100,8 +101,9 @@
   .modal-parceiro-label { font-size: 10px; font-weight: 600; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
   .imprimir-ficha { width: 100%; padding: 10px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 16px; }
   .imprimir-ficha:hover { background: #154794; }
+  .imprimir-ficha:disabled { background: #94a3b8; cursor: not-allowed; }
 
-  .admin-footer { text-align: center; font-size: 11px; color: #94a3b8; padding: 24px 16px 28px; margin-top: 8px; border-top: 1px solid #e2e8f0; }
+  .admin-footer { text-align: center; font-size: 11px; color: #94a3b8; padding: 24px 16px 32px; margin: 0 16px; border-top: 1px solid #e2e8f0; }
   .admin-footer-inner { line-height: 1.9; margin-top: 6px; }
 
   @media print {
@@ -136,6 +138,7 @@
 </div>
 
 <div class="painel" id="painel">
+
   <div class="topbar">
     <div class="topbar-esq">
       <img src="10.png" alt="SEMESP" class="topbar-logo">
@@ -209,7 +212,8 @@
     </div>
     <div style="padding:12px 16px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;" id="contador-label"></div>
   </div>
-<div class="admin-footer">
+
+  <div class="admin-footer">
     SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO
     <div class="admin-footer-inner">
       Desenvolvido por <strong>DTI — Departamento de Tecnologia da Informação</strong><br>
@@ -217,7 +221,11 @@
       © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
     </div>
   </div>
-</div><!-- /painel --> id="modal-bg" onclick="fecharModal(event)">
+
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="fecharModal(event)">
   <div class="modal">
     <div class="modal-header">
       <span class="modal-titulo">Ficha do participante</span>
@@ -231,18 +239,20 @@
     <div id="m-dados"></div>
     <div class="modal-secao">Eventos inscritos</div>
     <div id="m-eventos"></div>
-    <button class="imprimir-ficha" onclick="imprimirFicha()">Imprimir esta ficha</button>
+    <button class="imprimir-ficha" id="btn-imprimir-ficha" onclick="imprimirFicha()">Imprimir esta ficha</button>
   </div>
 </div>
 
 <div class="print-area" id="print-area" style="display:none;"></div>
+<!-- Container oculto para renderizar QR Code via biblioteca -->
+<div id="qr-hidden" style="position:fixed;left:-9999px;top:-9999px;width:128px;height:128px;"></div>
 
 <script>
 const SUPABASE_URL = 'https://pjjqmoxccggsvfjjckhp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
-const ADMIN_USER  = 'admin';
-const ADMIN_SENHA = 'semesp@2026';
-const LOGO_URL    = window.location.origin + '/10.png';
+const ADMIN_USER   = 'admin';
+const ADMIN_SENHA  = 'semesp@2026';
+const LOGO_URL     = window.location.origin + '/10.png';
 
 const MODALIDADES = {
   1: { nome: 'Vôlei de Areia', sub: 'Masculino', tipo: 'areia', dupla: true  },
@@ -271,6 +281,37 @@ const rodape = `
     Desenvolvido por DTI — Departamento de Tecnologia da Informação · Ewerson Luiz de Oliveira · Gestor em TI<br>
     © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
   </div>`;
+
+// ── QR Code: gera via qrcodejs no browser, retorna data URL ──
+function gerarQRDataURL(texto) {
+  return new Promise((resolve) => {
+    const el = document.getElementById('qr-hidden');
+    el.innerHTML = '';
+    try {
+      const qr = new QRCode(el, {
+        text: texto,
+        width: 128,
+        height: 128,
+        colorDark: '#1a56a0',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      setTimeout(() => {
+        const canvas = el.querySelector('canvas');
+        if (canvas) {
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          const img = el.querySelector('img');
+          resolve(img ? img.src : null);
+        }
+        el.innerHTML = '';
+      }, 200);
+    } catch(e) {
+      el.innerHTML = '';
+      resolve(null);
+    }
+  });
+}
 
 function entrar() {
   const u = document.getElementById('login-user').value.trim();
@@ -367,7 +408,10 @@ function filtrar() {
 function renderTabela(lista) {
   const tbody = document.getElementById('tabela-body');
   document.getElementById('contador-label').textContent = `Exibindo ${lista.length} participante${lista.length!==1?'s':''}`;
-  if (lista.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum participante encontrado.</td></tr>'; return; }
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum participante encontrado.</td></tr>';
+    return;
+  }
 
   tbody.innerHTML = lista.map(p => {
     const ficha = p.inscricoes[0]?.numero_ficha || '—';
@@ -376,8 +420,9 @@ function renderTabela(lista) {
       const m = MODALIDADES[i.modalidade_id];
       if (!m) return '';
       const dupla = i.parceiro_nome ? `<div class="dupla-info">Dupla: ${i.parceiro_nome}</div>` : '';
-      return `<div><span class="badge badge-${m.tipo === 'agua' ? (m.dupla ? 'agua' : 'individual') : 'areia'}">${m.nome} ${m.sub}</span>${dupla}</div>`;
+      return `<div><span class="badge badge-${m.tipo==='agua'?(m.dupla?'agua':'individual'):'areia'}">${m.nome} ${m.sub}</span>${dupla}</div>`;
     }).join('');
+
     return `<tr>
       <td><span class="ficha-num">${ficha}</span></td>
       <td>${p.nome_completo}</td>
@@ -386,16 +431,24 @@ function renderTabela(lista) {
       <td>${p.cidade||'—'} / ${p.uf||'—'}</td>
       <td style="max-width:220px;">${eventos}</td>
       <td style="white-space:nowrap;">${data}</td>
-      <td><button class="ver-btn" onclick="abrirModal('${p.id}')">Ver ficha</button></td>
+      <td><button class="ver-btn" data-pid="${p.id}" onclick="abrirModalPorBtn(this)">Ver ficha</button></td>
     </tr>`;
   }).join('');
+}
+
+// Usa data-pid para evitar qualquer problema com aspas/UUID em onclick inline
+function abrirModalPorBtn(btn) {
+  const id = btn.getAttribute('data-pid');
+  abrirModal(id);
 }
 
 function abrirModal(id) {
   const p = todosInscritos.find(x => x.id === id);
   if (!p) return;
   participanteAtual = p;
+
   document.getElementById('m-ficha').textContent = p.inscricoes[0]?.numero_ficha || '—';
+
   document.getElementById('m-dados').innerHTML = `
     <div class="modal-row"><span class="modal-label">Nome</span><span class="modal-val">${p.nome_completo}</span></div>
     <div class="modal-row"><span class="modal-label">CPF</span><span class="modal-val">${p.cpf||'—'}</span></div>
@@ -412,8 +465,8 @@ function abrirModal(id) {
       <div class="modal-parceiro">
         <div class="modal-parceiro-label">Parceiro(a)</div>
         <div>${i.parceiro_nome}</div>
-        ${i.parceiro_cpf ? `<div style="font-size:11px;color:#64748b;">CPF: ${i.parceiro_cpf}</div>` : ''}
-        ${i.parceiro_telefone ? `<div style="font-size:11px;color:#64748b;">Tel: ${i.parceiro_telefone}</div>` : ''}
+        ${i.parceiro_cpf?`<div style="font-size:11px;color:#64748b;">CPF: ${i.parceiro_cpf}</div>`:''}
+        ${i.parceiro_telefone?`<div style="font-size:11px;color:#64748b;">Tel: ${i.parceiro_telefone}</div>`:''}
       </div>` : '';
     return `<div class="modal-evento-item">
       <div class="modal-evento-nome">${m.nome} — ${m.sub}</div>
@@ -421,16 +474,30 @@ function abrirModal(id) {
     </div>`;
   }).join('');
 
+  document.getElementById('btn-imprimir-ficha').disabled = false;
+  document.getElementById('btn-imprimir-ficha').textContent = 'Imprimir esta ficha';
   document.getElementById('modal-bg').classList.add('aberto');
 }
 
 function fecharModal(e) { if (e.target === document.getElementById('modal-bg')) fecharModalBtn(); }
 function fecharModalBtn() { document.getElementById('modal-bg').classList.remove('aberto'); }
 
-function imprimirFicha() {
+// ── Imprimir ficha com QR Code ────────────────────────────
+async function imprimirFicha() {
   const p = participanteAtual;
   if (!p) return;
+
+  const btn = document.getElementById('btn-imprimir-ficha');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando QR Code...';
+
   const ficha = p.inscricoes[0]?.numero_ficha || '—';
+
+  // Gerar QR Code em canvas e converter para data URL embutida
+  const qrDataURL = await gerarQRDataURL(ficha);
+  const qrBlock = qrDataURL
+    ? `<img src="${qrDataURL}" width="110" height="110" style="display:block;border-radius:4px;" alt="QR ${ficha}">`
+    : `<div style="width:110px;height:110px;background:#f1f5f9;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;text-align:center;">${ficha}</div>`;
 
   const eventosHtml = p.inscricoes.map(i => {
     const m = MODALIDADES[i.modalidade_id];
@@ -448,19 +515,17 @@ function imprimirFicha() {
     </div>`;
   }).join('');
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(ficha)}&format=png&margin=4`;
-
   const html = `<div style="font-family:system-ui,sans-serif;max-width:620px;margin:0 auto;padding:24px;">
     ${cabecalho}
     <div style="display:flex;align-items:center;gap:20px;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:16px 20px;margin-bottom:18px;">
       <div style="flex:1;">
         <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Número da Ficha</div>
         <div style="font-size:32px;font-weight:800;color:#1a56a0;letter-spacing:0.05em;">${ficha}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:6px;">Apresente este documento no dia do evento</div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px;">Apresente este comprovante no dia do evento</div>
       </div>
       <div style="text-align:center;flex-shrink:0;">
-        <img src="${qrUrl}" width="110" height="110" style="display:block;border-radius:6px;border:1px solid #bfdbfe;" alt="QR Code ${ficha}" crossorigin="anonymous">
-        <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${ficha}</div>
+        ${qrBlock}
+        <div style="font-size:10px;color:#64748b;margin-top:4px;font-weight:600;">${ficha}</div>
       </div>
     </div>
     <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Participante 1</div>
@@ -477,9 +542,13 @@ function imprimirFicha() {
     </div>
     ${rodape}
   </div>`;
+
+  btn.disabled = false;
+  btn.textContent = 'Imprimir esta ficha';
   imprimir(html);
 }
 
+// ── Imprimir lista geral ──────────────────────────────────
 function imprimirLista() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
@@ -492,7 +561,7 @@ function imprimirLista() {
   });
 
   const linhas = lista.map((p,idx) => {
-    const ficha  = p.inscricoes[0]?.numero_ficha||'—';
+    const ficha   = p.inscricoes[0]?.numero_ficha||'—';
     const eventos = p.inscricoes.map(i=>{
       const m=MODALIDADES[i.modalidade_id];
       if(!m) return '';
@@ -510,7 +579,7 @@ function imprimirLista() {
     </tr>`;
   }).join('');
 
-  const html = `<div style="font-family:system-ui,sans-serif;padding:20px;">
+  imprimir(`<div style="font-family:system-ui,sans-serif;padding:20px;">
     ${cabecalho}
     <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Total: ${lista.length} participantes · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -526,32 +595,29 @@ function imprimirLista() {
       <tbody>${linhas}</tbody>
     </table>
     ${rodape}
-  </div>`;
-  imprimir(html);
+  </div>`);
 }
 
+// ── Imprimir por evento ───────────────────────────────────
 function imprimirPorEvento() {
   let html = `<div style="font-family:system-ui,sans-serif;">`;
   Object.entries(MODALIDADES).forEach(([id, m], idx) => {
     const lista = todosInscritos.filter(p => p.inscricoes.some(i => i.modalidade_id == id));
     if (lista.length === 0) return;
-
     const linhas = lista.map((p, i) => {
-      const insc  = p.inscricoes.find(i => i.modalidade_id == id);
-      const ficha = insc?.numero_ficha || '—';
+      const insc    = p.inscricoes.find(x => x.modalidade_id == id);
+      const ficha   = insc?.numero_ficha || '—';
       const parceiro = insc?.parceiro_nome || '—';
       return `<tr style="background:${i%2===0?'white':'#f8fafc'}">
         <td style="padding:7px 8px;border:1px solid #e2e8f0;">${ficha}</td>
         <td style="padding:7px 8px;border:1px solid #e2e8f0;font-weight:600;">${p.nome_completo}</td>
-        ${m.dupla ? `<td style="padding:7px 8px;border:1px solid #e2e8f0;">${parceiro}</td>` : ''}
+        ${m.dupla?`<td style="padding:7px 8px;border:1px solid #e2e8f0;">${parceiro}</td>`:''}
         <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
         <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
         <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
       </tr>`;
     }).join('');
-
     const colParceiro = m.dupla ? `<th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Parceiro(a)</th>` : '';
-
     html += `<div style="page-break-before:${idx===0?'auto':'always'};padding:20px;">
       ${cabecalho}
       <h3 style="color:#1a56a0;margin-bottom:2px;">${m.nome} — ${m.sub}</h3>
@@ -574,13 +640,12 @@ function imprimirPorEvento() {
   imprimir(html);
 }
 
+// ── Imprimir vagas ────────────────────────────────────────
 function imprimirVagas() {
   const inscricoes = todosInscritos.flatMap(p=>p.inscricoes);
   const linhas = Object.entries(MODALIDADES).map(([id,m])=>{
-    const total=30;
-    const preenchidas=inscricoes.filter(i=>i.modalidade_id==id).length;
-    const restam=total-preenchidas;
-    const pct=Math.round((preenchidas/total)*100);
+    const total=30, preenchidas=inscricoes.filter(i=>i.modalidade_id==id).length;
+    const restam=total-preenchidas, pct=Math.round((preenchidas/total)*100);
     return `<tr>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${m.nome}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${m.sub}</td>
@@ -590,8 +655,7 @@ function imprimirVagas() {
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${pct}%</td>
     </tr>`;
   }).join('');
-
-  const html = `<div style="font-family:system-ui,sans-serif;padding:24px;max-width:700px;margin:0 auto;">
+  imprimir(`<div style="font-family:system-ui,sans-serif;padding:24px;max-width:700px;margin:0 auto;">
     ${cabecalho}
     <h3 style="color:#1a56a0;margin-bottom:12px;">Relatório de Vagas por Modalidade</h3>
     <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Impresso em ${new Date().toLocaleString('pt-BR')}</p>
@@ -607,8 +671,7 @@ function imprimirVagas() {
       <tbody>${linhas}</tbody>
     </table>
     ${rodape}
-  </div>`;
-  imprimir(html);
+  </div>`);
 }
 
 function imprimir(html) {
