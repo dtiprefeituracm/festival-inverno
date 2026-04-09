@@ -109,7 +109,7 @@
   @media print {
     body * { visibility: hidden; }
     .print-area, .print-area * { visibility: visible; }
-    .print-area { position: fixed; inset: 0; padding: 20px; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; }
   }
   @media (max-width: 600px) {
     .metrics { grid-template-columns: 1fr 1fr; }
@@ -644,7 +644,7 @@ function imprimirPorEvento() {
       </tr>`;
     }).join('');
     const colParceiro = m.dupla ? `<th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Parceiro(a)</th>` : '';
-    html += `<div style="page-break-before:${idx===0?'auto':'always'};padding:20px;">
+    html += `<div style="page-break-before:${idx===0?'auto':'always'};break-before:${idx===0?'auto':'page'};padding:20px;">
       ${cabecalho}
       <h3 style="color:#1a56a0;margin-bottom:2px;">${m.nome} — ${m.sub}</h3>
       <p style="font-size:12px;color:#64748b;margin-bottom:12px;">${lista.length} inscrito${lista.length!==1?'s':''} · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
