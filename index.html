@@ -120,6 +120,46 @@
   .parceiro-box label.campo:first-of-type { margin-top: 0; }
   .parceiro-box input { font-size: 13px; padding: 8px 10px; }
 
+  /* ── Autorização de imagem ── */
+  .autorizacao-card {
+    background: white; border-radius: 12px; padding: 20px;
+    margin-bottom: 16px; border: 1px solid #e2e8f0;
+  }
+  .autorizacao-card h2 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+
+  .termo-box {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 14px; font-size: 12px; color: #475569; line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .termo-box strong { color: #1e293b; }
+
+  .termo-ver-mais { display: none; }
+  .termo-ver-mais.visivel { display: block; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+  .termo-toggle { background: none; border: none; color: #1a56a0; font-size: 12px; cursor: pointer; font-weight: 600; padding: 0; margin-top: 6px; }
+
+  .checkbox-linha {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 8px; cursor: pointer;
+    transition: background 0.15s; border: 2px solid #e2e8f0;
+    margin-bottom: 10px;
+  }
+  .checkbox-linha:hover { background: #f8faff; border-color: #93c5fd; }
+  .checkbox-linha.marcado { background: #eff6ff; border-color: #1a56a0; }
+  .checkbox-linha.marcado-menor { background: #fdf2f8; border-color: #be185d; }
+  .checkbox-linha input[type=checkbox] { margin-top: 2px; flex-shrink: 0; width: 18px; height: 18px; accent-color: #1a56a0; cursor: pointer; }
+  .checkbox-label { font-size: 13px; color: #1e293b; line-height: 1.5; user-select: none; }
+  .checkbox-label span { color: #dc2626; font-weight: 700; }
+
+  .menor-aviso {
+    display: none; background: #fdf2f8; border: 1px solid #fbcfe8;
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 10px;
+  }
+  .menor-aviso.visivel { display: block; }
+  .menor-aviso-titulo { font-size: 11px; font-weight: 700; color: #be185d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+  .autorizacao-nao-aceita { border-color: #fecaca !important; background: #fef2f2 !important; }
+
   /* Botão e erros */
   .btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
   .btn:hover { background: #154794; }
@@ -214,7 +254,7 @@
     <div class="header-divider"></div>
     <img src="10.png" alt="SEMESP" class="logo-semesp">
   </div>
-  <div class="badge">01 e 02 de Maio de 2026</div>
+  <div class="badge">01, 02 e 03 de Maio de 2026</div>
   <h1>Festival de Inverno</h1>
   <p>Secretaria Municipal de Esporte — Costa Marques / RO</p>
 </div>
@@ -257,7 +297,7 @@
         <div class="row">
           <div>
             <label class="campo">Data de nascimento</label>
-            <input type="date" id="nascimento">
+            <input type="date" id="nascimento" oninput="verificarMenor()">
           </div>
           <div>
             <label class="campo">Telefone / WhatsApp <span class="obrigatorio">*</span></label>
@@ -429,6 +469,58 @@
         </div>
       </div>
 
+      <!-- ── CONTRIBUIÇÃO: 1 KG DE ALIMENTO ── -->
+      <div class="card" style="border-color:#fcd34d;background:#fffbeb;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:28px;flex-shrink:0;">🥫</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px;">Contribuição obrigatória</div>
+            <div style="font-size:13px;color:#78350f;line-height:1.6;">
+              Para participar do Festival de Inverno 2026, cada competidor deve entregar <strong>1 kg de alimento não perecível</strong> no ato do credenciamento, no dia do evento.<br>
+              <span style="font-size:11px;color:#a16207;margin-top:4px;display:block;">Os alimentos serão doados a famílias carentes do município de Costa Marques / RO.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AUTORIZAÇÃO DE USO DE IMAGEM ── -->
+      <div class="autorizacao-card">
+        <h2>📸 Autorização de uso de imagem <span class="obrigatorio">*</span></h2>
+
+        <div class="termo-box">
+          <strong>Termo de Autorização de Uso de Imagem</strong><br>
+          Autorizo a <strong>Prefeitura Municipal de Costa Marques / SEMESP</strong> a capturar e utilizar minha imagem em fotografias e vídeos produzidos durante o <strong>Festival de Inverno 2026</strong>, para fins de divulgação em redes sociais, site oficial e materiais institucionais, sem fins lucrativos.
+          <button class="termo-toggle" onclick="toggleTermo()" id="btn-termo">▼ Ver texto completo</button>
+          <div class="termo-ver-mais" id="termo-completo">
+            A presente autorização é concedida gratuitamente e por prazo indeterminado, abrangendo o uso da imagem capturada em fotos, vídeos e transmissões ao vivo realizadas durante o evento, podendo ser publicadas nas plataformas digitais oficiais da Prefeitura de Costa Marques e da SEMESP (Instagram, Facebook, YouTube, site oficial e demais canais institucionais). A autorização não implica qualquer remuneração ao autorizante e não autoriza uso comercial ou terceirizado das imagens sem novo consentimento expresso. Para menores de 18 anos, a autorização deve ser concedida pelo responsável legal.
+          </div>
+        </div>
+
+        <!-- Checkbox principal -->
+        <label class="checkbox-linha" id="label-autorizo" onclick="toggleAutorizacao()">
+          <input type="checkbox" id="cb-autorizo" onclick="event.stopPropagation(); toggleAutorizacao()">
+          <span class="checkbox-label">
+            Autorizo o uso da minha imagem conforme descrito acima. <span>*</span>
+          </span>
+        </label>
+
+        <!-- Aviso e campo para menor de idade (aparece automaticamente) -->
+        <div class="menor-aviso" id="menor-aviso">
+          <div class="menor-aviso-titulo">👤 Participante menor de idade</div>
+          <p style="font-size:12px;color:#9d174d;margin-bottom:10px;line-height:1.5;">
+            Com base na data de nascimento informada, este participante é <strong>menor de 18 anos</strong>. É necessário que o <strong>responsável legal</strong> autorize o uso de imagem.
+          </p>
+          <label class="checkbox-linha marcado-menor" id="label-responsavel" onclick="toggleResponsavel()">
+            <input type="checkbox" id="cb-responsavel" onclick="event.stopPropagation(); toggleResponsavel()" style="accent-color: #be185d;">
+            <span class="checkbox-label">
+              Sou responsável legal por este participante e autorizo o uso de imagem. <span>*</span>
+            </span>
+          </label>
+          <label class="campo" style="margin-top:10px;">Nome completo do responsável legal <span class="obrigatorio">*</span></label>
+          <input type="text" id="nome-responsavel" placeholder="Nome do pai, mãe ou responsável legal">
+        </div>
+      </div>
+
       <div class="msg-erro" id="erro"></div>
       <button class="btn" id="btn-enviar" onclick="enviarInscricao()">Enviar inscrição</button>
     </div>
@@ -443,6 +535,12 @@
         <p>Guarde esse número e apresente<br>no dia do evento.</p>
       </div>
       <p style="margin-top:8px;font-size:13px;">Em caso de dúvidas, entre em contato com a SEMESP.</p>
+      <div style="margin-top:16px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:left;display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:22px;flex-shrink:0;">🥫</span>
+        <div style="font-size:13px;color:#78350f;line-height:1.6;">
+          <strong>Lembre-se:</strong> traga <strong>1 kg de alimento não perecível</strong> no dia do credenciamento. A contribuição é obrigatória para retirar sua ficha.
+        </div>
+      </div>
       <a class="share-btn" id="share-link" href="#" target="_blank">Compartilhar no WhatsApp</a>
     </div>
   </div>
@@ -515,8 +613,51 @@ const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
 
 // ── Data limite para inscrições e adições ──────────────────
 // Ajuste esta data conforme necessário (YYYY-MM-DDTHH:mm:ss)
-const DATA_LIMITE_INSCRICAO = new Date('2026-04-30T23:59:59');
+const DATA_LIMITE_INSCRICAO = new Date('2026-05-03T23:59:59');
 function inscricaoAberta() { return new Date() <= DATA_LIMITE_INSCRICAO; }
+
+// ── Autorização de imagem ─────────────────────────────────
+function toggleTermo() {
+  const el = document.getElementById('termo-completo');
+  const btn = document.getElementById('btn-termo');
+  el.classList.toggle('visivel');
+  btn.textContent = el.classList.contains('visivel') ? '▲ Ocultar texto' : '▼ Ver texto completo';
+}
+
+function toggleAutorizacao() {
+  const cb = document.getElementById('cb-autorizo');
+  cb.checked = !cb.checked;
+  document.getElementById('label-autorizo').classList.toggle('marcado', cb.checked);
+  verificarMenor();
+}
+
+function toggleResponsavel() {
+  const cb = document.getElementById('cb-responsavel');
+  cb.checked = !cb.checked;
+}
+
+// Checa a data de nascimento e mostra/esconde campo de responsável
+function verificarMenor() {
+  const nasc = document.getElementById('nascimento').value;
+  const autorizado = document.getElementById('cb-autorizo').checked;
+  const avisoEl = document.getElementById('menor-aviso');
+  if (!nasc || !autorizado) { avisoEl.classList.remove('visivel'); return; }
+  const hoje = new Date();
+  const nascDate = new Date(nasc + 'T00:00:00');
+  const idade = hoje.getFullYear() - nascDate.getFullYear() -
+    (hoje < new Date(hoje.getFullYear(), nascDate.getMonth(), nascDate.getDate()) ? 1 : 0);
+  avisoEl.classList.toggle('visivel', idade < 18);
+}
+
+function eMenor() {
+  const nasc = document.getElementById('nascimento').value;
+  if (!nasc) return false;
+  const hoje = new Date();
+  const nascDate = new Date(nasc + 'T00:00:00');
+  const idade = hoje.getFullYear() - nascDate.getFullYear() -
+    (hoje < new Date(hoje.getFullYear(), nascDate.getMonth(), nascDate.getDate()) ? 1 : 0);
+  return idade < 18;
+}
 
 const DUPLAS = new Set([1, 2, 3, 4]);
 const selecionados = new Set();
@@ -744,6 +885,31 @@ async function enviarInscricao() {
     return;
   }
 
+  // Validar autorização de imagem
+  const autorizou = document.getElementById('cb-autorizo').checked;
+  if (!autorizou) {
+    erro.textContent = 'É necessário autorizar o uso de imagem para concluir a inscrição.';
+    erro.style.display = 'block';
+    document.getElementById('label-autorizo').classList.add('autorizacao-nao-aceita');
+    document.getElementById('label-autorizo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  document.getElementById('label-autorizo').classList.remove('autorizacao-nao-aceita');
+
+  // Validar responsável se menor
+  let nomeResponsavel = null;
+  if (eMenor()) {
+    const cbResp = document.getElementById('cb-responsavel').checked;
+    const nomeResp = document.getElementById('nome-responsavel').value.trim();
+    if (!cbResp || !nomeResp) {
+      erro.textContent = 'Para participantes menores de idade, o responsável legal deve autorizar e informar o nome completo.';
+      erro.style.display = 'block';
+      document.getElementById('nome-responsavel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    nomeResponsavel = nomeResp;
+  }
+
   const nomesEventos = { 1:'Vôlei Masc.', 2:'Vôlei Fem.', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
 
   for (const id of selecionados) {
@@ -769,7 +935,9 @@ async function enviarInscricao() {
     nome_completo: nome, cpf, sexo,
     email: email || null, telefone,
     data_nascimento: nasc || null,
-    cidade, uf
+    cidade, uf,
+    autorizacao_imagem: true,
+    nome_responsavel: nomeResponsavel || null
   });
 
   if (!participante || participante.length === 0 || participante.code) {
@@ -804,7 +972,7 @@ async function enviarInscricao() {
 
   const eventos = Array.from(selecionados).map(id => nomesEventos[id]).join(', ');
   const msg = encodeURIComponent(
-    `Olá! Me inscrevi no Festival de Inverno — Costa Marques/RO (01 e 02 de Maio de 2026).\n` +
+    `Olá! Me inscrevi no Festival de Inverno — Costa Marques/RO (01, 02 e 03 de Maio de 2026).\n` +
     `Meu número de ficha é *${ficha}*.\nEventos: ${eventos}.\n\n` +
     `Faça sua inscrição também pelo link abaixo:\n` +
     `https://festival-inverno.vercel.app`
@@ -1093,7 +1261,7 @@ async function submeterAdicao() {
 
   const novosEventos = Array.from(selecionadosAdd).map(id => nomesEventos[id]).join(', ');
   const msg = encodeURIComponent(
-    `Adicionei novas modalidades no Festival de Inverno — Costa Marques/RO (01 e 02 de Maio de 2026).\n` +
+    `Adicionei novas modalidades no Festival de Inverno — Costa Marques/RO (01, 02 e 03 de Maio de 2026).\n` +
     `Meu número de ficha é *${fichaExistente}*.\nNovos eventos: ${novosEventos}.\n\n` +
     `Faça sua inscrição também:\nhttps://festival-inverno.vercel.app`
   );
