@@ -3,684 +3,1297 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Admin — Festival de Inverno</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<title>Festival de Inverno — Inscrições</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
 
-  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .login-box { background: white; border-radius: 16px; padding: 32px 28px; width: 100%; max-width: 380px; border: 1px solid #e2e8f0; }
-  .login-logo { text-align: center; margin-bottom: 24px; }
-  .login-logo img { height: 70px; width: auto; object-fit: contain; margin-bottom: 12px; }
-  .login-logo h1 { font-size: 20px; font-weight: 700; color: #1a56a0; }
-  .login-logo p { font-size: 13px; color: #64748b; margin-top: 4px; }
-  .login-box label { display: block; font-size: 13px; color: #475569; margin-bottom: 4px; margin-top: 14px; }
-  .login-box input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
-  .login-box input:focus { border-color: #1a56a0; }
-  .login-btn { width: 100%; padding: 12px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }
-  .login-btn:hover { background: #154794; }
-  .login-erro { color: #dc2626; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+  .header { background: #1a56a0; color: white; padding: 20px 16px 24px; text-align: center; }
+  .header-logos { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+  .logo-prefeitura { height: 110px; width: auto; object-fit: contain; }
+  .logo-semesp { height: 100px; width: auto; object-fit: contain; }
+  .header-divider { width: 1px; height: 90px; background: rgba(255,255,255,0.3); }
+  .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-bottom: 8px; }
+  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.85; }
 
-  .painel { display: none; }
-  .topbar { background: #1a56a0; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-  .topbar-esq { display: flex; align-items: center; gap: 14px; }
-  .topbar-logo { height: 48px; width: auto; object-fit: contain; }
-  .topbar-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.3); }
-  .topbar-titulo { font-size: 15px; font-weight: 700; }
-  .topbar-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
-  .sair-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
-  .sair-btn:hover { background: rgba(255,255,255,0.25); }
+  /* ── Nav tabs ── */
+  .nav-tabs { background: #154794; display: flex; justify-content: center; gap: 4px; padding: 0 16px; }
+  .nav-tab { padding: 10px 20px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+  .nav-tab:hover { color: rgba(255,255,255,0.9); }
+  .nav-tab.ativo { color: white; border-bottom-color: #7dd3fc; }
 
-  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 16px; }
-  .metric { background: white; border-radius: 10px; padding: 14px; border: 1px solid #e2e8f0; }
-  .metric-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
-  .metric-val { font-size: 26px; font-weight: 700; color: #1a56a0; }
-  .metric-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .container { max-width: 560px; margin: 24px auto; padding: 0 16px 60px; }
+  .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+  .card h2 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
 
-  .section { background: white; border-radius: 12px; margin: 0 16px 16px; border: 1px solid #e2e8f0; overflow: hidden; }
-  .section-header { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-  .section-titulo { font-size: 13px; font-weight: 600; color: #1e293b; }
+  label.campo { display: block; font-size: 13px; color: #475569; margin-bottom: 4px; margin-top: 14px; }
+  label.campo:first-of-type { margin-top: 0; }
+  .obrigatorio { color: #dc2626; }
 
-  .filtros { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filtros input, .filtros select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 13px; outline: none; color: #1e293b; background: white; }
-  .filtros input { width: 200px; }
-  .filtros input:focus, .filtros select:focus { border-color: #1a56a0; }
-
-  .print-btn { padding: 7px 14px; background: #1a56a0; color: white; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-  .print-btn:hover { background: #154794; }
-  .print-btn.outline { background: white; color: #1a56a0; border: 1px solid #1a56a0; }
-  .print-btn.outline:hover { background: #eff6ff; }
-
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 14px; background: #f8fafc; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
-  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #f8fafc; }
-
-  .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
-  .badge-areia { background: #fef3c7; color: #92400e; }
-  .badge-agua { background: #dbeafe; color: #1e40af; }
-  .badge-individual { background: #f0fdf4; color: #166534; }
-
-  .ficha-num { font-weight: 700; color: #1a56a0; font-size: 12px; }
-  .ver-btn { padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; cursor: pointer; background: white; color: #475569; }
-  .ver-btn:hover { border-color: #1a56a0; color: #1a56a0; }
-  .dupla-info { font-size: 11px; color: #64748b; margin-top: 2px; }
-
-  .loading { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
-  .vazio { text-align: center; padding: 32px; color: #94a3b8; font-size: 13px; }
-
-  .vagas-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 16px; }
-  .vaga-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
-  .vaga-nome { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 2px; }
-  .vaga-sub { font-size: 11px; color: #64748b; margin-bottom: 8px; }
-  .vaga-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
-  .vaga-fill { height: 100%; border-radius: 4px; background: #1a56a0; }
-  .vaga-fill.cheio { background: #dc2626; }
-  .vaga-fill.quase { background: #f59e0b; }
-  .vaga-info { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
-
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
-  .modal-bg.aberto { display: flex; }
-  .modal { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .modal-titulo { font-size: 16px; font-weight: 700; color: #1e293b; }
-  .modal-fechar { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
-  .modal-ficha { text-align: center; background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
-  .modal-ficha-num { font-size: 28px; font-weight: 800; color: #1a56a0; }
-  .modal-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-  .modal-row:last-child { border-bottom: none; }
-  .modal-label { color: #64748b; }
-  .modal-val { color: #1e293b; font-weight: 500; text-align: right; max-width: 60%; }
-  .modal-secao { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 8px; }
-  .modal-evento-item { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; }
-  .modal-evento-nome { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
-  .modal-parceiro { font-size: 12px; color: #475569; background: #f8faff; border-radius: 6px; padding: 8px 10px; margin-top: 6px; }
-  .modal-parceiro-label { font-size: 10px; font-weight: 600; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .imprimir-ficha { width: 100%; padding: 10px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 16px; }
-  .imprimir-ficha:hover { background: #154794; }
-  .imprimir-ficha:disabled { background: #94a3b8; cursor: not-allowed; }
-
-  .admin-footer { text-align: center; font-size: 11px; color: #94a3b8; padding: 24px 16px 32px; margin: 0 16px; border-top: 1px solid #e2e8f0; }
-  .admin-footer-inner { line-height: 1.9; margin-top: 6px; }
-
-  @media print {
-    body * { visibility: hidden; }
-    .print-area, .print-area * { visibility: visible; }
-    .print-area { position: fixed; inset: 0; padding: 20px; }
+  input[type=text], input[type=email], input[type=tel], input[type=date] {
+    width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1;
+    border-radius: 8px; font-size: 14px; color: #1e293b;
+    outline: none; transition: border 0.2s; background: white;
   }
-  @media (max-width: 600px) {
-    .metrics { grid-template-columns: 1fr 1fr; }
-    .vagas-grid { grid-template-columns: 1fr 1fr; }
-    .filtros input { width: 100%; }
-    .topbar-divider { display: none; }
+  input:focus { border-color: #1a56a0; box-shadow: 0 0 0 3px rgba(26,86,160,0.1); }
+  input[readonly] { background: #f8fafc; color: #64748b; cursor: default; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Sexo toggle ── */
+  .sexo-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .sexo-btn {
+    padding: 11px 8px; border: 2px solid #e2e8f0; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer; background: white;
+    color: #94a3b8; transition: all 0.15s; display: flex; align-items: center;
+    justify-content: center; gap: 6px; user-select: none;
+  }
+  .sexo-btn:hover { border-color: #93c5fd; color: #1a56a0; }
+  .sexo-btn.ativo-m { border-color: #1a56a0; background: #eff6ff; color: #1a56a0; }
+  .sexo-btn.ativo-f { border-color: #be185d; background: #fdf2f8; color: #be185d; }
+  .sexo-icone { font-size: 18px; }
+
+  /* ── Cidade autocomplete ── */
+  .cidade-wrap { position: relative; }
+  .cidade-lista { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 99; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .cidade-lista.aberta { display: block; }
+  .cidade-item { padding: 10px 12px; font-size: 13px; color: #1e293b; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+  .cidade-item:last-child { border-bottom: none; }
+  .cidade-item:hover, .cidade-item.ativo { background: #eff6ff; color: #1a56a0; }
+  .cidade-item strong { color: #1a56a0; font-weight: 700; }
+
+  /* ── Eventos ── */
+  .section-cat { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 8px; }
+  .section-cat:first-of-type { margin-top: 0; }
+  .eventos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .evento-wrapper { display: block; }
+  .evento-wrapper.oculto { display: none; }
+
+  .evento-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.15s; user-select: none; background: white; }
+  .evento-card:hover { border-color: #93c5fd; background: #f8faff; }
+  .evento-card.selecionado { border-color: #1a56a0; background: #eff6ff; }
+  .evento-card.selecionado .check { opacity: 1; }
+  .evento-card.feminino-selecionado { border-color: #be185d; background: #fdf2f8; }
+  .evento-card.feminino-selecionado .check { opacity: 1; background: #be185d; }
+  .evento-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .evento-nome { font-size: 13px; font-weight: 600; color: #1e293b; line-height: 1.3; }
+  .evento-sub { font-size: 11px; color: #64748b; margin-top: 3px; }
+  .evento-tipo { font-size: 10px; padding: 3px 8px; border-radius: 10px; display: inline-block; margin-top: 8px; font-weight: 500; }
+  .tipo-areia { background: #fef3c7; color: #92400e; }
+  .tipo-agua { background: #dbeafe; color: #1e40af; }
+  .tipo-individual { background: #f0fdf4; color: #166534; }
+  .check { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; opacity: 0; background: #1a56a0; }
+  .check::after { content: ''; width: 5px; height: 9px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px); display: block; }
+
+  /* Aviso feminino (aquáticos) */
+  .aviso-feminino {
+    display: none; margin-top: 8px;
+    background: #fff7ed; border: 1px solid #fed7aa;
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 12px; color: #9a3412; line-height: 1.5;
+  }
+  .aviso-feminino.visivel { display: flex; gap: 8px; align-items: flex-start; }
+  .aviso-feminino-icone { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Bloqueio de modalidade */
+  .eventos-bloqueio {
+    text-align: center; padding: 24px 16px; color: #94a3b8;
+    font-size: 13px; background: #f8fafc; border-radius: 8px;
+    border: 1px dashed #e2e8f0; display: none;
+  }
+  .eventos-bloqueio.visivel { display: block; }
+  .eventos-conteudo { display: none; }
+  .eventos-conteudo.visivel { display: block; }
+
+  /* Parceiro */
+  .parceiro-box { display: none; margin-top: 10px; background: #f8faff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; }
+  .parceiro-box.visivel { display: block; }
+  .parceiro-box.feminino { background: #fdf2f8; border-color: #fbcfe8; }
+  .parceiro-titulo { font-size: 11px; font-weight: 600; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .parceiro-box.feminino .parceiro-titulo { color: #be185d; }
+  .parceiro-restricao { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 8px; display: inline-block; margin-left: 6px; vertical-align: middle; }
+  .restricao-m { background: #dbeafe; color: #1e40af; }
+  .restricao-f { background: #fce7f3; color: #9d174d; }
+  .parceiro-box label.campo { font-size: 12px; margin-top: 8px; }
+  .parceiro-box label.campo:first-of-type { margin-top: 0; }
+  .parceiro-box input { font-size: 13px; padding: 8px 10px; }
+
+  /* ── Autorização de imagem ── */
+  .autorizacao-card {
+    background: white; border-radius: 12px; padding: 20px;
+    margin-bottom: 16px; border: 1px solid #e2e8f0;
+  }
+  .autorizacao-card h2 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+
+  .termo-box {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 14px; font-size: 12px; color: #475569; line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .termo-box strong { color: #1e293b; }
+
+  .termo-ver-mais { display: none; }
+  .termo-ver-mais.visivel { display: block; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+  .termo-toggle { background: none; border: none; color: #1a56a0; font-size: 12px; cursor: pointer; font-weight: 600; padding: 0; margin-top: 6px; }
+
+  .checkbox-linha {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 8px; cursor: pointer;
+    transition: background 0.15s; border: 2px solid #e2e8f0;
+    margin-bottom: 10px;
+  }
+  .checkbox-linha:hover { background: #f8faff; border-color: #93c5fd; }
+  .checkbox-linha.marcado { background: #eff6ff; border-color: #1a56a0; }
+  .checkbox-linha.marcado-menor { background: #fdf2f8; border-color: #be185d; }
+  .checkbox-linha input[type=checkbox] { margin-top: 2px; flex-shrink: 0; width: 18px; height: 18px; accent-color: #1a56a0; cursor: pointer; }
+  .checkbox-label { font-size: 13px; color: #1e293b; line-height: 1.5; user-select: none; }
+  .checkbox-label span { color: #dc2626; font-weight: 700; }
+
+  .menor-aviso {
+    display: none; background: #fdf2f8; border: 1px solid #fbcfe8;
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 10px;
+  }
+  .menor-aviso.visivel { display: block; }
+  .menor-aviso-titulo { font-size: 11px; font-weight: 700; color: #be185d; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+  .autorizacao-nao-aceita { border-color: #fecaca !important; background: #fef2f2 !important; }
+
+  /* Botão e erros */
+  .btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
+  .btn:hover { background: #154794; }
+  .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+  .msg-erro { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+  /* ── Erro CPF duplicado — com ações ── */
+  .erro-ja-inscrito { display: none; margin-bottom: 12px; }
+  .erro-ja-inscrito-header {
+    background: #fef3c7; border: 1px solid #fcd34d; border-radius: 10px 10px 0 0;
+    padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .erro-ja-inscrito-header.sem-acoes { border-radius: 10px; }
+  .erro-ja-icone { font-size: 20px; flex-shrink: 0; }
+  .erro-ja-texto { font-size: 13px; color: #78350f; line-height: 1.5; }
+  .erro-ja-texto strong { display: block; font-size: 14px; color: #92400e; margin-bottom: 2px; }
+  .erro-ja-acoes {
+    border: 1px solid #fcd34d; border-top: none; border-radius: 0 0 10px 10px;
+    background: #fffbeb; padding: 10px 12px; display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .btn-acao {
+    flex: 1; min-width: 140px; padding: 9px 14px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; text-align: center;
+    transition: all 0.15s; border: 1px solid;
+  }
+  .btn-acao-primary { background: #1a56a0; color: white; border-color: #1a56a0; }
+  .btn-acao-primary:hover { background: #154794; }
+  .btn-acao-outline { background: white; color: #1a56a0; border-color: #bfdbfe; }
+  .btn-acao-outline:hover { background: #eff6ff; }
+
+  /* Sucesso */
+  .sucesso { display: none; text-align: center; padding: 40px 20px; }
+  .sucesso-icone { font-size: 56px; margin-bottom: 16px; }
+  .sucesso h2 { font-size: 22px; font-weight: 700; color: #1a56a0; margin-bottom: 6px; }
+  .sucesso p { font-size: 14px; color: #475569; line-height: 1.6; }
+  .numero-ficha { font-size: 36px; font-weight: 800; color: #1a56a0; margin: 16px 0 8px; letter-spacing: 0.05em; }
+  .ficha-box { background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .share-btn { display: inline-block; margin-top: 16px; padding: 12px 24px; background: #25d366; color: white; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; }
+
+  /* ── Seção Consulta / Adição ── */
+  #secao-consulta { display: none; }
+
+  .consulta-busca-wrap { display: flex; gap: 8px; }
+  .consulta-busca-wrap input { flex: 1; }
+  .btn-buscar { padding: 10px 18px; background: #1a56a0; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-buscar:hover { background: #154794; }
+  .btn-buscar:disabled { background: #94a3b8; cursor: not-allowed; }
+
+  .consulta-resultado { display: none; margin-top: 16px; }
+  .consulta-perfil { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .consulta-perfil-nome { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+  .consulta-perfil-sub { font-size: 12px; color: #64748b; }
+  .consulta-ficha-num { font-size: 13px; font-weight: 700; color: #1a56a0; margin-top: 6px; }
+
+  .consulta-secao-titulo { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+
+  .consulta-mod-atual { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag-modal { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; background: #dbeafe; color: #1e40af; }
+  .tag-modal-check { font-size: 11px; }
+
+  .consulta-novas-titulo { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 10px; }
+  .consulta-sem-novas { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #166534; text-align: center; }
+  .consulta-encerrada { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #dc2626; text-align: center; }
+
+  .consulta-erro { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; margin-top: 10px; }
+
+  /* Footer */
+  .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 32px; }
+  .admin-link {
+    display: inline-block; margin-top: 18px; color: #cbd5e1;
+    font-size: 11px; text-decoration: none; padding: 4px 10px;
+    border-radius: 6px; border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+  }
+  .admin-link:hover { color: #64748b; border-color: #cbd5e1; background: #f8fafc; }
+
+  @media (max-width: 400px) {
+    .row { grid-template-columns: 1fr; }
+    .eventos-grid { grid-template-columns: 1fr; }
+    .header-divider { display: none; }
+    .sexo-toggle { grid-template-columns: 1fr; }
+    .consulta-busca-wrap { flex-direction: column; }
+    .btn-acao { min-width: 100%; }
   }
 </style>
 </head>
 <body>
 
-<div class="login-wrap" id="login-wrap">
-  <div class="login-box">
-    <div class="login-logo">
-      <img src="10.png" alt="SEMESP">
-      <h1>Festival de Inverno</h1>
-      <p>Painel Administrativo — SEMESP</p>
-    </div>
-    <label>Usuário</label>
-    <input type="text" id="login-user" placeholder="admin" autocomplete="username">
-    <label>Senha</label>
-    <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter') entrar()">
-    <button class="login-btn" onclick="entrar()">Entrar</button>
-    <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
+<div class="header">
+  <div class="header-logos">
+    <img src="logogestao.png" alt="Prefeitura de Costa Marques" class="logo-prefeitura">
+    <div class="header-divider"></div>
+    <img src="10.png" alt="SEMESP" class="logo-semesp">
   </div>
+  <div class="badge">01, 02 e 03 de Maio de 2026</div>
+  <h1>Festival de Inverno</h1>
+  <p>Secretaria Municipal de Esporte — Costa Marques / RO</p>
 </div>
 
-<div class="painel" id="painel">
+<!-- Nav tabs -->
+<div class="nav-tabs">
+  <button class="nav-tab ativo" id="tab-inscricao" onclick="mudarTab('inscricao')">📋 Nova inscrição</button>
+  <button class="nav-tab" id="tab-consulta" onclick="mudarTab('consulta')">🔍 Já inscrito?</button>
+</div>
 
-  <div class="topbar">
-    <div class="topbar-esq">
-      <img src="10.png" alt="SEMESP" class="topbar-logo">
-      <div class="topbar-divider"></div>
-      <div>
-        <div class="topbar-titulo">Painel — Festival de Inverno 2026</div>
-        <div class="topbar-sub">SEMESP — Costa Marques / RO</div>
+<div class="container">
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  ABA 1 — FORMULÁRIO NOVO                              -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="aba-inscricao">
+    <div id="formulario">
+
+      <!-- ── DADOS PESSOAIS ── -->
+      <div class="card">
+        <h2>Dados pessoais — Participante</h2>
+
+        <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+        <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name">
+
+        <label class="campo">CPF <span class="obrigatorio">*</span></label>
+        <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14">
+
+        <label class="campo">Sexo <span class="obrigatorio">*</span></label>
+        <div class="sexo-toggle">
+          <button type="button" id="sexo-btn-m" class="sexo-btn" onclick="selecionarSexo('M')">
+            <span class="sexo-icone">♂</span> Masculino
+          </button>
+          <button type="button" id="sexo-btn-f" class="sexo-btn" onclick="selecionarSexo('F')">
+            <span class="sexo-icone">♀</span> Feminino
+          </button>
+        </div>
+        <input type="hidden" id="sexo" value="">
+
+        <div class="row">
+          <div>
+            <label class="campo">Data de nascimento</label>
+            <input type="date" id="nascimento" oninput="verificarMenor()">
+          </div>
+          <div>
+            <label class="campo">Telefone / WhatsApp <span class="obrigatorio">*</span></label>
+            <input type="tel" id="telefone" placeholder="(69) 9 0000-0000">
+          </div>
+        </div>
+
+        <label class="campo">E-mail</label>
+        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+
+        <div class="row">
+          <div>
+            <label class="campo">Cidade <span class="obrigatorio">*</span></label>
+            <div class="cidade-wrap" id="cidade-wrap">
+              <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off"
+                oninput="filtrarCidades()" onkeydown="navegarCidades(event)" onfocus="filtrarCidades()">
+              <div class="cidade-lista" id="cidade-lista"></div>
+            </div>
+            <input type="hidden" id="cidade-valor">
+          </div>
+          <div>
+            <label class="campo">UF</label>
+            <input type="text" id="uf" value="RO" readonly>
+          </div>
+        </div>
       </div>
-    </div>
-    <button class="sair-btn" onclick="sair()">Sair</button>
-  </div>
 
-  <div class="metrics">
-    <div class="metric"><div class="metric-label">Total de inscritos</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">participantes</div></div>
-    <div class="metric"><div class="metric-label">Duplas formadas</div><div class="metric-val" id="m-duplas">—</div><div class="metric-sub">em modalidades dupla</div></div>
-    <div class="metric"><div class="metric-label">Evento mais procurado</div><div class="metric-val" style="font-size:14px;padding-top:4px;" id="m-top">—</div><div class="metric-sub" id="m-top-qtd"></div></div>
-    <div class="metric"><div class="metric-label">Cidades diferentes</div><div class="metric-val" id="m-cidades">—</div><div class="metric-sub">municípios</div></div>
-  </div>
+      <!-- ── EVENTOS ── -->
+      <div class="card">
+        <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
 
-  <div class="section" style="margin-bottom:16px;">
-    <div class="section-header">
-      <span class="section-titulo">Vagas por modalidade</span>
-      <button class="print-btn outline" onclick="imprimirVagas()">Imprimir relatório</button>
-    </div>
-    <div class="vagas-grid" id="vagas-grid"><div class="loading">Carregando...</div></div>
-  </div>
+        <div class="eventos-bloqueio visivel" id="eventos-bloqueio">
+          ⬆️ Selecione seu sexo acima para ver as modalidades disponíveis.
+        </div>
 
-  <div class="section">
-    <div class="section-header">
-      <span class="section-titulo">Inscritos</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="print-btn outline" onclick="imprimirLista()">Imprimir lista geral</button>
-        <button class="print-btn" onclick="imprimirPorEvento()">Imprimir por evento</button>
+        <div class="eventos-conteudo" id="eventos-conteudo">
+
+          <!-- AREIA -->
+          <div class="section-cat" id="cat-areia">Esportes de areia</div>
+          <div class="eventos-grid">
+
+            <div class="evento-wrapper" id="wrapper-ev1">
+              <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
+                <div class="evento-header">
+                  <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Masculino · Dupla</div></div>
+                  <div class="check"></div>
+                </div>
+                <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+              </div>
+              <div class="parceiro-box" id="parceiro-1">
+                <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
+                <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                <input type="text" id="p1-nome" placeholder="Nome do parceiro">
+                <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                <input type="text" id="p1-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                <input type="tel" id="p1-tel" placeholder="(69) 9 0000-0000">
+              </div>
+            </div>
+
+            <div class="evento-wrapper" id="wrapper-ev2">
+              <div class="evento-card feminino" id="ev2" onclick="toggleEvento(2)">
+                <div class="evento-header">
+                  <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Feminino · Dupla</div></div>
+                  <div class="check"></div>
+                </div>
+                <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+              </div>
+              <div class="parceiro-box feminino" id="parceiro-2">
+                <div class="parceiro-titulo">Dados da parceira <span class="parceiro-restricao restricao-f">♀ feminino</span></div>
+                <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                <input type="text" id="p2-nome" placeholder="Nome da parceira">
+                <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                <input type="text" id="p2-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                <input type="tel" id="p2-tel" placeholder="(69) 9 0000-0000">
+              </div>
+            </div>
+
+            <div class="evento-wrapper" id="wrapper-ev3" style="grid-column: span 2;">
+              <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
+                <div class="evento-header">
+                  <div><div class="evento-nome">Futevôlei</div><div class="evento-sub">Masculino · Dupla</div></div>
+                  <div class="check"></div>
+                </div>
+                <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+              </div>
+              <div class="parceiro-box" id="parceiro-3">
+                <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
+                <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                <input type="text" id="p3-nome" placeholder="Nome do parceiro">
+                <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                <input type="text" id="p3-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                <input type="tel" id="p3-tel" placeholder="(69) 9 0000-0000">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- AQUÁTICOS -->
+          <div class="section-cat" style="margin-top:16px;">Esportes aquáticos</div>
+          <div class="eventos-grid">
+
+            <div class="evento-wrapper" id="wrapper-ev4" style="grid-column: span 2;">
+              <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
+                <div class="evento-header">
+                  <div><div class="evento-nome">Canoagem</div><div class="evento-sub">Dupla</div></div>
+                  <div class="check"></div>
+                </div>
+                <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+              </div>
+              <div class="aviso-feminino" id="aviso-canoagem">
+                <span class="aviso-feminino-icone">⚠️</span>
+                <span><strong>Categoria feminina sujeita a confirmação.</strong> A chave feminina de Canoagem só será formada com no mínimo <strong>4 duplas inscritas</strong>. Sua inscrição ficará em espera até o fechamento da chave.</span>
+              </div>
+              <div class="parceiro-box" id="parceiro-4">
+                <div class="parceiro-titulo" id="parceiro-4-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m" id="parceiro-4-restricao">♂ masculino</span></div>
+                <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                <input type="text" id="p4-nome" placeholder="Nome do parceiro">
+                <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                <input type="text" id="p4-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                <input type="tel" id="p4-tel" placeholder="(69) 9 0000-0000">
+              </div>
+            </div>
+
+            <div class="evento-wrapper" id="wrapper-ev5">
+              <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
+                <div class="evento-header">
+                  <div><div class="evento-nome">Caiaque</div><div class="evento-sub">Individual</div></div>
+                  <div class="check"></div>
+                </div>
+                <span class="evento-tipo tipo-individual">Individual</span>
+              </div>
+              <div class="aviso-feminino" id="aviso-caiaque">
+                <span class="aviso-feminino-icone">⚠️</span>
+                <span><strong>Categoria feminina sujeita a confirmação.</strong> A categoria feminina de Caiaque só será formada com no mínimo <strong>4 atletas inscritas</strong>. Sua inscrição ficará em espera até o fechamento da categoria.</span>
+              </div>
+            </div>
+
+            <div class="evento-wrapper" id="wrapper-ev6">
+              <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
+                <div class="evento-header">
+                  <div><div class="evento-nome">Natação</div><div class="evento-sub">Individual</div></div>
+                  <div class="check"></div>
+                </div>
+                <span class="evento-tipo tipo-individual">Individual</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
       </div>
-    </div>
-    <div class="section-header" style="padding-top:10px;padding-bottom:10px;">
-      <div class="filtros">
-        <input type="text" id="busca" placeholder="Buscar nome ou CPF..." oninput="filtrar()">
-        <select id="filtro-evento" onchange="filtrar()">
-          <option value="">Todos os eventos</option>
-          <option value="1">Vôlei de Areia Masc.</option>
-          <option value="2">Vôlei de Areia Fem.</option>
-          <option value="3">Futevôlei</option>
-          <option value="4">Canoagem</option>
-          <option value="5">Caiaque</option>
-          <option value="6">Natação</option>
-        </select>
-        <select id="filtro-uf" onchange="filtrar()">
-          <option value="">Todos os estados</option>
-        </select>
+
+      <!-- Erro CPF duplicado — ações -->
+      <div class="erro-ja-inscrito" id="erro-ja-inscrito">
+        <div class="erro-ja-inscrito-header">
+          <span class="erro-ja-icone">⚠️</span>
+          <div class="erro-ja-texto">
+            <strong>CPF já cadastrado</strong>
+            Encontramos uma inscrição com este CPF. Deseja adicionar uma nova modalidade ou consultar seus eventos já registrados?
+          </div>
+        </div>
+        <div class="erro-ja-acoes">
+          <button class="btn-acao btn-acao-primary" onclick="irParaConsultaComCPF()">➕ Adicionar modalidade</button>
+          <button class="btn-acao btn-acao-outline" onclick="irParaConsultaComCPF()">🔍 Consultar inscrição</button>
+        </div>
       </div>
+
+      <!-- ── CONTRIBUIÇÃO: 1 KG DE ALIMENTO ── -->
+      <div class="card" style="border-color:#fcd34d;background:#fffbeb;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:28px;flex-shrink:0;">🥫</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px;">Contribuição obrigatória</div>
+            <div style="font-size:13px;color:#78350f;line-height:1.6;">
+              Para participar do Festival de Inverno 2026, cada competidor deve entregar <strong>1 kg de alimento não perecível</strong> no ato do credenciamento, no dia do evento.<br>
+              <span style="font-size:11px;color:#a16207;margin-top:4px;display:block;">Os alimentos serão doados a famílias carentes do município de Costa Marques / RO.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AUTORIZAÇÃO DE USO DE IMAGEM ── -->
+      <div class="autorizacao-card">
+        <h2>📸 Autorização de uso de imagem <span class="obrigatorio">*</span></h2>
+
+        <div class="termo-box">
+          <strong>Termo de Autorização de Uso de Imagem</strong><br>
+          Autorizo a <strong>Prefeitura Municipal de Costa Marques / SEMESP</strong> a capturar e utilizar minha imagem em fotografias e vídeos produzidos durante o <strong>Festival de Inverno 2026</strong>, para fins de divulgação em redes sociais, site oficial e materiais institucionais, sem fins lucrativos.
+          <button class="termo-toggle" onclick="toggleTermo()" id="btn-termo">▼ Ver texto completo</button>
+          <div class="termo-ver-mais" id="termo-completo">
+            A presente autorização é concedida gratuitamente e por prazo indeterminado, abrangendo o uso da imagem capturada em fotos, vídeos e transmissões ao vivo realizadas durante o evento, podendo ser publicadas nas plataformas digitais oficiais da Prefeitura de Costa Marques e da SEMESP (Instagram, Facebook, YouTube, site oficial e demais canais institucionais). A autorização não implica qualquer remuneração ao autorizante e não autoriza uso comercial ou terceirizado das imagens sem novo consentimento expresso. Para menores de 18 anos, a autorização deve ser concedida pelo responsável legal.
+          </div>
+        </div>
+
+        <!-- Checkbox principal -->
+        <label class="checkbox-linha" id="label-autorizo" onclick="toggleAutorizacao()">
+          <input type="checkbox" id="cb-autorizo" onclick="event.stopPropagation(); toggleAutorizacao()">
+          <span class="checkbox-label">
+            Autorizo o uso da minha imagem conforme descrito acima. <span>*</span>
+          </span>
+        </label>
+
+        <!-- Aviso e campo para menor de idade (aparece automaticamente) -->
+        <div class="menor-aviso" id="menor-aviso">
+          <div class="menor-aviso-titulo">👤 Participante menor de idade</div>
+          <p style="font-size:12px;color:#9d174d;margin-bottom:10px;line-height:1.5;">
+            Com base na data de nascimento informada, este participante é <strong>menor de 18 anos</strong>. É necessário que o <strong>responsável legal</strong> autorize o uso de imagem.
+          </p>
+          <label class="checkbox-linha marcado-menor" id="label-responsavel" onclick="toggleResponsavel()">
+            <input type="checkbox" id="cb-responsavel" onclick="event.stopPropagation(); toggleResponsavel()" style="accent-color: #be185d;">
+            <span class="checkbox-label">
+              Sou responsável legal por este participante e autorizo o uso de imagem. <span>*</span>
+            </span>
+          </label>
+          <label class="campo" style="margin-top:10px;">Nome completo do responsável legal <span class="obrigatorio">*</span></label>
+          <input type="text" id="nome-responsavel" placeholder="Nome do pai, mãe ou responsável legal">
+        </div>
+      </div>
+
+      <div class="msg-erro" id="erro"></div>
+      <button class="btn" id="btn-enviar" onclick="enviarInscricao()">Enviar inscrição</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Ficha</th>
-            <th>Participante 1</th>
-            <th>CPF</th>
-            <th>Telefone</th>
-            <th>Cidade/UF</th>
-            <th>Evento / Dupla</th>
-            <th>Data</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tabela-body">
-          <tr><td colspan="8" class="loading">Carregando...</td></tr>
-        </tbody>
-      </table>
+
+    <!-- Sucesso -->
+    <div class="sucesso" id="sucesso">
+      <div class="sucesso-icone">🎉</div>
+      <h2>Inscrição confirmada!</h2>
+      <p>Seu número de ficha é:</p>
+      <div class="ficha-box">
+        <div class="numero-ficha" id="numero-ficha"></div>
+        <p>Guarde esse número e apresente<br>no dia do evento.</p>
+      </div>
+      <p style="margin-top:8px;font-size:13px;">Em caso de dúvidas, entre em contato com a SEMESP.</p>
+      <div style="margin-top:16px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:left;display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:22px;flex-shrink:0;">🥫</span>
+        <div style="font-size:13px;color:#78350f;line-height:1.6;">
+          <strong>Lembre-se:</strong> traga <strong>1 kg de alimento não perecível</strong> no dia do credenciamento. A contribuição é obrigatória para retirar sua ficha.
+        </div>
+      </div>
+      <a class="share-btn" id="share-link" href="#" target="_blank">Compartilhar no WhatsApp</a>
     </div>
-    <div style="padding:12px 16px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;" id="contador-label"></div>
   </div>
 
-  <div class="admin-footer">
-    SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO
-    <div class="admin-footer-inner">
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!--  ABA 2 — CONSULTA / ADIÇÃO DE MODALIDADE              -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="aba-consulta" style="display:none;">
+    <div class="card">
+      <h2>Consultar ou adicionar modalidade</h2>
+      <p style="font-size:13px;color:#475569;margin-bottom:14px;line-height:1.6;">
+        Informe seu <strong>CPF</strong> ou o <strong>número da ficha</strong> (ex: FI-4710) para localizar sua inscrição.
+      </p>
+      <div class="consulta-busca-wrap">
+        <input type="text" id="consulta-input" placeholder="000.000.000-00  ou  FI-0000"
+          maxlength="18"
+          onkeydown="if(event.key==='Enter') buscarInscricao()"
+          oninput="mascararConsultaInput(this)">
+        <button class="btn-buscar" id="btn-buscar" onclick="buscarInscricao()">Buscar</button>
+      </div>
+      <div class="consulta-erro" id="consulta-erro"></div>
+    </div>
+
+    <!-- Resultado da busca -->
+    <div class="consulta-resultado" id="consulta-resultado">
+
+      <!-- Perfil encontrado -->
+      <div class="card">
+        <div class="consulta-perfil" id="consulta-perfil"></div>
+
+        <!-- Modalidades atuais -->
+        <div class="consulta-secao-titulo">Modalidades já inscritas</div>
+        <div class="consulta-mod-atual" id="consulta-mod-atual"></div>
+
+        <!-- Novas modalidades disponíveis -->
+        <div id="consulta-adicionar-area"></div>
+      </div>
+
+      <!-- Sucesso adição -->
+      <div class="sucesso" id="sucesso-adicao" style="display:none;">
+        <div class="sucesso-icone">✅</div>
+        <h2>Modalidade adicionada!</h2>
+        <p>Sua nova inscrição foi confirmada com o mesmo número de ficha.</p>
+        <div class="ficha-box">
+          <div class="numero-ficha" id="ficha-adicao"></div>
+        </div>
+        <a class="share-btn" id="share-adicao" href="#" target="_blank">Compartilhar no WhatsApp</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    SEMESP — Secretaria Municipal de Esporte.
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;line-height:1.9;">
       Desenvolvido por <strong>DTI — Departamento de Tecnologia da Informação</strong><br>
       Ewerson Luiz de Oliveira · Gestor em Tecnologia da Informação<br>
+      Data de acesso: <span id="data-acesso"></span><br>
       © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
     </div>
+    <a href="admin.html" class="admin-link" title="Área administrativa">🔒 Administrativo</a>
   </div>
 
-</div>
-
-<!-- Modal -->
-<div class="modal-bg" id="modal-bg" onclick="fecharModal(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-titulo">Ficha do participante</span>
-      <button class="modal-fechar" onclick="fecharModalBtn()">×</button>
-    </div>
-    <div class="modal-ficha">
-      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Número da ficha</div>
-      <div class="modal-ficha-num" id="m-ficha"></div>
-    </div>
-    <div class="modal-secao">Participante 1</div>
-    <div id="m-dados"></div>
-    <div class="modal-secao">Eventos inscritos</div>
-    <div id="m-eventos"></div>
-    <button class="imprimir-ficha" id="btn-imprimir-ficha" onclick="imprimirFicha()">Imprimir esta ficha</button>
-  </div>
-</div>
-
-<div class="print-area" id="print-area" style="display:none;"></div>
-<!-- Container oculto para renderizar QR Code via biblioteca -->
-<div id="qr-hidden" style="position:fixed;left:-9999px;top:-9999px;width:128px;height:128px;"></div>
+</div><!-- /container -->
 
 <script>
 const SUPABASE_URL = 'https://pjjqmoxccggsvfjjckhp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_NG9lP5x2hkiU_rCIgCTkeA_O29A7aN1';
-const ADMIN_USER   = 'admin';
-const ADMIN_SENHA  = 'semesp@2026';
-const LOGO_URL     = window.location.origin + '/10.png';
 
-const MODALIDADES = {
-  1: { nome: 'Vôlei de Areia', sub: 'Masculino', tipo: 'areia', dupla: true  },
-  2: { nome: 'Vôlei de Areia', sub: 'Feminino',  tipo: 'areia', dupla: true  },
-  3: { nome: 'Futevôlei',      sub: 'Masculino', tipo: 'areia', dupla: true  },
-  4: { nome: 'Canoagem',       sub: 'Dupla',     tipo: 'agua',  dupla: true  },
-  5: { nome: 'Caiaque',        sub: 'Individual',tipo: 'agua',  dupla: false },
-  6: { nome: 'Natação',        sub: 'Individual',tipo: 'agua',  dupla: false },
-};
+// ── Data limite para inscrições e adições ──────────────────
+// Ajuste esta data conforme necessário (YYYY-MM-DDTHH:mm:ss)
+const DATA_LIMITE_INSCRICAO = new Date('2026-05-03T23:59:59');
+function inscricaoAberta() { return new Date() <= DATA_LIMITE_INSCRICAO; }
 
-let todosInscritos = [];
-let participanteAtual = null;
-
-const cabecalho = `
-  <div style="display:flex;align-items:center;gap:16px;border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:18px;">
-    <img src="${LOGO_URL}" style="height:56px;width:auto;object-fit:contain;" alt="SEMESP">
-    <div>
-      <div style="font-size:17px;font-weight:700;color:#1a56a0;">Festival de Inverno 2026</div>
-      <div style="font-size:12px;color:#64748b;margin-top:2px;">SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO</div>
-      <div style="font-size:12px;color:#64748b;">01, 02 e 03 de Maio de 2026</div>
-    </div>
-  </div>`;
-
-const rodape = `
-  <div style="margin-top:28px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;color:#94a3b8;text-align:center;line-height:1.8;">
-    Desenvolvido por DTI — Departamento de Tecnologia da Informação · Ewerson Luiz de Oliveira · Gestor em TI<br>
-    © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
-  </div>`;
-
-// ── QR Code: gera via qrcodejs no browser, retorna data URL ──
-function gerarQRDataURL(texto) {
-  return new Promise((resolve) => {
-    const el = document.getElementById('qr-hidden');
-    el.innerHTML = '';
-    try {
-      const qr = new QRCode(el, {
-        text: texto,
-        width: 128,
-        height: 128,
-        colorDark: '#1a56a0',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-      setTimeout(() => {
-        const canvas = el.querySelector('canvas');
-        if (canvas) {
-          resolve(canvas.toDataURL('image/png'));
-        } else {
-          const img = el.querySelector('img');
-          resolve(img ? img.src : null);
-        }
-        el.innerHTML = '';
-      }, 200);
-    } catch(e) {
-      el.innerHTML = '';
-      resolve(null);
-    }
-  });
+// ── Autorização de imagem ─────────────────────────────────
+function toggleTermo() {
+  const el = document.getElementById('termo-completo');
+  const btn = document.getElementById('btn-termo');
+  el.classList.toggle('visivel');
+  btn.textContent = el.classList.contains('visivel') ? '▲ Ocultar texto' : '▼ Ver texto completo';
 }
 
-function entrar() {
-  const u = document.getElementById('login-user').value.trim();
-  const s = document.getElementById('login-senha').value;
-  if (u === ADMIN_USER && s === ADMIN_SENHA) {
-    document.getElementById('login-wrap').style.display = 'none';
-    document.getElementById('painel').style.display = 'block';
-    carregarDados();
+function toggleAutorizacao() {
+  const cb = document.getElementById('cb-autorizo');
+  cb.checked = !cb.checked;
+  document.getElementById('label-autorizo').classList.toggle('marcado', cb.checked);
+  verificarMenor();
+}
+
+function toggleResponsavel() {
+  const cb = document.getElementById('cb-responsavel');
+  cb.checked = !cb.checked;
+}
+
+// Checa a data de nascimento e mostra/esconde campo de responsável
+function verificarMenor() {
+  const nasc = document.getElementById('nascimento').value;
+  const autorizado = document.getElementById('cb-autorizo').checked;
+  const avisoEl = document.getElementById('menor-aviso');
+  if (!nasc || !autorizado) { avisoEl.classList.remove('visivel'); return; }
+  const hoje = new Date();
+  const nascDate = new Date(nasc + 'T00:00:00');
+  const idade = hoje.getFullYear() - nascDate.getFullYear() -
+    (hoje < new Date(hoje.getFullYear(), nascDate.getMonth(), nascDate.getDate()) ? 1 : 0);
+  avisoEl.classList.toggle('visivel', idade < 18);
+}
+
+function eMenor() {
+  const nasc = document.getElementById('nascimento').value;
+  if (!nasc) return false;
+  const hoje = new Date();
+  const nascDate = new Date(nasc + 'T00:00:00');
+  const idade = hoje.getFullYear() - nascDate.getFullYear() -
+    (hoje < new Date(hoje.getFullYear(), nascDate.getMonth(), nascDate.getDate()) ? 1 : 0);
+  return idade < 18;
+}
+
+const DUPLAS = new Set([1, 2, 3, 4]);
+const selecionados = new Set();
+let itemAtivo = -1;
+let sexoSelecionado = '';
+
+const VISIVEL_M = new Set([1, 3, 4, 5, 6]);
+const VISIVEL_F = new Set([2, 4, 5, 6]);
+
+const MODALIDADES = {
+  1: { nome: 'Vôlei de Areia', sub: 'Masculino', dupla: true,  visM: true,  visF: false },
+  2: { nome: 'Vôlei de Areia', sub: 'Feminino',  dupla: true,  visM: false, visF: true  },
+  3: { nome: 'Futevôlei',      sub: 'Masculino', dupla: true,  visM: true,  visF: false },
+  4: { nome: 'Canoagem',       sub: 'Dupla',     dupla: true,  visM: true,  visF: true  },
+  5: { nome: 'Caiaque',        sub: 'Individual',dupla: false, visM: true,  visF: true  },
+  6: { nome: 'Natação',        sub: 'Individual',dupla: false, visM: true,  visF: true  },
+};
+
+const MUNICIPIOS_RO = [
+  "Alta Floresta D'Oeste","Alto Alegre dos Parecis","Alto Paraíso","Alvorada D'Oeste",
+  "Ariquemes","Buritis","Cabixi","Cacaulândia","Cacoal","Campo Novo de Rondônia",
+  "Candeias do Jamari","Castanheiras","Cerejeiras","Chupinguaia","Colorado do Oeste",
+  "Corumbiara","Costa Marques","Cujubim","Espigão D'Oeste","Governador Jorge Teixeira",
+  "Guajará-Mirim","Itapuã do Oeste","Jaru","Ji-Paraná","Machadinho D'Oeste",
+  "Ministro Andreazza","Mirante da Serra","Monte Negro","Nova Brasilândia D'Oeste",
+  "Nova Mamoré","Nova União","Novo Horizonte do Oeste","Ouro Preto do Oeste",
+  "Parecis","Pimenta Bueno","Pimenteiras do Oeste","Porto Velho","Presidente Médici",
+  "Primavera de Rondônia","Rio Crespo","Rolim de Moura","Santa Luzia D'Oeste",
+  "São Felipe D'Oeste","São Francisco do Guaporé","São Miguel do Guaporé",
+  "Seringueiras","Teixeirópolis","Theobroma","Urupá","Vale do Anari","Vale do Paraíso",
+  "Vilhena"
+];
+
+// ── Troca de abas ─────────────────────────────────────────
+function mudarTab(tab) {
+  document.getElementById('aba-inscricao').style.display = tab === 'inscricao' ? '' : 'none';
+  document.getElementById('aba-consulta').style.display  = tab === 'consulta'  ? '' : 'none';
+  document.getElementById('tab-inscricao').classList.toggle('ativo', tab === 'inscricao');
+  document.getElementById('tab-consulta').classList.toggle('ativo', tab === 'consulta');
+}
+
+// ── SEXO ──────────────────────────────────────────────────
+function selecionarSexo(s) {
+  sexoSelecionado = s;
+  document.getElementById('sexo').value = s;
+  const btnM = document.getElementById('sexo-btn-m');
+  const btnF = document.getElementById('sexo-btn-f');
+  btnM.className = 'sexo-btn' + (s === 'M' ? ' ativo-m' : '');
+  btnF.className = 'sexo-btn' + (s === 'F' ? ' ativo-f' : '');
+  document.getElementById('eventos-bloqueio').classList.remove('visivel');
+  document.getElementById('eventos-conteudo').classList.add('visivel');
+  const visivel = s === 'M' ? VISIVEL_M : VISIVEL_F;
+  for (const id of [...selecionados]) {
+    if (!visivel.has(id)) {
+      selecionados.delete(id);
+      const card = document.getElementById('ev' + id);
+      if (card) { card.classList.remove('selecionado', 'feminino-selecionado'); }
+      const pb = document.getElementById('parceiro-' + id);
+      if (pb) pb.classList.remove('visivel');
+    }
+  }
+  for (let i = 1; i <= 6; i++) {
+    const w = document.getElementById('wrapper-ev' + i);
+    if (!w) continue;
+    w.classList.toggle('oculto', !visivel.has(i));
+  }
+  const avisoCanoa = document.getElementById('aviso-canoagem');
+  const avisoKaiak = document.getElementById('aviso-caiaque');
+  if (s === 'F') { avisoCanoa.classList.add('visivel'); avisoKaiak.classList.add('visivel'); }
+  else            { avisoCanoa.classList.remove('visivel'); avisoKaiak.classList.remove('visivel'); }
+  atualizarParceiroCanoagem(s);
+  document.getElementById('cat-areia').style.display = '';
+}
+
+function atualizarParceiroCanoagem(s) {
+  const tituloEl   = document.getElementById('parceiro-4-titulo');
+  const restricaoEl = document.getElementById('parceiro-4-restricao');
+  const boxEl      = document.getElementById('parceiro-4');
+  if (s === 'F') {
+    if (tituloEl)    tituloEl.firstChild.textContent = 'Dados da parceira ';
+    if (restricaoEl) { restricaoEl.textContent = '♀ feminino'; restricaoEl.className = 'parceiro-restricao restricao-f'; }
+    if (boxEl)       boxEl.classList.add('feminino');
+    const pNome = document.getElementById('p4-nome');
+    if (pNome) pNome.placeholder = 'Nome da parceira';
   } else {
-    document.getElementById('login-erro').style.display = 'block';
+    if (tituloEl)    tituloEl.firstChild.textContent = 'Dados do parceiro ';
+    if (restricaoEl) { restricaoEl.textContent = '♂ masculino'; restricaoEl.className = 'parceiro-restricao restricao-m'; }
+    if (boxEl)       boxEl.classList.remove('feminino');
+    const pNome = document.getElementById('p4-nome');
+    if (pNome) pNome.placeholder = 'Nome do parceiro';
   }
 }
 
-function sair() {
-  document.getElementById('login-wrap').style.display = 'flex';
-  document.getElementById('painel').style.display = 'none';
-  document.getElementById('login-senha').value = '';
+// ── CIDADE AUTOCOMPLETE ───────────────────────────────────
+function normalizar(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+function filtrarCidades() {
+  const input = document.getElementById('cidade');
+  const lista = document.getElementById('cidade-lista');
+  const termo = input.value.trim();
+  itemAtivo = -1;
+  if (termo.length === 0) { lista.classList.remove('aberta'); lista.innerHTML = ''; return; }
+  const termoNorm = normalizar(termo);
+  const filtrados = MUNICIPIOS_RO.filter(m => normalizar(m).includes(termoNorm));
+  if (filtrados.length === 0) { lista.classList.remove('aberta'); lista.innerHTML = ''; return; }
+  lista.innerHTML = filtrados.map((m) => {
+    const mNorm = normalizar(m);
+    const idx = mNorm.indexOf(termoNorm);
+    const antes = m.slice(0, idx);
+    const meio = m.slice(idx, idx + termo.length);
+    const depois = m.slice(idx + termo.length);
+    const esc = m.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="cidade-item" data-valor="${m}" onmousedown="event.preventDefault();selecionarCidade('${esc}')">${antes}<strong>${meio}</strong>${depois}</div>`;
+  }).join('');
+  lista.classList.add('aberta');
+}
+function selecionarCidade(cidade) {
+  document.getElementById('cidade').value = cidade;
+  document.getElementById('cidade-valor').value = cidade;
+  document.getElementById('cidade-lista').classList.remove('aberta');
+  document.getElementById('cidade-lista').innerHTML = '';
+}
+function navegarCidades(e) {
+  const lista = document.getElementById('cidade-lista');
+  const itens = lista.querySelectorAll('.cidade-item');
+  if (!lista.classList.contains('aberta') || itens.length === 0) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo'); itemAtivo = Math.min(itemAtivo + 1, itens.length - 1); itens[itemAtivo].classList.add('ativo'); itens[itemAtivo].scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if (itemAtivo >= 0) itens[itemAtivo].classList.remove('ativo'); itemAtivo = Math.max(itemAtivo - 1, 0); itens[itemAtivo].classList.add('ativo'); itens[itemAtivo].scrollIntoView({ block: 'nearest' }); }
+  else if (e.key === 'Enter' && itemAtivo >= 0) { e.preventDefault(); selecionarCidade(itens[itemAtivo].dataset.valor); }
+  else if (e.key === 'Escape') lista.classList.remove('aberta');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#cidade-wrap')) document.getElementById('cidade-lista').classList.remove('aberta');
+});
+
+// ── CPF MÁSCARA ───────────────────────────────────────────
+function mascararCPF(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/,'$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/,'$1.$2');
+  el.value = v;
+}
+document.getElementById('cpf').addEventListener('input', function() {
+  mascararCPF(this);
+  // Esconder erro CPF duplicado ao redigitar
+  document.getElementById('erro-ja-inscrito').style.display = 'none';
+  document.getElementById('erro').style.display = 'none';
+});
+
+// ── EVENTOS TOGGLE ────────────────────────────────────────
+function toggleEvento(id) {
+  const card = document.getElementById('ev' + id);
+  const parceiroBox = document.getElementById('parceiro-' + id);
+  const isFem = sexoSelecionado === 'F';
+  if (selecionados.has(id)) {
+    selecionados.delete(id);
+    card.classList.remove('selecionado', 'feminino-selecionado');
+    if (parceiroBox) parceiroBox.classList.remove('visivel');
+  } else {
+    selecionados.add(id);
+    card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
+    if (parceiroBox && DUPLAS.has(id)) parceiroBox.classList.add('visivel');
+  }
 }
 
+// ── API ───────────────────────────────────────────────────
 async function get(tabela, params = '') {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?${params}`, {
     headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
   });
   return r.json();
 }
-
-async function carregarDados() {
-  const participantes = await get('participantes', 'order=criado_em.desc');
-  const inscricoes    = await get('inscricoes', 'select=*');
-
-  todosInscritos = participantes.map(p => ({
-    ...p,
-    inscricoes: inscricoes.filter(i => i.participante_id === p.id)
-  }));
-
-  atualizarMetricas(todosInscritos, inscricoes);
-  atualizarVagas(inscricoes);
-  preencherUFs(todosInscritos);
-  renderTabela(todosInscritos);
+async function post(tabela, dados) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(dados)
+  });
+  return r.json();
 }
 
-function atualizarMetricas(lista, inscricoes) {
-  document.getElementById('m-total').textContent = lista.length;
-  const duplas = inscricoes.filter(i => MODALIDADES[i.modalidade_id]?.dupla && i.parceiro_nome).length;
-  document.getElementById('m-duplas').textContent = duplas;
-  document.getElementById('m-cidades').textContent = new Set(lista.map(p => (p.cidade||'')+(p.uf||''))).size;
-  const cont = {};
-  inscricoes.forEach(i => { cont[i.modalidade_id] = (cont[i.modalidade_id]||0)+1; });
-  const top = Object.entries(cont).sort((a,b)=>b[1]-a[1])[0];
-  if (top) {
-    const m = MODALIDADES[top[0]];
-    document.getElementById('m-top').textContent = m ? m.nome : '—';
-    document.getElementById('m-top-qtd').textContent = top[1] + ' inscrições';
+// ── SUBMISSÃO NOVA INSCRIÇÃO ──────────────────────────────
+function gerarFicha() { return 'FI-' + String(Math.floor(Math.random() * 9000) + 1000); }
+
+async function enviarInscricao() {
+  const nome     = document.getElementById('nome').value.trim();
+  const cpf      = document.getElementById('cpf').value.trim();
+  const sexo     = document.getElementById('sexo').value;
+  const telefone = document.getElementById('telefone').value.trim();
+  const cidadeInput = document.getElementById('cidade').value.trim();
+  const cidadeValor = document.getElementById('cidade-valor').value.trim();
+  const cidade   = cidadeValor || cidadeInput;
+  const uf       = 'RO';
+  const email    = document.getElementById('email').value.trim();
+  const nasc     = document.getElementById('nascimento').value;
+  const erro     = document.getElementById('erro');
+  const erroJa   = document.getElementById('erro-ja-inscrito');
+  const btn      = document.getElementById('btn-enviar');
+
+  erro.style.display   = 'none';
+  erroJa.style.display = 'none';
+
+  if (!nome || !cpf || !telefone || !cidade) {
+    erro.textContent = 'Preencha todos os campos obrigatórios do Participante 1.';
+    erro.style.display = 'block';
+    window.scrollTo({ top: erro.offsetTop - 20, behavior: 'smooth' });
+    return;
   }
-}
-
-function atualizarVagas(inscricoes) {
-  const grid = document.getElementById('vagas-grid');
-  grid.innerHTML = '';
-  Object.entries(MODALIDADES).forEach(([id, m]) => {
-    const total = 30;
-    const preenchidas = inscricoes.filter(i => i.modalidade_id == id).length;
-    const pct = Math.round((preenchidas/total)*100);
-    const cls = pct >= 100 ? 'cheio' : pct >= 80 ? 'quase' : '';
-    grid.innerHTML += `<div class="vaga-card">
-      <div class="vaga-nome">${m.nome}</div>
-      <div class="vaga-sub">${m.sub}</div>
-      <div class="vaga-bar"><div class="vaga-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
-      <div class="vaga-info"><span>${preenchidas} / ${total}</span><span>${pct}%</span></div>
-    </div>`;
-  });
-}
-
-function preencherUFs(lista) {
-  const ufs = [...new Set(lista.map(p=>p.uf).filter(Boolean))].sort();
-  const sel = document.getElementById('filtro-uf');
-  sel.innerHTML = '<option value="">Todos os estados</option>';
-  ufs.forEach(uf => { const o = document.createElement('option'); o.value=uf; o.textContent=uf; sel.appendChild(o); });
-}
-
-function filtrar() {
-  const busca  = document.getElementById('busca').value.toLowerCase();
-  const evento = document.getElementById('filtro-evento').value;
-  const uf     = document.getElementById('filtro-uf').value;
-  const filtrado = todosInscritos.filter(p => {
-    const mb = !busca  || p.nome_completo.toLowerCase().includes(busca) || (p.cpf||'').includes(busca);
-    const me = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const mu = !uf     || p.uf === uf;
-    return mb && me && mu;
-  });
-  renderTabela(filtrado);
-}
-
-function renderTabela(lista) {
-  const tbody = document.getElementById('tabela-body');
-  document.getElementById('contador-label').textContent = `Exibindo ${lista.length} participante${lista.length!==1?'s':''}`;
-  if (lista.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="vazio">Nenhum participante encontrado.</td></tr>';
+  if (!sexo) {
+    erro.textContent = 'Selecione seu sexo para continuar.';
+    erro.style.display = 'block';
+    document.getElementById('sexo-btn-m').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (selecionados.size === 0) {
+    erro.textContent = 'Selecione pelo menos um evento esportivo.';
+    erro.style.display = 'block';
     return;
   }
 
-  tbody.innerHTML = lista.map(p => {
-    const ficha = p.inscricoes[0]?.numero_ficha || '—';
-    const data  = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
-    const eventos = p.inscricoes.map(i => {
-      const m = MODALIDADES[i.modalidade_id];
-      if (!m) return '';
-      const dupla = i.parceiro_nome ? `<div class="dupla-info">Dupla: ${i.parceiro_nome}</div>` : '';
-      return `<div><span class="badge badge-${m.tipo==='agua'?(m.dupla?'agua':'individual'):'areia'}">${m.nome} ${m.sub}</span>${dupla}</div>`;
-    }).join('');
+  // Validar autorização de imagem
+  const autorizou = document.getElementById('cb-autorizo').checked;
+  if (!autorizou) {
+    erro.textContent = 'É necessário autorizar o uso de imagem para concluir a inscrição.';
+    erro.style.display = 'block';
+    document.getElementById('label-autorizo').classList.add('autorizacao-nao-aceita');
+    document.getElementById('label-autorizo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  document.getElementById('label-autorizo').classList.remove('autorizacao-nao-aceita');
 
-    return `<tr>
-      <td><span class="ficha-num">${ficha}</span></td>
-      <td>${p.nome_completo}</td>
-      <td>${p.cpf||'—'}</td>
-      <td>${p.telefone||'—'}</td>
-      <td>${p.cidade||'—'} / ${p.uf||'—'}</td>
-      <td style="max-width:220px;">${eventos}</td>
-      <td style="white-space:nowrap;">${data}</td>
-      <td><button class="ver-btn" data-pid="${p.id}" onclick="abrirModalPorBtn(this)">Ver ficha</button></td>
-    </tr>`;
-  }).join('');
-}
+  // Validar responsável se menor
+  let nomeResponsavel = null;
+  if (eMenor()) {
+    const cbResp = document.getElementById('cb-responsavel').checked;
+    const nomeResp = document.getElementById('nome-responsavel').value.trim();
+    if (!cbResp || !nomeResp) {
+      erro.textContent = 'Para participantes menores de idade, o responsável legal deve autorizar e informar o nome completo.';
+      erro.style.display = 'block';
+      document.getElementById('nome-responsavel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    nomeResponsavel = nomeResp;
+  }
 
-// Usa data-pid para evitar qualquer problema com aspas/UUID em onclick inline
-function abrirModalPorBtn(btn) {
-  const id = btn.getAttribute('data-pid');
-  abrirModal(id);
-}
+  const nomesEventos = { 1:'Vôlei Masc.', 2:'Vôlei Fem.', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
 
-function abrirModal(id) {
-  const p = todosInscritos.find(x => x.id === id);
-  if (!p) return;
-  participanteAtual = p;
+  for (const id of selecionados) {
+    if (DUPLAS.has(id)) {
+      const pNome = document.getElementById(`p${id}-nome`)?.value.trim();
+      const pCpf  = document.getElementById(`p${id}-cpf`)?.value.trim();
+      const pTel  = document.getElementById(`p${id}-tel`)?.value.trim();
+      if (!pNome || !pCpf || !pTel) {
+        const genero = sexo === 'F' ? 'parceira' : 'parceiro';
+        erro.textContent = `Preencha os dados do ${genero} no evento ${nomesEventos[id]}.`;
+        erro.style.display = 'block';
+        document.getElementById(`p${id}-nome`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+  }
 
-  document.getElementById('m-ficha').textContent = p.inscricoes[0]?.numero_ficha || '—';
-
-  document.getElementById('m-dados').innerHTML = `
-    <div class="modal-row"><span class="modal-label">Nome</span><span class="modal-val">${p.nome_completo}</span></div>
-    <div class="modal-row"><span class="modal-label">CPF</span><span class="modal-val">${p.cpf||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Nascimento</span><span class="modal-val">${p.data_nascimento?new Date(p.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR'):'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Telefone</span><span class="modal-val">${p.telefone||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">E-mail</span><span class="modal-val">${p.email||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Cidade / UF</span><span class="modal-val">${p.cidade||'—'} / ${p.uf||'—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Inscrito em</span><span class="modal-val">${p.criado_em?new Date(p.criado_em).toLocaleString('pt-BR'):'—'}</span></div>`;
-
-  document.getElementById('m-eventos').innerHTML = p.inscricoes.map(i => {
-    const m = MODALIDADES[i.modalidade_id];
-    if (!m) return '';
-    const parceiro = i.parceiro_nome ? `
-      <div class="modal-parceiro">
-        <div class="modal-parceiro-label">Parceiro(a)</div>
-        <div>${i.parceiro_nome}</div>
-        ${i.parceiro_cpf?`<div style="font-size:11px;color:#64748b;">CPF: ${i.parceiro_cpf}</div>`:''}
-        ${i.parceiro_telefone?`<div style="font-size:11px;color:#64748b;">Tel: ${i.parceiro_telefone}</div>`:''}
-      </div>` : '';
-    return `<div class="modal-evento-item">
-      <div class="modal-evento-nome">${m.nome} — ${m.sub}</div>
-      ${parceiro}
-    </div>`;
-  }).join('');
-
-  document.getElementById('btn-imprimir-ficha').disabled = false;
-  document.getElementById('btn-imprimir-ficha').textContent = 'Imprimir esta ficha';
-  document.getElementById('modal-bg').classList.add('aberto');
-}
-
-function fecharModal(e) { if (e.target === document.getElementById('modal-bg')) fecharModalBtn(); }
-function fecharModalBtn() { document.getElementById('modal-bg').classList.remove('aberto'); }
-
-// ── Imprimir ficha com QR Code ────────────────────────────
-async function imprimirFicha() {
-  const p = participanteAtual;
-  if (!p) return;
-
-  const btn = document.getElementById('btn-imprimir-ficha');
   btn.disabled = true;
-  btn.textContent = '⏳ Gerando QR Code...';
+  btn.textContent = 'Enviando...';
 
-  const ficha = p.inscricoes[0]?.numero_ficha || '—';
+  // ── Verificar vagas disponíveis para cada modalidade selecionada ──
+  const LIMITE_VAGAS = 20;
+  for (const mid of selecionados) {
+    const countRes = await get('inscricoes', `modalidade_id=eq.${mid}&select=id`);
+    if (Array.isArray(countRes) && countRes.length >= LIMITE_VAGAS) {
+      const nomesEventos2 = { 1:'Vôlei de Areia Masculino', 2:'Vôlei de Areia Feminino', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
+      erro.textContent = `Inscrições encerradas para ${nomesEventos2[mid] || 'esta modalidade'} — limite de ${LIMITE_VAGAS} vagas atingido.`;
+      erro.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Enviar inscrição';
+      return;
+    }
+  }
 
-  // Gerar QR Code em canvas e converter para data URL embutida
-  const qrDataURL = await gerarQRDataURL(ficha);
-  const qrBlock = qrDataURL
-    ? `<img src="${qrDataURL}" width="110" height="110" style="display:block;border-radius:4px;" alt="QR ${ficha}">`
-    : `<div style="width:110px;height:110px;background:#f1f5f9;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;text-align:center;">${ficha}</div>`;
-
-  const eventosHtml = p.inscricoes.map(i => {
-    const m = MODALIDADES[i.modalidade_id];
-    if (!m) return '';
-    const parceiro = i.parceiro_nome ? `
-      <div style="margin-top:6px;background:#f0f6ff;border-radius:6px;padding:8px 10px;font-size:12px;">
-        <div style="font-size:10px;font-weight:600;color:#1a56a0;text-transform:uppercase;margin-bottom:4px;">Parceiro(a)</div>
-        <div>${i.parceiro_nome}</div>
-        ${i.parceiro_cpf?`<div style="color:#64748b;">CPF: ${i.parceiro_cpf}</div>`:''}
-        ${i.parceiro_telefone?`<div style="color:#64748b;">Tel: ${i.parceiro_telefone}</div>`:''}
-      </div>` : '';
-    return `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-      <div style="font-weight:600;font-size:13px;">${m.nome} — ${m.sub}</div>
-      ${parceiro}
-    </div>`;
-  }).join('');
-
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:620px;margin:0 auto;padding:24px;">
-    ${cabecalho}
-    <div style="display:flex;align-items:center;gap:20px;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:16px 20px;margin-bottom:18px;">
-      <div style="flex:1;">
-        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Número da Ficha</div>
-        <div style="font-size:32px;font-weight:800;color:#1a56a0;letter-spacing:0.05em;">${ficha}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:6px;">Apresente este comprovante no dia do evento</div>
-      </div>
-      <div style="text-align:center;flex-shrink:0;">
-        ${qrBlock}
-        <div style="font-size:10px;color:#64748b;margin-top:4px;font-weight:600;">${ficha}</div>
-      </div>
-    </div>
-    <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Participante 1</div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
-      <tr><td style="padding:5px 0;color:#64748b;width:130px;">Nome</td><td style="padding:5px 0;font-weight:600;">${p.nome_completo}</td></tr>
-      <tr><td style="padding:5px 0;color:#64748b;">CPF</td><td style="padding:5px 0;">${p.cpf||'—'}</td></tr>
-      <tr><td style="padding:5px 0;color:#64748b;">Telefone</td><td style="padding:5px 0;">${p.telefone||'—'}</td></tr>
-      <tr><td style="padding:5px 0;color:#64748b;">Cidade / UF</td><td style="padding:5px 0;">${p.cidade||'—'} / ${p.uf||'—'}</td></tr>
-    </table>
-    <div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Eventos inscritos</div>
-    ${eventosHtml}
-    <div style="margin-top:20px;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
-      <span>Impresso em ${new Date().toLocaleString('pt-BR')}</span><span>Festival de Inverno 2026</span>
-    </div>
-    ${rodape}
-  </div>`;
-
-  btn.disabled = false;
-  btn.textContent = 'Imprimir esta ficha';
-  imprimir(html);
-}
-
-// ── Imprimir lista geral ──────────────────────────────────
-function imprimirLista() {
-  const busca  = document.getElementById('busca').value.toLowerCase();
-  const evento = document.getElementById('filtro-evento').value;
-  const uf     = document.getElementById('filtro-uf').value;
-  const lista  = todosInscritos.filter(p => {
-    const mb = !busca  || p.nome_completo.toLowerCase().includes(busca)||(p.cpf||'').includes(busca);
-    const me = !evento || p.inscricoes.some(i=>i.modalidade_id==evento);
-    const mu = !uf     || p.uf===uf;
-    return mb&&me&&mu;
+  const ficha = gerarFicha();
+  const participante = await post('participantes', {
+    nome_completo: nome, cpf, sexo,
+    email: email || null, telefone,
+    data_nascimento: nasc || null,
+    cidade, uf,
+    autorizacao_imagem: true,
+    nome_responsavel: nomeResponsavel || null
   });
 
-  const linhas = lista.map((p,idx) => {
-    const ficha   = p.inscricoes[0]?.numero_ficha||'—';
-    const eventos = p.inscricoes.map(i=>{
-      const m=MODALIDADES[i.modalidade_id];
-      if(!m) return '';
-      const par = i.parceiro_nome ? ` + ${i.parceiro_nome}` : '';
-      return `${m.nome} ${m.sub}${par}`;
-    }).join(' / ');
-    return `<tr style="background:${idx%2===0?'white':'#f8fafc'}">
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${ficha}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.nome_completo}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cpf||'—'}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;font-size:11px;">${eventos}</td>
-      <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
-    </tr>`;
-  }).join('');
+  if (!participante || participante.length === 0 || participante.code) {
+    const jaCadastrado = participante?.message?.includes('unique') || participante?.code === '23505';
+    if (jaCadastrado) {
+      // Mostrar erro inteligente com ações
+      erroJa.style.display = 'block';
+      erroJa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      erro.textContent = 'Erro ao enviar. Tente novamente.';
+      erro.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Enviar inscrição';
+    return;
+  }
 
-  imprimir(`<div style="font-family:system-ui,sans-serif;padding:20px;">
-    ${cabecalho}
-    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Total: ${lista.length} participantes · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-      <thead><tr style="background:#1a56a0;color:white;">
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Ficha</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Nome</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">CPF</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Telefone</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
-        <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Eventos / Duplas</th>
-        <th style="padding:7px 8px;text-align:center;border:1px solid #1447a0;">Check-in</th>
-      </tr></thead>
-      <tbody>${linhas}</tbody>
-    </table>
-    ${rodape}
-  </div>`);
+  const pid = participante[0].id;
+  for (const mid of selecionados) {
+    const dadosInscricao = { participante_id: pid, modalidade_id: mid, numero_ficha: ficha, status: 'confirmado' };
+    if (DUPLAS.has(mid)) {
+      dadosInscricao.parceiro_nome     = document.getElementById(`p${mid}-nome`).value.trim();
+      dadosInscricao.parceiro_cpf      = document.getElementById(`p${mid}-cpf`).value.trim();
+      dadosInscricao.parceiro_telefone = document.getElementById(`p${mid}-tel`).value.trim();
+    }
+    await post('inscricoes', dadosInscricao);
+  }
+
+  document.getElementById('formulario').style.display = 'none';
+  document.getElementById('sucesso').style.display = 'block';
+  document.getElementById('numero-ficha').textContent = ficha;
+
+  const eventos = Array.from(selecionados).map(id => nomesEventos[id]).join(', ');
+  const msg = encodeURIComponent(
+    `Olá! Me inscrevi no Festival de Inverno — Costa Marques/RO (01, 02 e 03 de Maio de 2026).\n` +
+    `Meu número de ficha é *${ficha}*.\nEventos: ${eventos}.\n\n` +
+    `Faça sua inscrição também pelo link abaixo:\n` +
+    `https://festival-inverno.vercel.app`
+  );
+  document.getElementById('share-link').href = `https://wa.me/?text=${msg}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Imprimir por evento ───────────────────────────────────
-function imprimirPorEvento() {
-  let html = `<div style="font-family:system-ui,sans-serif;">`;
-  Object.entries(MODALIDADES).forEach(([id, m], idx) => {
-    const lista = todosInscritos.filter(p => p.inscricoes.some(i => i.modalidade_id == id));
-    if (lista.length === 0) return;
-    const linhas = lista.map((p, i) => {
-      const insc    = p.inscricoes.find(x => x.modalidade_id == id);
-      const ficha   = insc?.numero_ficha || '—';
-      const parceiro = insc?.parceiro_nome || '—';
-      return `<tr style="background:${i%2===0?'white':'#f8fafc'}">
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;">${ficha}</td>
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;font-weight:600;">${p.nome_completo}</td>
-        ${m.dupla?`<td style="padding:7px 8px;border:1px solid #e2e8f0;">${parceiro}</td>`:''}
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.telefone||'—'}</td>
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;">${p.cidade||'—'} / ${p.uf||'—'}</td>
-        <td style="padding:7px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
-      </tr>`;
+// Ao clicar no botão "Adicionar modalidade" do erro de CPF duplicado
+function irParaConsultaComCPF() {
+  const cpf = document.getElementById('cpf').value.trim();
+  mudarTab('consulta');
+  if (cpf) {
+    document.getElementById('consulta-input').value = cpf;
+    buscarInscricao();
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── CONSULTA / ADIÇÃO ─────────────────────────────────────
+
+let participanteConsulta = null;
+let inscricoesConsulta   = [];
+
+// Máscara inteligente no campo de consulta:
+// — se parecer CPF (só dígitos até agora) → aplica máscara CPF
+// — se começar com letra (FI-...) → deixa como está em maiúsculas
+function mascararConsultaInput(el) {
+  limparResultadoConsulta();
+  const raw = el.value;
+  // Se começa com letra → provável ficha (FI-XXXX)
+  if (/^[a-zA-Z]/.test(raw.replace(/\s/g,''))) {
+    el.value = raw.toUpperCase();
+    return;
+  }
+  // Caso contrário trata como CPF
+  let v = raw.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/,'$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/,'$1.$2');
+  el.value = v;
+}
+
+function limparResultadoConsulta() {
+  document.getElementById('consulta-resultado').style.display = 'none';
+  document.getElementById('consulta-erro').style.display = 'none';
+  participanteConsulta = null;
+  inscricoesConsulta   = [];
+}
+
+async function buscarInscricao() {
+  const rawInput = document.getElementById('consulta-input').value.trim();
+  const erroEl   = document.getElementById('consulta-erro');
+  const btnBuscar = document.getElementById('btn-buscar');
+
+  erroEl.style.display = 'none';
+  document.getElementById('consulta-resultado').style.display = 'none';
+  document.getElementById('sucesso-adicao').style.display = 'none';
+
+  if (!rawInput) {
+    erroEl.textContent = 'Digite seu CPF ou número de ficha.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  btnBuscar.disabled = true;
+  btnBuscar.textContent = 'Buscando...';
+
+  let participante = null;
+
+  // ── Tentar por CPF ──
+  const cpfLimpo = rawInput.replace(/\D/g, '');
+  if (cpfLimpo.length === 11) {
+    // Formatar CPF igual ao formato salvo no banco: 000.000.000-00
+    const cpfFormatado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    // Tentar com CPF formatado
+    let res = await get('participantes', `cpf=eq.${encodeURIComponent(cpfFormatado)}&select=*`);
+    if (Array.isArray(res) && res.length > 0) {
+      participante = res[0];
+    } else {
+      // Fallback: tentar com CPF sem formatação (caso salvo sem máscara)
+      res = await get('participantes', `cpf=eq.${encodeURIComponent(cpfLimpo)}&select=*`);
+      if (Array.isArray(res) && res.length > 0) participante = res[0];
+    }
+  }
+
+  // ── Tentar por número de ficha ──
+  if (!participante) {
+    const fichaInput = rawInput.toUpperCase().replace(/\s/g,'');
+    // Aceita FI4710, FI-4710, fi-4710 etc.
+    const fichaFormatada = fichaInput.replace(/^FI\-?(\d+)$/, 'FI-$1');
+    if (/^FI-\d+$/.test(fichaFormatada)) {
+      const insc = await get('inscricoes', `numero_ficha=eq.${encodeURIComponent(fichaFormatada)}&select=participante_id&limit=1`);
+      if (Array.isArray(insc) && insc.length > 0) {
+        const pid = insc[0].participante_id;
+        const pRes = await get('participantes', `id=eq.${pid}&select=*`);
+        if (Array.isArray(pRes) && pRes.length > 0) participante = pRes[0];
+      }
+    }
+  }
+
+  btnBuscar.disabled = false;
+  btnBuscar.textContent = 'Buscar';
+
+  if (!participante) {
+    erroEl.textContent = 'Nenhuma inscrição encontrada. Verifique o CPF ou número de ficha e tente novamente.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  // Buscar inscrições do participante
+  const inscricoes = await get('inscricoes', `participante_id=eq.${participante.id}&select=*`);
+  participanteConsulta = participante;
+  inscricoesConsulta   = Array.isArray(inscricoes) ? inscricoes : [];
+
+  renderizarConsulta();
+}
+
+function renderizarConsulta() {
+  const p     = participanteConsulta;
+  const insc  = inscricoesConsulta;
+  const ficha = insc[0]?.numero_ficha || '—';
+  const sexo  = p.sexo || 'M';
+
+  // Perfil
+  document.getElementById('consulta-perfil').innerHTML = `
+    <div class="consulta-perfil-nome">${p.nome_completo}</div>
+    <div class="consulta-perfil-sub">CPF: ${p.cpf || '—'} &nbsp;·&nbsp; ${p.cidade || '—'} / ${p.uf || 'RO'}</div>
+    <div class="consulta-ficha-num">Ficha: ${ficha}</div>`;
+
+  // Modalidades atuais
+  const idsInscritos = new Set(insc.map(i => i.modalidade_id));
+  const modAtualEl = document.getElementById('consulta-mod-atual');
+  if (idsInscritos.size === 0) {
+    modAtualEl.innerHTML = '<span style="font-size:13px;color:#94a3b8;">Nenhuma modalidade registrada.</span>';
+  } else {
+    modAtualEl.innerHTML = [...idsInscritos].map(id => {
+      const m = MODALIDADES[id];
+      if (!m) return '';
+      const inscricao = insc.find(i => i.modalidade_id == id);
+      const parceiro = inscricao?.parceiro_nome ? ` + ${inscricao.parceiro_nome}` : '';
+      return `<span class="tag-modal"><span class="tag-modal-check">✓</span> ${m.nome} ${m.sub}${parceiro}</span>`;
     }).join('');
-    const colParceiro = m.dupla ? `<th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Parceiro(a)</th>` : '';
-    html += `<div style="page-break-before:${idx===0?'auto':'always'};padding:20px;">
-      ${cabecalho}
-      <h3 style="color:#1a56a0;margin-bottom:2px;">${m.nome} — ${m.sub}</h3>
-      <p style="font-size:12px;color:#64748b;margin-bottom:12px;">${lista.length} inscrito${lista.length!==1?'s':''} · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="background:#1a56a0;color:white;">
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Ficha</th>
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Participante 1</th>
-          ${colParceiro}
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Telefone</th>
-          <th style="padding:7px 8px;text-align:left;border:1px solid #1447a0;">Cidade/UF</th>
-          <th style="padding:7px 8px;text-align:center;border:1px solid #1447a0;">Check-in</th>
-        </tr></thead>
-        <tbody>${linhas}</tbody>
-      </table>
-      ${rodape}
-    </div>`;
-  });
-  html += '</div>';
-  imprimir(html);
-}
+  }
 
-// ── Imprimir vagas ────────────────────────────────────────
-function imprimirVagas() {
-  const inscricoes = todosInscritos.flatMap(p=>p.inscricoes);
-  const linhas = Object.entries(MODALIDADES).map(([id,m])=>{
-    const total=30, preenchidas=inscricoes.filter(i=>i.modalidade_id==id).length;
-    const restam=total-preenchidas, pct=Math.round((preenchidas/total)*100);
-    return `<tr>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;">${m.nome}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;">${m.sub}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${total}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:600;color:#1a56a0;">${preenchidas}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;color:${restam===0?'#dc2626':'#166534'}">${restam}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${pct}%</td>
-    </tr>`;
+  // Área de adição
+  const addArea = document.getElementById('consulta-adicionar-area');
+  addArea.innerHTML = '';
+
+  if (!inscricaoAberta()) {
+    addArea.innerHTML = `<div class="consulta-encerrada">⏰ O prazo para adição de modalidades encerrou em ${DATA_LIMITE_INSCRICAO.toLocaleDateString('pt-BR')}.</div>`;
+    document.getElementById('consulta-resultado').style.display = 'block';
+    return;
+  }
+
+  // Modalidades disponíveis para adicionar (baseado no sexo do participante)
+  const visivelSexo = sexo === 'F' ? [2, 4, 5, 6] : [1, 3, 4, 5, 6];
+  const disponíveis = visivelSexo.filter(id => !idsInscritos.has(id));
+
+  if (disponíveis.length === 0) {
+    addArea.innerHTML = `<div class="consulta-sem-novas">🏆 Você já está inscrito em todas as modalidades disponíveis para o seu sexo!</div>`;
+    document.getElementById('consulta-resultado').style.display = 'block';
+    return;
+  }
+
+  // Formulário de adição
+  const isFem = sexo === 'F';
+  const eventosHTML = disponíveis.map(id => {
+    const m = MODALIDADES[id];
+    const tipoCss = id <= 3 ? 'tipo-areia' : (m.dupla ? 'tipo-agua' : 'tipo-individual');
+    const tipoLabel = id <= 3 ? 'Esporte de Areia' : (m.dupla ? 'Esporte Aquático' : 'Individual');
+
+    let parceiroHtml = '';
+    if (m.dupla) {
+      const genero = isFem ? 'parceira' : 'parceiro';
+      const restricao = isFem
+        ? '<span class="parceiro-restricao restricao-f">♀ feminino</span>'
+        : '<span class="parceiro-restricao restricao-m">♂ masculino</span>';
+      parceiroHtml = `
+        <div class="parceiro-box" id="add-parceiro-${id}" style="margin-top:8px;">
+          <div class="parceiro-titulo">Dados do(a) ${genero} ${restricao}</div>
+          <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+          <input type="text" id="add-p${id}-nome" placeholder="Nome do(a) ${genero}">
+          <label class="campo">CPF <span class="obrigatorio">*</span></label>
+          <input type="text" id="add-p${id}-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+          <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+          <input type="tel" id="add-p${id}-tel" placeholder="(69) 9 0000-0000">
+        </div>`;
+    }
+
+    return `
+      <div style="margin-bottom:10px;" id="add-wrapper-${id}">
+        <div class="evento-card" id="add-ev${id}" onclick="toggleEventoAdd(${id},${isFem})">
+          <div class="evento-header">
+            <div><div class="evento-nome">${m.nome}</div><div class="evento-sub">${m.sub}</div></div>
+            <div class="check"></div>
+          </div>
+          <span class="evento-tipo ${tipoCss}">${tipoLabel}</span>
+        </div>
+        ${parceiroHtml}
+      </div>`;
   }).join('');
-  imprimir(`<div style="font-family:system-ui,sans-serif;padding:24px;max-width:700px;margin:0 auto;">
-    ${cabecalho}
-    <h3 style="color:#1a56a0;margin-bottom:12px;">Relatório de Vagas por Modalidade</h3>
-    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Impresso em ${new Date().toLocaleString('pt-BR')}</p>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead><tr style="background:#1a56a0;color:white;">
-        <th style="padding:9px 12px;text-align:left;border:1px solid #1447a0;">Evento</th>
-        <th style="padding:9px 12px;text-align:left;border:1px solid #1447a0;">Modalidade</th>
-        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Vagas</th>
-        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Preenchidas</th>
-        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">Restam</th>
-        <th style="padding:9px 12px;text-align:center;border:1px solid #1447a0;">%</th>
-      </tr></thead>
-      <tbody>${linhas}</tbody>
-    </table>
-    ${rodape}
-  </div>`);
+
+  addArea.innerHTML = `
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:14px 0;">
+    <div class="consulta-secao-titulo" style="margin-bottom:10px;">Adicionar nova modalidade</div>
+    ${eventosHTML}
+    <div class="msg-erro" id="add-erro" style="display:none;margin-top:10px;"></div>
+    <button class="btn" style="margin-top:10px;" onclick="submeterAdicao()">Confirmar adição</button>`;
+
+  document.getElementById('consulta-resultado').style.display = 'block';
 }
 
-function imprimir(html) {
-  const area = document.getElementById('print-area');
-  area.innerHTML = html;
-  area.style.display = 'block';
-  window.print();
-  area.style.display = 'none';
+const selecionadosAdd = new Set();
+
+function toggleEventoAdd(id, isFem) {
+  const card = document.getElementById('add-ev' + id);
+  const pb   = document.getElementById('add-parceiro-' + id);
+  if (selecionadosAdd.has(id)) {
+    selecionadosAdd.delete(id);
+    card.classList.remove('selecionado', 'feminino-selecionado');
+    if (pb) pb.classList.remove('visivel');
+  } else {
+    selecionadosAdd.add(id);
+    card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
+    if (pb && DUPLAS.has(id)) pb.classList.add('visivel');
+  }
 }
+
+async function submeterAdicao() {
+  const erroEl = document.getElementById('add-erro');
+  erroEl.style.display = 'none';
+
+  if (selecionadosAdd.size === 0) {
+    erroEl.textContent = 'Selecione pelo menos uma modalidade para adicionar.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  const nomesEventos = { 1:'Vôlei Masc.', 2:'Vôlei Fem.', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
+  const sexo = participanteConsulta.sexo || 'M';
+
+  for (const id of selecionadosAdd) {
+    if (DUPLAS.has(id)) {
+      const pNome = document.getElementById(`add-p${id}-nome`)?.value.trim();
+      const pCpf  = document.getElementById(`add-p${id}-cpf`)?.value.trim();
+      const pTel  = document.getElementById(`add-p${id}-tel`)?.value.trim();
+      if (!pNome || !pCpf || !pTel) {
+        const genero = sexo === 'F' ? 'parceira' : 'parceiro';
+        erroEl.textContent = `Preencha os dados do(a) ${genero} no evento ${nomesEventos[id]}.`;
+        erroEl.style.display = 'block';
+        document.getElementById(`add-p${id}-nome`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+  }
+
+  const btnConfirmar = document.querySelector('#consulta-adicionar-area .btn');
+  if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.textContent = 'Salvando...'; }
+
+  // Usar a ficha existente do participante
+  const fichaExistente = inscricoesConsulta[0]?.numero_ficha || gerarFicha();
+
+  for (const mid of selecionadosAdd) {
+    const dados = {
+      participante_id: participanteConsulta.id,
+      modalidade_id: mid,
+      numero_ficha: fichaExistente,
+      status: 'confirmado'
+    };
+    if (DUPLAS.has(mid)) {
+      dados.parceiro_nome     = document.getElementById(`add-p${mid}-nome`).value.trim();
+      dados.parceiro_cpf      = document.getElementById(`add-p${mid}-cpf`).value.trim();
+      dados.parceiro_telefone = document.getElementById(`add-p${mid}-tel`).value.trim();
+    }
+    await post('inscricoes', dados);
+  }
+
+  // Mostrar sucesso
+  const resultadoEl = document.getElementById('consulta-resultado');
+  const perfilEl    = resultadoEl.querySelector('.card');
+  if (perfilEl) perfilEl.style.display = 'none';
+
+  const sucessoEl = document.getElementById('sucesso-adicao');
+  document.getElementById('ficha-adicao').textContent = fichaExistente;
+
+  const novosEventos = Array.from(selecionadosAdd).map(id => nomesEventos[id]).join(', ');
+  const msg = encodeURIComponent(
+    `Adicionei novas modalidades no Festival de Inverno — Costa Marques/RO (01, 02 e 03 de Maio de 2026).\n` +
+    `Meu número de ficha é *${fichaExistente}*.\nNovos eventos: ${novosEventos}.\n\n` +
+    `Faça sua inscrição também:\nhttps://festival-inverno.vercel.app`
+  );
+  document.getElementById('share-adicao').href = `https://wa.me/?text=${msg}`;
+  sucessoEl.style.display = 'block';
+  selecionadosAdd.clear();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Data/hora de acesso no rodapé ─────────────────────────
+(function() {
+  const el = document.getElementById('data-acesso');
+  if (!el) return;
+  el.textContent = new Date().toLocaleString('pt-BR', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
+  });
+})();
 </script>
 </body>
 </html>
