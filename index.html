@@ -597,8 +597,8 @@
   <div class="footer">
     SEMESP — Secretaria Municipal de Esporte.
     <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;line-height:1.9;">
-      Desenvolvido por <strong>DTI — Departamento de Tecnologia da Informação</strong><br>
-      Ewerson Luiz de Oliveira · Gestor em Tecnologia da Informação<br>
+      Desenvolvido por <strong>Ewerson Luiz de Oliveira</strong><br>
+      Gestor em Tecnologia da Informação<br>
       Data de acesso: <span id="data-acesso"></span><br>
       © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
     </div>
@@ -929,6 +929,20 @@ async function enviarInscricao() {
 
   btn.disabled = true;
   btn.textContent = 'Enviando...';
+
+  // ── Verificar vagas disponíveis para cada modalidade selecionada ──
+  const LIMITE_VAGAS = 20;
+  for (const mid of selecionados) {
+    const countRes = await get('inscricoes', `modalidade_id=eq.${mid}&select=id`);
+    if (Array.isArray(countRes) && countRes.length >= LIMITE_VAGAS) {
+      const nomesEventos2 = { 1:'Vôlei de Areia Masculino', 2:'Vôlei de Areia Feminino', 3:'Futevôlei', 4:'Canoagem', 5:'Caiaque', 6:'Natação' };
+      erro.textContent = `Inscrições encerradas para ${nomesEventos2[mid] || 'esta modalidade'} — limite de ${LIMITE_VAGAS} vagas atingido.`;
+      erro.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Enviar inscrição';
+      return;
+    }
+  }
 
   const ficha = gerarFicha();
   const participante = await post('participantes', {
