@@ -250,8 +250,12 @@
   .membro-label { font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .opcional-tag { font-size: 10px; font-weight: 500; background: #f1f5f9; color: #94a3b8; padding: 2px 7px; border-radius: 6px; }
   .equipe-info { font-size: 11px; color: #64748b; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 7px 10px; margin-bottom: 10px; line-height: 1.5; }
-  .evento-icone { text-align: center; margin-bottom: 10px; line-height: 0; }
-  .evento-icone svg { height: 52px; width: auto; max-width: 100%; }
+  .evento-icone { text-align:center; margin-bottom:10px; line-height:0; transition:all .22s ease; border-radius:10px; padding:4px; }
+  .evento-icone svg { height:58px; width:auto; max-width:100%; display:block; margin:0 auto; transition:height .22s ease; }
+  .evento-card.selecionado .evento-icone, .evento-card.feminino-selecionado .evento-icone { padding:10px 8px 8px; margin-bottom:14px; }
+  .evento-card.selecionado .evento-icone { background:rgba(26,86,160,0.1); }
+  .evento-card.feminino-selecionado .evento-icone { background:rgba(190,24,93,0.08); }
+  .evento-card.selecionado .evento-icone svg, .evento-card.feminino-selecionado .evento-icone svg { height:82px; }
   .reg-toggle { width: 100%; text-align: left; padding: 11px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 13px; color: #1e293b; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; }
   .reg-toggle:hover { background: #eff6ff; border-color: #93c5fd; }
   .reg-seta { font-size: 11px; color: #94a3b8; transition: transform 0.2s; }
@@ -379,7 +383,36 @@
 
             <div class="evento-wrapper" id="wrapper-ev1">
               <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="46" width="96" height="8" rx="3" fill="#fde68a" opacity="0.6"/><line x1="47" y1="10" x2="47" y2="46" stroke="#94a3b8" stroke-width="2"/><line x1="49" y1="10" x2="49" y2="46" stroke="#94a3b8" stroke-width="2"/><line x1="43" y1="10" x2="53" y2="10" stroke="#64748b" stroke-width="2.5"/><line x1="43" y1="18" x2="53" y2="18" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="26" x2="53" y2="26" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="34" x2="53" y2="34" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="42" x2="53" y2="42" stroke="#cbd5e1" stroke-width="0.8"/><circle cx="28" cy="7" r="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/><circle cx="20" cy="21" r="4.5" fill="#1a56a0"/><line x1="20" y1="25" x2="20" y2="38" stroke="#1a56a0" stroke-width="2.2"/><line x1="20" y1="28" x2="12" y2="24" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="28" x2="30" y2="20" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="38" x2="15" y2="48" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="38" x2="25" y2="48" stroke="#1a56a0" stroke-width="1.8"/><circle cx="76" cy="24" r="4.5" fill="#1a56a0"/><line x1="76" y1="28" x2="76" y2="41" stroke="#1a56a0" stroke-width="2.2"/><line x1="76" y1="31" x2="67" y2="28" stroke="#1a56a0" stroke-width="1.8"/><line x1="76" y1="31" x2="84" y2="28" stroke="#1a56a0" stroke-width="1.8"/><line x1="76" y1="41" x2="71" y2="50" stroke="#1a56a0" stroke-width="1.8"/><line x1="76" y1="41" x2="81" y2="50" stroke="#1a56a0" stroke-width="1.8"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="50" width="80" height="10" fill="#fde68a"/>
+      <rect x="0" y="46" width="80" height="6" fill="#f59e0b" opacity=".25"/>
+      <line x1="40" y1="10" x2="40" y2="50" stroke="#94a3b8" stroke-width="1.8"/>
+      <rect x="34" y="10" width="12" height="2.5" rx="1" fill="#475569"/>
+      <line x1="34" y1="18" x2="46" y2="18" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="26" x2="46" y2="26" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="34" x2="46" y2="34" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="42" x2="46" y2="42" stroke="#cbd5e1" stroke-width=".7"/>
+      <circle cx="20" cy="8" r="5.5" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+      <path d="M14.5 5Q20 8 25.5 5" fill="none" stroke="#94a3b8" stroke-width=".8"/>
+      <path d="M14.5 11Q20 8 25.5 11" fill="none" stroke="#94a3b8" stroke-width=".8"/>
+      <line x1="20" y1="2.5" x2="20" y2="13.5" stroke="#94a3b8" stroke-width=".8"/>
+      <circle cx="16" cy="19" r="4" fill="#fcd9b6"/>
+      <path d="M12 16.5Q16 12 20 16.5" fill="#1a56a0"/>
+      <rect x="13" y="23" width="6" height="10" rx="2" fill="#1a56a0"/>
+      <rect x="13" y="29" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="13" y1="25" x2="6" y2="19" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="19" y1="25" x2="29" y2="18" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="14" y1="33" x2="11" y2="44" stroke="#1e3a8a" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="18" y1="33" x2="21" y2="44" stroke="#1e3a8a" stroke-width="2.3" stroke-linecap="round"/>
+      <circle cx="62" cy="24" r="4" fill="#fcd9b6"/>
+      <path d="M58 21.5Q62 17 66 21.5" fill="#1a56a0"/>
+      <rect x="59" y="28" width="6" height="10" rx="2" fill="#1a56a0"/>
+      <rect x="59" y="34" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="59" y1="30" x2="52" y2="26" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="65" y1="30" x2="72" y2="26" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="60" y1="38" x2="57" y2="48" stroke="#1e3a8a" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="64" y1="38" x2="67" y2="48" stroke="#1e3a8a" stroke-width="2.3" stroke-linecap="round"/>
+    </svg></div>
               <div class="evento-header">
                   <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Masculino · Dupla</div></div>
                   <div class="check"></div>
@@ -399,7 +432,38 @@
 
             <div class="evento-wrapper" id="wrapper-ev2">
               <div class="evento-card feminino" id="ev2" onclick="toggleEvento(2)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="46" width="96" height="8" rx="3" fill="#fde68a" opacity="0.6"/><line x1="47" y1="10" x2="47" y2="46" stroke="#94a3b8" stroke-width="2"/><line x1="49" y1="10" x2="49" y2="46" stroke="#94a3b8" stroke-width="2"/><line x1="43" y1="10" x2="53" y2="10" stroke="#64748b" stroke-width="2.5"/><line x1="43" y1="18" x2="53" y2="18" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="26" x2="53" y2="26" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="34" x2="53" y2="34" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="42" x2="53" y2="42" stroke="#cbd5e1" stroke-width="0.8"/><circle cx="28" cy="7" r="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/><circle cx="20" cy="21" r="4.5" fill="#be185d"/><line x1="20" y1="25" x2="20" y2="38" stroke="#be185d" stroke-width="2.2"/><line x1="20" y1="28" x2="12" y2="24" stroke="#be185d" stroke-width="1.8"/><line x1="20" y1="28" x2="30" y2="20" stroke="#be185d" stroke-width="1.8"/><line x1="20" y1="38" x2="15" y2="48" stroke="#be185d" stroke-width="1.8"/><line x1="20" y1="38" x2="25" y2="48" stroke="#be185d" stroke-width="1.8"/><circle cx="76" cy="24" r="4.5" fill="#be185d"/><line x1="76" y1="28" x2="76" y2="41" stroke="#be185d" stroke-width="2.2"/><line x1="76" y1="31" x2="67" y2="28" stroke="#be185d" stroke-width="1.8"/><line x1="76" y1="31" x2="84" y2="28" stroke="#be185d" stroke-width="1.8"/><line x1="76" y1="41" x2="71" y2="50" stroke="#be185d" stroke-width="1.8"/><line x1="76" y1="41" x2="81" y2="50" stroke="#be185d" stroke-width="1.8"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="50" width="80" height="10" fill="#fde68a"/>
+      <rect x="0" y="46" width="80" height="6" fill="#f59e0b" opacity=".25"/>
+      <line x1="40" y1="10" x2="40" y2="50" stroke="#94a3b8" stroke-width="1.8"/>
+      <rect x="34" y="10" width="12" height="2.5" rx="1" fill="#475569"/>
+      <line x1="34" y1="18" x2="46" y2="18" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="26" x2="46" y2="26" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="34" x2="46" y2="34" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="42" x2="46" y2="42" stroke="#cbd5e1" stroke-width=".7"/>
+      <circle cx="20" cy="8" r="5.5" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+      <path d="M14.5 5Q20 8 25.5 5" fill="none" stroke="#94a3b8" stroke-width=".8"/>
+      <path d="M14.5 11Q20 8 25.5 11" fill="none" stroke="#94a3b8" stroke-width=".8"/>
+      <line x1="20" y1="2.5" x2="20" y2="13.5" stroke="#94a3b8" stroke-width=".8"/>
+      <circle cx="16" cy="19" r="4" fill="#fcd9b6"/>
+      <ellipse cx="12" cy="16" rx="3" ry="4.5" fill="#be185d" opacity=".9" transform="rotate(-15 12 16)"/>
+      <path d="M12 16.5Q16 12 20 16.5" fill="#be185d"/>
+      <rect x="13" y="23" width="6" height="10" rx="2" fill="#be185d"/>
+      <rect x="13" y="29" width="6" height="4" rx="1" fill="#831843"/>
+      <line x1="13" y1="25" x2="6" y2="19" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="19" y1="25" x2="29" y2="18" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="14" y1="33" x2="11" y2="44" stroke="#831843" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="18" y1="33" x2="21" y2="44" stroke="#831843" stroke-width="2.3" stroke-linecap="round"/>
+      <circle cx="62" cy="24" r="4" fill="#fcd9b6"/>
+      <ellipse cx="66" cy="21" rx="3" ry="4.5" fill="#be185d" opacity=".9" transform="rotate(15 66 21)"/>
+      <path d="M58 21.5Q62 17 66 21.5" fill="#be185d"/>
+      <rect x="59" y="28" width="6" height="10" rx="2" fill="#be185d"/>
+      <rect x="59" y="34" width="6" height="4" rx="1" fill="#831843"/>
+      <line x1="59" y1="30" x2="52" y2="26" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="65" y1="30" x2="72" y2="26" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="60" y1="38" x2="57" y2="48" stroke="#831843" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="64" y1="38" x2="67" y2="48" stroke="#831843" stroke-width="2.3" stroke-linecap="round"/>
+    </svg></div>
               <div class="evento-header">
                   <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Feminino · Dupla</div></div>
                   <div class="check"></div>
@@ -419,7 +483,36 @@
 
             <div class="evento-wrapper" id="wrapper-ev3" style="grid-column: span 2;">
               <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="46" width="96" height="8" rx="3" fill="#fde68a" opacity="0.6"/><line x1="47" y1="10" x2="47" y2="46" stroke="#94a3b8" stroke-width="2"/><line x1="49" y1="10" x2="49" y2="46" stroke="#94a3b8" stroke-width="2"/><line x1="43" y1="10" x2="53" y2="10" stroke="#64748b" stroke-width="2.5"/><line x1="43" y1="18" x2="53" y2="18" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="26" x2="53" y2="26" stroke="#cbd5e1" stroke-width="0.8"/><line x1="43" y1="34" x2="53" y2="34" stroke="#cbd5e1" stroke-width="0.8"/><circle cx="30" cy="6" r="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/><circle cx="20" cy="20" r="4.5" fill="#1a56a0"/><line x1="20" y1="24" x2="20" y2="37" stroke="#1a56a0" stroke-width="2.2"/><line x1="20" y1="27" x2="12" y2="24" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="27" x2="26" y2="23" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="37" x2="14" y2="47" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="37" x2="28" y2="44" stroke="#1a56a0" stroke-width="2.2"/><line x1="28" y1="44" x2="32" y2="40" stroke="#1a56a0" stroke-width="2.2"/><circle cx="76" cy="24" r="4.5" fill="#1a56a0"/><line x1="76" y1="28" x2="76" y2="41" stroke="#1a56a0" stroke-width="2.2"/><line x1="76" y1="31" x2="67" y2="28" stroke="#1a56a0" stroke-width="1.8"/><line x1="76" y1="31" x2="84" y2="28" stroke="#1a56a0" stroke-width="1.8"/><line x1="76" y1="41" x2="71" y2="50" stroke="#1a56a0" stroke-width="1.8"/><line x1="76" y1="41" x2="81" y2="50" stroke="#1a56a0" stroke-width="1.8"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="50" width="80" height="10" fill="#fde68a"/>
+      <rect x="0" y="46" width="80" height="6" fill="#f59e0b" opacity=".25"/>
+      <line x1="40" y1="10" x2="40" y2="50" stroke="#94a3b8" stroke-width="1.8"/>
+      <rect x="34" y="10" width="12" height="2.5" rx="1" fill="#475569"/>
+      <line x1="34" y1="18" x2="46" y2="18" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="26" x2="46" y2="26" stroke="#cbd5e1" stroke-width=".7"/>
+      <line x1="34" y1="34" x2="46" y2="34" stroke="#cbd5e1" stroke-width=".7"/>
+      <circle cx="56" cy="9" r="6" fill="#1e293b"/>
+      <polygon points="56,4 59,7 58,10.5 54,10.5 53,7" fill="white" opacity=".9"/>
+      <polygon points="62,13 59,10.5 62,7.5" fill="white" opacity=".7"/>
+      <polygon points="50,13 53,10.5 50,7.5" fill="white" opacity=".7"/>
+      <circle cx="16" cy="17" r="4" fill="#fcd9b6"/>
+      <path d="M12 14.5Q16 10 20 14.5" fill="#059669"/>
+      <rect x="13" y="21" width="6" height="10" rx="2" fill="#059669"/>
+      <rect x="13" y="27" width="6" height="4" rx="1" fill="#065f46"/>
+      <line x1="13" y1="24" x2="6" y2="20" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="19" y1="24" x2="24" y2="19" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="14" y1="31" x2="8" y2="40" stroke="#065f46" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="18" y1="31" x2="26" y2="24" stroke="#065f46" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="26" y1="24" x2="30" y2="20" stroke="#065f46" stroke-width="2.3" stroke-linecap="round"/>
+      <circle cx="62" cy="24" r="4" fill="#fcd9b6"/>
+      <path d="M58 21.5Q62 17 66 21.5" fill="#1a56a0"/>
+      <rect x="59" y="28" width="6" height="10" rx="2" fill="#1a56a0"/>
+      <rect x="59" y="34" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="59" y1="30" x2="52" y2="26" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="65" y1="30" x2="72" y2="26" stroke="#fcd9b6" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="60" y1="38" x2="57" y2="48" stroke="#1e3a8a" stroke-width="2.3" stroke-linecap="round"/>
+      <line x1="64" y1="38" x2="67" y2="48" stroke="#1e3a8a" stroke-width="2.3" stroke-linecap="round"/>
+    </svg></div>
               <div class="evento-header">
                   <div><div class="evento-nome">Futevôlei</div><div class="evento-sub">Masculino · Dupla</div></div>
                   <div class="check"></div>
@@ -445,7 +538,29 @@
 
             <div class="evento-wrapper" id="wrapper-ev4" style="grid-column: span 2;">
               <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><path d="M0 38 Q24 33 48 37 Q72 41 96 37 L96 54 L0 54 Z" fill="#bfdbfe" opacity="0.55"/><path d="M10 36 Q48 26 86 36 Q74 46 48 48 Q22 46 10 36Z" fill="#92400e" stroke="#78350f" stroke-width="1.2"/><circle cx="34" cy="22" r="4.5" fill="#1a56a0"/><line x1="34" y1="26" x2="34" y2="35" stroke="#1a56a0" stroke-width="2.2"/><line x1="18" y1="18" x2="42" y2="38" stroke="#7c3aed" stroke-width="2"/><ellipse cx="16" cy="16" rx="4" ry="6" fill="#7c3aed" transform="rotate(-35 16 16)"/><circle cx="62" cy="22" r="4.5" fill="#1a56a0"/><line x1="62" y1="26" x2="62" y2="35" stroke="#1a56a0" stroke-width="2.2"/><line x1="78" y1="18" x2="54" y2="38" stroke="#7c3aed" stroke-width="2"/><ellipse cx="80" cy="16" rx="4" ry="6" fill="#7c3aed" transform="rotate(35 80 16)"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="38" width="80" height="22" fill="#bfdbfe" opacity=".4"/>
+      <path d="M0 40Q10 36 20 40T40 40T60 40T80 40" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
+      <path d="M0 46Q10 42 20 46T40 46T60 46T80 46" fill="none" stroke="#60a5fa" stroke-width=".9" opacity=".6"/>
+      <path d="M8 38Q40 26 72 38Q62 46 40 48Q18 46 8 38Z" fill="#92400e" stroke="#78350f" stroke-width="1.4"/>
+      <line x1="22" y1="18" x2="8" y2="44" stroke="#78350f" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse cx="7" cy="45" rx="2.5" ry="5.5" fill="#d97706" transform="rotate(-12 7 45)"/>
+      <line x1="58" y1="18" x2="72" y2="44" stroke="#78350f" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse cx="73" cy="45" rx="2.5" ry="5.5" fill="#d97706" transform="rotate(12 73 45)"/>
+      <circle cx="22" cy="14" r="4" fill="#fcd9b6"/>
+      <path d="M18 11.5Q22 7 26 11.5" fill="#1a56a0"/>
+      <rect x="19" y="18" width="6" height="9" rx="2" fill="#1a56a0"/>
+      <rect x="19" y="23" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="19" y1="20" x2="13" y2="16" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="25" y1="20" x2="30" y2="17" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="58" cy="14" r="4" fill="#fcd9b6"/>
+      <ellipse cx="62" cy="11" rx="3" ry="4" fill="#be185d" opacity=".9" transform="rotate(12 62 11)"/>
+      <path d="M54 11.5Q58 7 62 11.5" fill="#be185d"/>
+      <rect x="55" y="18" width="6" height="9" rx="2" fill="#be185d"/>
+      <rect x="55" y="23" width="6" height="4" rx="1" fill="#831843"/>
+      <line x1="55" y1="20" x2="50" y2="17" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="61" y1="20" x2="67" y2="16" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+    </svg></div>
               <div class="evento-header">
                   <div><div class="evento-nome">Canoagem</div><div class="evento-sub">Dupla</div></div>
                   <div class="check"></div>
@@ -469,7 +584,22 @@
 
             <div class="evento-wrapper" id="wrapper-ev5">
               <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><path d="M0 38 Q24 33 48 37 Q72 41 96 37 L96 54 L0 54 Z" fill="#bfdbfe" opacity="0.55"/><path d="M4 36 Q48 20 92 36 Q80 48 48 50 Q16 48 4 36Z" fill="#059669" stroke="#047857" stroke-width="1.2"/><ellipse cx="48" cy="33" rx="14" ry="6" fill="#065f46"/><circle cx="48" cy="20" r="4.5" fill="#1a56a0"/><line x1="48" y1="24" x2="48" y2="33" stroke="#1a56a0" stroke-width="2.2"/><line x1="12" y1="26" x2="84" y2="26" stroke="#92400e" stroke-width="2.5"/><ellipse cx="10" cy="26" rx="6" ry="3.5" fill="#78350f"/><ellipse cx="86" cy="26" rx="6" ry="3.5" fill="#78350f"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="38" width="80" height="22" fill="#bfdbfe" opacity=".4"/>
+      <path d="M0 40Q10 36 20 40T40 40T60 40T80 40" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
+      <path d="M0 46Q10 42 20 46T40 46T60 46T80 46" fill="none" stroke="#60a5fa" stroke-width=".9" opacity=".6"/>
+      <path d="M2 36Q40 22 78 36Q66 48 40 50Q14 48 2 36Z" fill="#059669" stroke="#047857" stroke-width="1.4"/>
+      <ellipse cx="40" cy="33" rx="12" ry="5" fill="#065f46"/>
+      <line x1="10" y1="26" x2="70" y2="26" stroke="#78350f" stroke-width="2.2" stroke-linecap="round"/>
+      <ellipse cx="8" cy="26" rx="3.5" ry="6" fill="#d97706" transform="rotate(-18 8 26)"/>
+      <ellipse cx="72" cy="26" rx="3.5" ry="6" fill="#d97706" transform="rotate(18 72 26)"/>
+      <circle cx="40" cy="14" r="4" fill="#fcd9b6"/>
+      <path d="M36 11.5Q40 7 44 11.5" fill="#1a56a0"/>
+      <rect x="37" y="18" width="6" height="9" rx="2" fill="#1a56a0"/>
+      <rect x="37" y="23" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="37" y1="20" x2="30" y2="18" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="43" y1="20" x2="50" y2="18" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+    </svg></div>
               <div class="evento-header">
                   <div><div class="evento-nome">Caiaque</div><div class="evento-sub">Individual</div></div>
                   <div class="check"></div>
@@ -484,7 +614,40 @@
 
             <div class="evento-wrapper" id="wrapper-ev6">
               <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><path d="M0 36 Q24 31 48 35 Q72 39 96 35 L96 54 L0 54 Z" fill="#bfdbfe" opacity="0.5"/><path d="M58 44 Q66 40 74 44 Q66 48 58 44Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/><circle cx="71" cy="44" r="1.2" fill="#1e293b"/><circle cx="20" cy="17" r="4.5" fill="#1a56a0"/><line x1="20" y1="21" x2="20" y2="34" stroke="#1a56a0" stroke-width="2.2"/><line x1="20" y1="25" x2="12" y2="23" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="25" x2="24" y2="21" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="34" x2="15" y2="43" stroke="#1a56a0" stroke-width="1.8"/><line x1="20" y1="34" x2="25" y2="43" stroke="#1a56a0" stroke-width="1.8"/><line x1="24" y1="20" x2="52" y2="6" stroke="#92400e" stroke-width="2"/><line x1="52" y1="6" x2="58" y2="8" stroke="#92400e" stroke-width="1.2"/><line x1="58" y1="8" x2="66" y2="40" stroke="#94a3b8" stroke-width="0.9"/><circle cx="66" cy="40" r="1.5" fill="#3b82f6"/><circle cx="44" cy="19" r="4.5" fill="#1a56a0"/><line x1="44" y1="23" x2="44" y2="36" stroke="#1a56a0" stroke-width="2.2"/><line x1="44" y1="27" x2="36" y2="25" stroke="#1a56a0" stroke-width="1.8"/><line x1="44" y1="27" x2="48" y2="23" stroke="#1a56a0" stroke-width="1.8"/><line x1="44" y1="36" x2="39" y2="45" stroke="#1a56a0" stroke-width="1.8"/><line x1="44" y1="36" x2="49" y2="45" stroke="#1a56a0" stroke-width="1.8"/><line x1="48" y1="22" x2="70" y2="10" stroke="#92400e" stroke-width="2"/><line x1="70" y1="10" x2="76" y2="12" stroke="#92400e" stroke-width="1.2"/><line x1="76" y1="12" x2="80" y2="38" stroke="#94a3b8" stroke-width="0.9"/><circle cx="80" cy="38" r="1.5" fill="#3b82f6"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="36" width="80" height="24" fill="#bfdbfe" opacity=".4"/>
+      <path d="M0 38Q10 34 20 38T40 38T60 38T80 38" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
+      <path d="M0 44Q10 40 20 44T40 44T60 44T80 44" fill="none" stroke="#60a5fa" stroke-width=".9" opacity=".6"/>
+      <path d="M10 36L18 44L62 44L70 36Z" fill="#1a56a0" stroke="#154794" stroke-width="1.4"/>
+      <rect x="60" y="36" width="4" height="8" rx="1" fill="#475569"/>
+      <path d="M58 48Q62 44 66 48Q62 52 58 48Z" fill="#fbbf24" stroke="#d97706" stroke-width=".8"/>
+      <circle cx="64" cy="47.5" r=".9" fill="#1e293b"/>
+      <polygon points="58,48 55,46 55,50" fill="#f59e0b"/>
+      <circle cx="24" cy="18" r="4" fill="#fcd9b6"/>
+      <path d="M20 15.5Q24 11 28 15.5" fill="#1a56a0"/>
+      <rect x="21" y="22" width="6" height="10" rx="2" fill="#1a56a0"/>
+      <rect x="21" y="28" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="21" y1="24" x2="14" y2="19" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="27" y1="24" x2="32" y2="30" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="22" y1="32" x2="20" y2="42" stroke="#1e3a8a" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="26" y1="32" x2="28" y2="42" stroke="#1e3a8a" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="28" y1="18" x2="54" y2="4" stroke="#78350f" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="54" y1="4" x2="58" y2="6" stroke="#78350f" stroke-width="1.1"/>
+      <line x1="58" y1="6" x2="62" y2="36" stroke="#94a3b8" stroke-width=".9"/>
+      <circle cx="62" cy="36" r="1.8" fill="#3b82f6" stroke="#1d4ed8" stroke-width=".8"/>
+      <circle cx="50" cy="20" r="4" fill="#fcd9b6"/>
+      <path d="M46 17.5Q50 13 54 17.5" fill="#1a56a0"/>
+      <rect x="47" y="24" width="6" height="10" rx="2" fill="#1a56a0"/>
+      <rect x="47" y="30" width="6" height="4" rx="1" fill="#1e3a8a"/>
+      <line x1="47" y1="26" x2="40" y2="22" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="53" y1="26" x2="58" y2="32" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="48" y1="34" x2="46" y2="44" stroke="#1e3a8a" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="52" y1="34" x2="54" y2="44" stroke="#1e3a8a" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="56" y1="20" x2="74" y2="8" stroke="#78350f" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="74" y1="8" x2="78" y2="10" stroke="#78350f" stroke-width="1.1"/>
+      <line x1="78" y1="10" x2="74" y2="34" stroke="#94a3b8" stroke-width=".9"/>
+      <circle cx="74" cy="34" r="1.8" fill="#3b82f6" stroke="#1d4ed8" stroke-width=".8"/>
+    </svg></div>
                 <div class="evento-header">
                   <div><div class="evento-nome">Pesca</div><div class="evento-sub">Masculino · Equipe</div></div>
                   <div class="check"></div>
@@ -544,7 +707,42 @@
 
             <div class="evento-wrapper oculto" id="wrapper-ev7">
               <div class="evento-card feminino" id="ev7" onclick="toggleEvento(7)">
-                <div class="evento-icone"><svg viewBox="0 0 96 54" xmlns="http://www.w3.org/2000/svg"><path d="M0 36 Q24 31 48 35 Q72 39 96 35 L96 54 L0 54 Z" fill="#bfdbfe" opacity="0.5"/><path d="M58 44 Q66 40 74 44 Q66 48 58 44Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/><circle cx="71" cy="44" r="1.2" fill="#1e293b"/><circle cx="20" cy="17" r="4.5" fill="#be185d"/><line x1="20" y1="21" x2="20" y2="34" stroke="#be185d" stroke-width="2.2"/><line x1="20" y1="25" x2="12" y2="23" stroke="#be185d" stroke-width="1.8"/><line x1="20" y1="25" x2="24" y2="21" stroke="#be185d" stroke-width="1.8"/><line x1="20" y1="34" x2="15" y2="43" stroke="#be185d" stroke-width="1.8"/><line x1="20" y1="34" x2="25" y2="43" stroke="#be185d" stroke-width="1.8"/><line x1="24" y1="20" x2="52" y2="6" stroke="#92400e" stroke-width="2"/><line x1="52" y1="6" x2="58" y2="8" stroke="#92400e" stroke-width="1.2"/><line x1="58" y1="8" x2="66" y2="40" stroke="#94a3b8" stroke-width="0.9"/><circle cx="66" cy="40" r="1.5" fill="#3b82f6"/><circle cx="44" cy="19" r="4.5" fill="#be185d"/><line x1="44" y1="23" x2="44" y2="36" stroke="#be185d" stroke-width="2.2"/><line x1="44" y1="27" x2="36" y2="25" stroke="#be185d" stroke-width="1.8"/><line x1="44" y1="27" x2="48" y2="23" stroke="#be185d" stroke-width="1.8"/><line x1="44" y1="36" x2="39" y2="45" stroke="#be185d" stroke-width="1.8"/><line x1="44" y1="36" x2="49" y2="45" stroke="#be185d" stroke-width="1.8"/><line x1="48" y1="22" x2="70" y2="10" stroke="#92400e" stroke-width="2"/><line x1="70" y1="10" x2="76" y2="12" stroke="#92400e" stroke-width="1.2"/><line x1="76" y1="12" x2="80" y2="38" stroke="#94a3b8" stroke-width="0.9"/><circle cx="80" cy="38" r="1.5" fill="#3b82f6"/></svg></div>
+                <div class="evento-icone"><svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="36" width="80" height="24" fill="#bfdbfe" opacity=".4"/>
+      <path d="M0 38Q10 34 20 38T40 38T60 38T80 38" fill="none" stroke="#60a5fa" stroke-width="1.2"/>
+      <path d="M0 44Q10 40 20 44T40 44T60 44T80 44" fill="none" stroke="#60a5fa" stroke-width=".9" opacity=".6"/>
+      <path d="M10 36L18 44L62 44L70 36Z" fill="#be185d" stroke="#831843" stroke-width="1.4"/>
+      <rect x="60" y="36" width="4" height="8" rx="1" fill="#475569"/>
+      <path d="M58 48Q62 44 66 48Q62 52 58 48Z" fill="#fbbf24" stroke="#d97706" stroke-width=".8"/>
+      <circle cx="64" cy="47.5" r=".9" fill="#1e293b"/>
+      <polygon points="58,48 55,46 55,50" fill="#f59e0b"/>
+      <circle cx="24" cy="18" r="4" fill="#fcd9b6"/>
+      <ellipse cx="20" cy="15" rx="3" ry="4.5" fill="#be185d" opacity=".9" transform="rotate(-15 20 15)"/>
+      <path d="M20 15.5Q24 11 28 15.5" fill="#be185d"/>
+      <rect x="21" y="22" width="6" height="10" rx="2" fill="#be185d"/>
+      <rect x="21" y="28" width="6" height="4" rx="1" fill="#831843"/>
+      <line x1="21" y1="24" x2="14" y2="19" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="27" y1="24" x2="32" y2="30" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="22" y1="32" x2="20" y2="42" stroke="#831843" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="26" y1="32" x2="28" y2="42" stroke="#831843" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="28" y1="18" x2="54" y2="4" stroke="#78350f" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="54" y1="4" x2="58" y2="6" stroke="#78350f" stroke-width="1.1"/>
+      <line x1="58" y1="6" x2="62" y2="36" stroke="#94a3b8" stroke-width=".9"/>
+      <circle cx="62" cy="36" r="1.8" fill="#3b82f6" stroke="#1d4ed8" stroke-width=".8"/>
+      <circle cx="50" cy="20" r="4" fill="#fcd9b6"/>
+      <ellipse cx="54" cy="17" rx="3" ry="4.5" fill="#be185d" opacity=".9" transform="rotate(15 54 17)"/>
+      <path d="M46 17.5Q50 13 54 17.5" fill="#be185d"/>
+      <rect x="47" y="24" width="6" height="10" rx="2" fill="#be185d"/>
+      <rect x="47" y="30" width="6" height="4" rx="1" fill="#831843"/>
+      <line x1="47" y1="26" x2="40" y2="22" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="53" y1="26" x2="58" y2="32" stroke="#fcd9b6" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="48" y1="34" x2="46" y2="44" stroke="#831843" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="52" y1="34" x2="54" y2="44" stroke="#831843" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="56" y1="20" x2="74" y2="8" stroke="#78350f" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="74" y1="8" x2="78" y2="10" stroke="#78350f" stroke-width="1.1"/>
+      <line x1="78" y1="10" x2="74" y2="34" stroke="#94a3b8" stroke-width=".9"/>
+      <circle cx="74" cy="34" r="1.8" fill="#3b82f6" stroke="#1d4ed8" stroke-width=".8"/>
+    </svg></div>
                 <div class="evento-header">
                   <div><div class="evento-nome">Pesca</div><div class="evento-sub">Feminino · Equipe</div></div>
                   <div class="check"></div>
@@ -822,6 +1020,25 @@ const a0_0x1bfaa0=a0_0x17f7;(function(_0x506719,_0x680a86){const _0x861b1f=a0_0x
 
 <script>
 // ── Patch: Pesca (ev6/ev7), Regulamento, selecionarSexo (suporte ev7) ──
+// ── API Serverless — chaves ficam no servidor, nunca no browser ─────────────
+// Override de get() e post() do bloco ofuscado para usar /api/supabase
+get = async function(tabela, query = '') {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'buscar', tabela, query })
+  });
+  return r.json();
+};
+post = async function(tabela, dados) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'inserir', tabela, dados })
+  });
+  return r.json();
+};
+
 const EQUIPES_IDS = new Set([6, 7]); // Pesca equipe
 
 // Mostrar/ocultar checkbox de autorização conforme o nome for preenchido
