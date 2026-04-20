@@ -1,8 +1,8 @@
-// js/app.js — Versão melhorada
+// js/app.js — Versão corrigida com filtro de sexo funcionando
 
 let selecionados = new Set();
 
-// ==================== API ====================
+// ==================== API (Proxy Seguro) ====================
 async function get(tabela, query = '') {
   const res = await fetch('/api/supabase', {
     method: 'POST',
@@ -24,6 +24,7 @@ async function post(tabela, dados) {
 // ==================== MUDAR ABA ====================
 function mudarTab(aba) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('ativo'));
+  
   if (aba === 'inscricao') {
     document.getElementById('tab-inscricao').classList.add('ativo');
     document.getElementById('aba-inscricao').style.display = 'block';
@@ -35,19 +36,31 @@ function mudarTab(aba) {
   }
 }
 
-// ==================== SELECIONAR SEXO ====================
+// ==================== SELECIONAR SEXO + FILTRO CORRETO ====================
 function selecionarSexo(s) {
   document.getElementById('sexo').value = s;
+  
+  // Atualiza visual dos botões
   document.getElementById('sexo-btn-m').classList.toggle('ativo-m', s === 'M');
   document.getElementById('sexo-btn-f').classList.toggle('ativo-f', s === 'F');
 
-  const isM = s === 'M';
-  document.querySelectorAll('.evento-wrapper').forEach(w => {
-    const id = parseInt(w.id.replace('wrapper-ev', '')) || 0;
-    if (!id) return;
-    w.classList.toggle('oculto', (isM && [2,7].includes(id)) || (!isM && [1,6].includes(id)));
+  const isMasculino = s === 'M';
+
+  // Filtro correto:
+  // Masculino → mostra: 1(Vôlei M), 3(Futevôlei), 4(Canoagem), 5(Caiaque), 6(Pesca M)
+  // Feminino  → mostra: 2(Vôlei F), 4(Canoagem), 5(Caiaque), 7(Pesca F)
+  document.querySelectorAll('.evento-wrapper').forEach(wrapper => {
+    const id = parseInt(wrapper.id.replace('wrapper-ev', '')) || 0;
+    if (id === 0) return;
+
+    const deveMostrar = isMasculino 
+      ? [1, 3, 4, 5, 6].includes(id) 
+      : [2, 4, 5, 7].includes(id);
+
+    wrapper.classList.toggle('oculto', !deveMostrar);
   });
 
+  // Mostra a área de eventos
   document.getElementById('eventos-bloqueio').classList.remove('visivel');
   document.getElementById('eventos-conteudo').classList.add('visivel');
 }
@@ -156,5 +169,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   mudarTab('inscricao');
 
-  console.log('%c✅ Sistema Festival de Inverno 2026 carregado com sucesso!', 'color:#1a56a0; font-weight:bold');
+  console.log('%c✅ Sistema Festival de Inverno 2026 carregado!', 'color:#1a56a0; font-weight:bold');
 });
