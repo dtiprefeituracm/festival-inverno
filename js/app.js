@@ -1,4 +1,4 @@
-// js/app.js — Versão final com Pesca progressiva
+// js/app.js — Versão FINAL
 
 let selecionados = new Set();
 
@@ -68,7 +68,6 @@ function toggleEvento(id) {
     const isFem = document.getElementById('sexo').value === 'F';
     card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
     
-    // Mostra campos de parceiro para duplas e pesca
     if (parceiroBox && [1,2,3,4,6,7].includes(id)) {
       parceiroBox.style.display = 'block';
     }
@@ -154,6 +153,15 @@ async function enviarInscricao() {
     sucessoDiv.style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
 
+    // Link WhatsApp
+    const mods = Array.from(selecionados).map(id => {
+      const nomes = {1:"Vôlei M", 2:"Vôlei F", 3:"Futevôlei", 4:"Canoagem", 5:"Caiaque", 6:"Pesca M", 7:"Pesca F"};
+      return nomes[id] || `Modalidade ${id}`;
+    }).join(", ");
+    
+    const texto = `Estou inscrito no Festival de Inverno 2026!\nFicha: ${ficha}\nModalidades: ${mods}`;
+    document.getElementById('share-link').href = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+
   } catch (e) {
     console.error(e);
     erro.textContent = "Erro ao enviar. Tente novamente.";
@@ -169,14 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const cpfEl = document.getElementById('cpf');
   if (cpfEl) cpfEl.addEventListener('input', () => mascararCPF(cpfEl));
 
-  // Máscara nos campos de parceiro
   document.querySelectorAll('input[id$="-cpf"]').forEach(input => {
     input.addEventListener('input', () => mascararCPF(input));
   });
 
   document.getElementById('btn-enviar').addEventListener('click', enviarInscricao);
 
-  // Inicia escondendo os eventos
   document.getElementById('eventos-conteudo').style.display = 'none';
 
   console.log('%c✅ Sistema Festival de Inverno 2026 carregado com sucesso!', 'color:#1a56a0; font-weight:bold');
