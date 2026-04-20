@@ -1,52 +1,252 @@
-/* css/styles.css — Estilos profissionais do Festival de Inverno 2026 */
+/* css/styles.css — Estilos do Festival de Inverno 2026 */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f4f8; min-height: 100vh; line-height: 1.5; }
+body { 
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
+  background: #f0f4f8; 
+  min-height: 100vh; 
+  color: #1e293b;
+}
 
-.header { background: #1a56a0; color: white; padding: 20px 16px 24px; text-align: center; }
-.header-logos { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
-.logo-prefeitura, .logo-semesp { height: 100px; width: auto; object-fit: contain; }
-.header-divider { width: 1px; height: 90px; background: rgba(255,255,255,0.3); }
-.badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-bottom: 8px; }
-.header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-.header p { font-size: 13px; opacity: 0.85; }
+.header { 
+  background: #1a56a0; 
+  color: white; 
+  padding: 20px 16px 24px; 
+  text-align: center; 
+}
+.header-logos { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 24px; 
+  margin-bottom: 16px; 
+  flex-wrap: wrap; 
+}
+.logo-prefeitura, .logo-semesp { 
+  height: 100px; 
+  width: auto; 
+  object-fit: contain; 
+}
+.header-divider { 
+  width: 1px; 
+  height: 90px; 
+  background: rgba(255,255,255,0.3); 
+}
+.badge { 
+  display: inline-block; 
+  background: rgba(255,255,255,0.2); 
+  padding: 4px 14px; 
+  border-radius: 20px; 
+  font-size: 12px; 
+  margin-bottom: 8px; 
+}
+.header h1 { 
+  font-size: 24px; 
+  font-weight: 700; 
+  margin-bottom: 4px; 
+}
+.header p { 
+  font-size: 13px; 
+  opacity: 0.85; 
+}
 
-.nav-tabs { background: #154794; display: flex; justify-content: center; gap: 4px; padding: 0 16px; }
-.nav-tab { padding: 10px 20px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); cursor: pointer; border-bottom: 3px solid transparent; background: none; border: none; }
+/* Nav Tabs */
+.nav-tabs { 
+  background: #154794; 
+  display: flex; 
+  justify-content: center; 
+  gap: 4px; 
+  padding: 0 16px; 
+}
+.nav-tab { 
+  padding: 10px 20px; 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: rgba(255,255,255,0.65); 
+  cursor: pointer; 
+  border-bottom: 3px solid transparent; 
+  background: none; 
+  border: none; 
+}
 .nav-tab:hover { color: rgba(255,255,255,0.9); }
-.nav-tab.ativo { color: white; border-bottom-color: #7dd3fc; }
+.nav-tab.ativo { 
+  color: white; 
+  border-bottom-color: #7dd3fc; 
+}
 
-.container { max-width: 560px; margin: 24px auto; padding: 0 16px 60px; }
-.card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
-.card h2 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+.container { 
+  max-width: 560px; 
+  margin: 24px auto; 
+  padding: 0 16px 60px; 
+}
+.card { 
+  background: white; 
+  border-radius: 12px; 
+  padding: 20px; 
+  margin-bottom: 16px; 
+  border: 1px solid #e2e8f0; 
+}
+.card h2 { 
+  font-size: 12px; 
+  font-weight: 600; 
+  color: #64748b; 
+  text-transform: uppercase; 
+  letter-spacing: 0.06em; 
+  margin-bottom: 16px; 
+}
 
-label.campo { display: block; font-size: 13px; color: #475569; margin-bottom: 4px; margin-top: 14px; }
+label.campo { 
+  display: block; 
+  font-size: 13px; 
+  color: #475569; 
+  margin-bottom: 4px; 
+  margin-top: 14px; 
+}
 label.campo:first-of-type { margin-top: 0; }
 .obrigatorio { color: #dc2626; }
 
 input[type=text], input[type=email], input[type=tel], input[type=date] {
-  width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1;
-  border-radius: 8px; font-size: 14px; color: #1e293b;
-  outline: none; transition: border 0.2s;
+  width: 100%; 
+  padding: 10px 12px; 
+  border: 1px solid #cbd5e1;
+  border-radius: 8px; 
+  font-size: 14px; 
+  color: #1e293b;
+  outline: none; 
+  transition: border 0.2s; 
 }
-input:focus { border-color: #1a56a0; box-shadow: 0 0 0 3px rgba(26,86,160,0.1); }
+input:focus { 
+  border-color: #1a56a0; 
+  box-shadow: 0 0 0 3px rgba(26,86,160,0.1); 
+}
 
-/* resto do CSS (sexo toggle, eventos, parceiro, autorizacao, etc.) */
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.sexo-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-/* ... (o resto do CSS que você já tinha) ... */
+/* Sexo Toggle */
+.sexo-toggle { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 8px; 
+  margin-top: 4px; 
+}
+.sexo-btn {
+  padding: 11px 8px; 
+  border: 2px solid #e2e8f0; 
+  border-radius: 10px;
+  font-size: 14px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  background: white;
+  color: #94a3b8; 
+  transition: all 0.15s; 
+  display: flex; 
+  align-items: center;
+  justify-content: center; 
+  gap: 6px; 
+}
+.sexo-btn.ativo-m { 
+  border-color: #1a56a0; 
+  background: #eff6ff; 
+  color: #1a56a0; 
+}
+.sexo-btn.ativo-f { 
+  border-color: #be185d; 
+  background: #fdf2f8; 
+  color: #be185d; 
+}
 
-.btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+/* Eventos */
+.eventos-bloqueio {
+  text-align: center; 
+  padding: 24px 16px; 
+  color: #94a3b8;
+  font-size: 13px; 
+  background: #f8fafc; 
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0; 
+  display: none;
+}
+.eventos-bloqueio.visivel { display: block; }
+.eventos-conteudo { display: none; }
+.eventos-conteudo.visivel { display: block; }
+
+.eventos-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 8px; 
+}
+.evento-card { 
+  border: 2px solid #e2e8f0; 
+  border-radius: 10px; 
+  padding: 12px; 
+  cursor: pointer; 
+  transition: all 0.15s; 
+  background: white; 
+}
+.evento-card:hover { border-color: #93c5fd; background: #f8faff; }
+.evento-card.selecionado { border-color: #1a56a0; background: #eff6ff; }
+.evento-card.feminino-selecionado { border-color: #be185d; background: #fdf2f8; }
+
+/* Botão e Erros */
+.btn { 
+  width: 100%; 
+  padding: 14px; 
+  background: #1a56a0; 
+  color: white; 
+  border: none; 
+  border-radius: 10px; 
+  font-size: 15px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  margin-top: 10px;
+}
 .btn:hover { background: #154794; }
 .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-.msg-erro { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: none; }
+.msg-erro { 
+  background: #fef2f2; 
+  border: 1px solid #fecaca; 
+  color: #dc2626; 
+  padding: 10px 14px; 
+  border-radius: 8px; 
+  font-size: 13px; 
+  margin-bottom: 12px; 
+  display: none; 
+}
 
 /* Sucesso */
-.sucesso { display: none; text-align: center; padding: 40px 20px; }
-.numero-ficha { font-size: 36px; font-weight: 800; color: #1a56a0; margin: 16px 0 8px; letter-spacing: 0.05em; }
+.sucesso { 
+  display: none; 
+  text-align: center; 
+  padding: 40px 20px; 
+}
+.sucesso-icone { font-size: 56px; margin-bottom: 16px; }
+.numero-ficha { 
+  font-size: 36px; 
+  font-weight: 800; 
+  color: #1a56a0; 
+  margin: 16px 0 8px; 
+  letter-spacing: 0.05em; 
+}
+.ficha-box { 
+  background: #eff6ff; 
+  border: 2px solid #bfdbfe; 
+  border-radius: 12px; 
+  padding: 20px; 
+  margin: 16px 0; 
+}
+.share-btn { 
+  display: inline-block; 
+  margin-top: 16px; 
+  padding: 12px 24px; 
+  background: #25d366; 
+  color: white; 
+  border-radius: 10px; 
+  font-size: 14px; 
+  font-weight: 600; 
+  text-decoration: none; 
+}
 
 /* Responsivo */
-@media (max-width: 400px) {
+@media (max-width: 500px) {
   .row, .eventos-grid { grid-template-columns: 1fr; }
+  .header-divider { display: none; }
 }
