@@ -1,8 +1,8 @@
-// js/app.js — Código principal do Festival de Inverno 2026
+// js/app.js — Versão melhorada
 
-let selecionados = new Set();   // modalidades selecionadas na nova inscrição
+let selecionados = new Set();
 
-// ==================== API (Proxy Seguro) ====================
+// ==================== API ====================
 async function get(tabela, query = '') {
   const res = await fetch('/api/supabase', {
     method: 'POST',
@@ -21,11 +21,9 @@ async function post(tabela, dados) {
   return res.json();
 }
 
-// ==================== FUNÇÕES PRINCIPAIS ====================
-
+// ==================== MUDAR ABA ====================
 function mudarTab(aba) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('ativo'));
-  
   if (aba === 'inscricao') {
     document.getElementById('tab-inscricao').classList.add('ativo');
     document.getElementById('aba-inscricao').style.display = 'block';
@@ -37,146 +35,126 @@ function mudarTab(aba) {
   }
 }
 
+// ==================== SELECIONAR SEXO ====================
 function selecionarSexo(s) {
   document.getElementById('sexo').value = s;
-  
-  // Destaca o botão correto
   document.getElementById('sexo-btn-m').classList.toggle('ativo-m', s === 'M');
   document.getElementById('sexo-btn-f').classList.toggle('ativo-f', s === 'F');
 
-  // Mostra/esconde modalidades conforme sexo
-  const isMasculino = s === 'M';
-  document.querySelectorAll('.evento-wrapper').forEach(wrapper => {
-    const id = parseInt(wrapper.id.replace('wrapper-ev', '')) || 0;
-    if (id === 0) return;
-    
-    if (isMasculino) {
-      wrapper.classList.toggle('oculto', [2, 7].includes(id)); // esconde feminino
-    } else {
-      wrapper.classList.toggle('oculto', [1, 6].includes(id)); // esconde masculino
-    }
+  const isM = s === 'M';
+  document.querySelectorAll('.evento-wrapper').forEach(w => {
+    const id = parseInt(w.id.replace('wrapper-ev', '')) || 0;
+    if (!id) return;
+    w.classList.toggle('oculto', (isM && [2,7].includes(id)) || (!isM && [1,6].includes(id)));
   });
 
-  // Mostra a área de eventos
   document.getElementById('eventos-bloqueio').classList.remove('visivel');
   document.getElementById('eventos-conteudo').classList.add('visivel');
 }
 
-// Alternar seleção de evento
+// ==================== TOGGLE EVENTO ====================
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
   if (!card) return;
-
-  const isFem = document.getElementById('sexo').value === 'F';
 
   if (selecionados.has(id)) {
     selecionados.delete(id);
     card.classList.remove('selecionado', 'feminino-selecionado');
   } else {
     selecionados.add(id);
+    const isFem = document.getElementById('sexo').value === 'F';
     card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
   }
 }
 
-// Enviar inscrição
+// ==================== ENVIAR INSCRIÇÃO ====================
 async function enviarInscricao() {
   const btn = document.getElementById('btn-enviar');
-  const erroEl = document.getElementById('erro');
-  erroEl.style.display = 'none';
+  const erro = document.getElementById('erro');
+  erro.style.display = 'none';
 
   const nome = document.getElementById('nome').value.trim();
   const cpf = document.getElementById('cpf').value.trim();
   const sexo = document.getElementById('sexo').value;
-  const telefone = document.getElementById('telefone').value.trim();
+  const tel = document.getElementById('telefone').value.trim();
   const cidade = document.getElementById('cidade-valor').value.trim() || document.getElementById('cidade').value.trim();
 
-  if (!nome || !cpf || !sexo || !telefone || !cidade) {
-    erroEl.textContent = 'Preencha todos os campos obrigatórios.';
-    erroEl.style.display = 'block';
+  if (!nome || !cpf || !sexo || !tel || !cidade) {
+    erro.textContent = "Preencha todos os campos obrigatórios.";
+    erro.style.display = "block";
     return;
   }
-
   if (selecionados.size === 0) {
-    erroEl.textContent = 'Selecione pelo menos um evento.';
-    erroEl.style.display = 'block';
+    erro.textContent = "Selecione pelo menos um evento.";
+    erro.style.display = "block";
     return;
   }
-
   if (!document.getElementById('cb-autorizo').checked) {
-    erroEl.textContent = 'É obrigatório autorizar o uso de imagem.';
-    erroEl.style.display = 'block';
+    erro.textContent = "É obrigatório autorizar o uso de imagem.";
+    erro.style.display = "block";
     return;
   }
-
   if (!document.getElementById('aceite-regulamento').checked) {
-    erroEl.textContent = 'Você precisa aceitar o Regulamento.';
-    erroEl.style.display = 'block';
+    erro.textContent = "Você precisa aceitar o Regulamento.";
+    erro.style.display = "block";
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Enviando...';
+  btn.textContent = "Enviando...";
 
   try {
-    const ficha = 'FI-' + String(Math.floor(Math.random() * 9000) + 1000);
+    const ficha = "FI-" + String(Math.floor(Math.random() * 9000) + 1000);
 
-    // Salvar participante
-    const partData = {
+    const part = await post('participantes', {
       nome_completo: nome,
       cpf: cpf,
       sexo: sexo,
-      email: document.getElementById('email').value.trim() || null,
-      telefone: telefone,
-      data_nascimento: document.getElementById('nascimento').value || null,
+      telefone: tel,
       cidade: cidade,
-      uf: 'RO',
-      autorizacao_imagem: true
-    };
+      uf: "RO",
+      autorizacao_imagem: true,
+      data_nascimento: document.getElementById('nascimento').value || null,
+      email: document.getElementById('email').value.trim() || null
+    });
 
-    const resPart = await post('participantes', partData);
-    if (!resPart || resPart.length === 0) throw new Error('Erro ao salvar participante');
+    if (!part || part.length === 0) throw new Error("Erro ao salvar participante");
 
-    const pid = resPart[0].id;
+    const pid = part[0].id;
 
-    // Salvar inscrições
     for (const modId of selecionados) {
-      const insc = {
+      await post('inscricoes', {
         participante_id: pid,
         modalidade_id: modId,
         numero_ficha: ficha,
-        status: 'confirmado'
-      };
-      await post('inscricoes', insc);
+        status: "confirmado"
+      });
     }
 
-    // Mostrar sucesso
+    // Sucesso
     document.getElementById('formulario').style.display = 'none';
-    const sucessoDiv = document.getElementById('sucesso');
-    sucessoDiv.style.display = 'block';
+    const suc = document.getElementById('sucesso');
+    suc.style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
 
-  } catch (err) {
-    console.error(err);
-    erroEl.textContent = 'Ocorreu um erro. Tente novamente.';
-    erroEl.style.display = 'block';
+  } catch (e) {
+    console.error(e);
+    erro.textContent = "Erro ao enviar. Tente novamente.";
+    erro.style.display = "block";
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Enviar Inscrição';
+    btn.textContent = "Enviar Inscrição";
   }
 }
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
-  // Máscara CPF
-  const cpfInput = document.getElementById('cpf');
-  if (cpfInput) cpfInput.addEventListener('input', () => mascararCPF(cpfInput));
+  const cpfEl = document.getElementById('cpf');
+  if (cpfEl) cpfEl.addEventListener('input', () => mascararCPF(cpfEl));
 
-  // Botão enviar
-  const btnEnviar = document.getElementById('btn-enviar');
-  if (btnEnviar) btnEnviar.addEventListener('click', enviarInscricao);
+  document.getElementById('btn-enviar').addEventListener('click', enviarInscricao);
 
-  // Inicia na aba de inscrição
   mudarTab('inscricao');
 
-  console.log('✅ Sistema Festival de Inverno carregado com sucesso!');
+  console.log('%c✅ Sistema Festival de Inverno 2026 carregado com sucesso!', 'color:#1a56a0; font-weight:bold');
 });
