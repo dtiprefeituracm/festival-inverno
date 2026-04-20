@@ -82,132 +82,127 @@
         <!-- 2. Eventos -->
         <div class="card">
           <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
+          
           <div class="eventos-bloqueio visivel" id="eventos-bloqueio">
             ⬆️ Selecione seu sexo acima para ver as modalidades disponíveis.
           </div>
+
           <div class="eventos-conteudo" id="eventos-conteudo">
 
-  <!-- Esportes de Areia -->
-  <div class="section-cat">Esportes de Areia</div>
-  <div class="eventos-grid">
+            <!-- Esportes de Areia -->
+            <div class="section-cat">Esportes de Areia</div>
+            <div class="eventos-grid">
 
-    <!-- Vôlei Masculino -->
-    <div class="evento-wrapper" id="wrapper-ev1">
-      <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
-        <div class="evento-header">
-          <div>
-            <div class="evento-nome">Vôlei de Areia</div>
-            <div class="evento-sub">Masculino · Dupla</div>
+              <!-- 1 - Vôlei Masculino -->
+              <div class="evento-wrapper" id="wrapper-ev1">
+                <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Vôlei de Areia</div>
+                      <div class="evento-sub">Masculino · Dupla</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                </div>
+                <div class="parceiro-box" id="parceiro-1"></div>
+              </div>
+
+              <!-- 2 - Vôlei Feminino -->
+              <div class="evento-wrapper" id="wrapper-ev2">
+                <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Vôlei de Areia</div>
+                      <div class="evento-sub">Feminino · Dupla</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                </div>
+                <div class="parceiro-box" id="parceiro-2"></div>
+              </div>
+
+              <!-- 3 - Futevôlei -->
+              <div class="evento-wrapper" id="wrapper-ev3">
+                <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Futevôlei</div>
+                      <div class="evento-sub">Masculino · Dupla</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                </div>
+                <div class="parceiro-box" id="parceiro-3"></div>
+              </div>
+            </div>
+
+            <!-- Esportes Aquáticos e Pesca -->
+            <div class="section-cat">Esportes Aquáticos e Pesca</div>
+            <div class="eventos-grid">
+
+              <!-- 4 - Canoagem -->
+              <div class="evento-wrapper" id="wrapper-ev4">
+                <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Canoagem</div>
+                      <div class="evento-sub">Aberto · Dupla</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+                </div>
+              </div>
+
+              <!-- 5 - Caiaque -->
+              <div class="evento-wrapper" id="wrapper-ev5">
+                <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Caiaque</div>
+                      <div class="evento-sub">Aberto · Individual</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+                </div>
+              </div>
+
+              <!-- 6 - Pesca Masculino -->
+              <div class="evento-wrapper" id="wrapper-ev6">
+                <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Pesca</div>
+                      <div class="evento-sub">Masculino · Equipe</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
+                </div>
+              </div>
+
+              <!-- 7 - Pesca Feminino -->
+              <div class="evento-wrapper" id="wrapper-ev7">
+                <div class="evento-card" id="ev7" onclick="toggleEvento(7)">
+                  <div class="evento-header">
+                    <div>
+                      <div class="evento-nome">Pesca</div>
+                      <div class="evento-sub">Feminino · Equipe</div>
+                    </div>
+                    <div class="check"></div>
+                  </div>
+                  <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="check"></div>
         </div>
-        <span class="evento-tipo tipo-areia">Esporte de Areia</span>
-      </div>
-      <div class="parceiro-box" id="parceiro-1">
-        <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
-        <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
-        <input type="text" id="p1-nome" placeholder="Nome do parceiro">
-        <label class="campo">CPF <span class="obrigatorio">*</span></label>
-        <input type="text" id="p1-cpf" placeholder="000.000.000-00" maxlength="14">
-        <label class="campo">Telefone <span class="obrigatorio">*</span></label>
-        <input type="tel" id="p1-tel" placeholder="(69) 9 0000-0000">
-      </div>
-    </div>
 
-    <!-- Vôlei Feminino -->
-    <div class="evento-wrapper" id="wrapper-ev2">
-      <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
-        <div class="evento-header">
-          <div>
-            <div class="evento-nome">Vôlei de Areia</div>
-            <div class="evento-sub">Feminino · Dupla</div>
-          </div>
-          <div class="check"></div>
-        </div>
-        <span class="evento-tipo tipo-areia">Esporte de Areia</span>
-      </div>
-      <div class="parceiro-box" id="parceiro-2">
-        <div class="parceiro-titulo">Dados da parceira <span class="parceiro-restricao restricao-f">♀ feminino</span></div>
-        <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
-        <input type="text" id="p2-nome" placeholder="Nome da parceira">
-        <label class="campo">CPF <span class="obrigatorio">*</span></label>
-        <input type="text" id="p2-cpf" placeholder="000.000.000-00" maxlength="14">
-        <label class="campo">Telefone <span class="obrigatorio">*</span></label>
-        <input type="tel" id="p2-tel" placeholder="(69) 9 0000-0000">
-      </div>
-    </div>
-
-    <!-- Futevôlei -->
-    <div class="evento-wrapper" id="wrapper-ev3">
-      <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
-        <div class="evento-header">
-          <div>
-            <div class="evento-nome">Futevôlei</div>
-            <div class="evento-sub">Masculino · Dupla</div>
-          </div>
-          <div class="check"></div>
-        </div>
-        <span class="evento-tipo tipo-areia">Esporte de Areia</span>
-      </div>
-      <div class="parceiro-box" id="parceiro-3">
-        <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
-        <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
-        <input type="text" id="p3-nome" placeholder="Nome do parceiro">
-        <label class="campo">CPF <span class="obrigatorio">*</span></label>
-        <input type="text" id="p3-cpf" placeholder="000.000.000-00" maxlength="14">
-        <label class="campo">Telefone <span class="obrigatorio">*</span></label>
-        <input type="tel" id="p3-tel" placeholder="(69) 9 0000-0000">
-      </div>
-    </div>
-  </div>
-
-  <!-- Esportes Aquáticos e Pesca -->
-  <div class="section-cat">Esportes Aquáticos e Pesca</div>
-  <div class="eventos-grid">
-    <div class="evento-wrapper" id="wrapper-ev4">
-      <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
-        <div class="evento-header">
-          <div><div class="evento-nome">Canoagem</div><div class="evento-sub">Aberto · Dupla</div></div>
-          <div class="check"></div>
-        </div>
-        <span class="evento-tipo tipo-agua">Esporte Aquático</span>
-      </div>
-    </div>
-
-    <div class="evento-wrapper" id="wrapper-ev5">
-      <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
-        <div class="evento-header">
-          <div><div class="evento-nome">Caiaque</div><div class="evento-sub">Aberto · Individual</div></div>
-          <div class="check"></div>
-        </div>
-        <span class="evento-tipo tipo-agua">Esporte Aquático</span>
-      </div>
-    </div>
-
-    <div class="evento-wrapper" id="wrapper-ev6">
-      <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
-        <div class="evento-header">
-          <div><div class="evento-nome">Pesca</div><div class="evento-sub">Masculino · Equipe</div></div>
-          <div class="check"></div>
-        </div>
-        <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
-      </div>
-    </div>
-
-    <div class="evento-wrapper" id="wrapper-ev7">
-      <div class="evento-card" id="ev7" onclick="toggleEvento(7)">
-        <div class="evento-header">
-          <div><div class="evento-nome">Pesca</div><div class="evento-sub">Feminino · Equipe</div></div>
-          <div class="check"></div>
-        </div>
-        <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
-      </div>
-    </div>
-  </div>
-</div>
-          </div>
-
-        <!-- 3. Autorização + Regulamento -->
+        <!-- 3. Autorização e Regulamento -->
         <div class="card autorizacao-card">
           <h2>Autorização e Regulamento</h2>
           <div class="checkbox-linha" id="label-autorizo">
@@ -228,7 +223,7 @@
       <!-- TELA DE SUCESSO -->
       <div id="sucesso" class="sucesso">
         <div class="sucesso-icone">🏆</div>
-        <h2>Inscrição realizada!</h2>
+        <h2>Inscrição realizada com sucesso!</h2>
         <div class="ficha-box">
           <div class="numero-ficha" id="numero-ficha">FI-XXXX</div>
         </div>
@@ -236,7 +231,7 @@
       </div>
     </div>
 
-    <!-- ABA CONSULTA (por enquanto simples) -->
+    <!-- ABA CONSULTA -->
     <div id="secao-consulta" style="display: none;">
       <div class="card">
         <h2>Consultar inscrição</h2>
