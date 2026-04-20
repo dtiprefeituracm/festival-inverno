@@ -91,7 +91,7 @@
             <div class="section-cat">Esportes de Areia</div>
             <div class="eventos-grid">
 
-              <!-- Vôlei Masculino -->
+              <!-- 1 Vôlei Masculino -->
               <div class="evento-wrapper" id="wrapper-ev1">
                 <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
                   <div class="evento-header">
@@ -111,7 +111,7 @@
                 </div>
               </div>
 
-              <!-- Vôlei Feminino -->
+              <!-- 2 Vôlei Feminino -->
               <div class="evento-wrapper" id="wrapper-ev2">
                 <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
                   <div class="evento-header">
@@ -131,7 +131,7 @@
                 </div>
               </div>
 
-              <!-- Futevôlei -->
+              <!-- 3 Futevôlei -->
               <div class="evento-wrapper" id="wrapper-ev3">
                 <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
                   <div class="evento-header">
@@ -155,6 +155,8 @@
             <!-- Aquáticos e Pesca -->
             <div class="section-cat">Esportes Aquáticos e Pesca</div>
             <div class="eventos-grid">
+
+              <!-- 4 Canoagem -->
               <div class="evento-wrapper" id="wrapper-ev4">
                 <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
                   <div class="evento-header">
@@ -174,6 +176,7 @@
                 </div>
               </div>
 
+              <!-- 5 Caiaque -->
               <div class="evento-wrapper" id="wrapper-ev5">
                 <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
                   <div class="evento-header">
@@ -184,6 +187,7 @@
                 </div>
               </div>
 
+              <!-- 6 Pesca Masculino -->
               <div class="evento-wrapper" id="wrapper-ev6">
                 <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
                   <div class="evento-header">
@@ -192,8 +196,18 @@
                   </div>
                   <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
                 </div>
+                <div class="parceiro-box" id="parceiro-6">
+                  <div class="parceiro-titulo">Dados do parceiro (Membro 2) <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
+                  <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p6-nome" placeholder="Nome do membro 2">
+                  <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p6-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                  <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                  <input type="tel" id="p6-tel" placeholder="(69) 9 0000-0000">
+                </div>
               </div>
 
+              <!-- 7 Pesca Feminino -->
               <div class="evento-wrapper" id="wrapper-ev7">
                 <div class="evento-card" id="ev7" onclick="toggleEvento(7)">
                   <div class="evento-header">
@@ -201,6 +215,15 @@
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
+                </div>
+                <div class="parceiro-box" id="parceiro-7">
+                  <div class="parceiro-titulo">Dados do parceiro (Membro 2) <span class="parceiro-restricao restricao-f">♀ feminino</span></div>
+                  <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p7-nome" placeholder="Nome do membro 2">
+                  <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p7-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                  <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                  <input type="tel" id="p7-tel" placeholder="(69) 9 0000-0000">
                 </div>
               </div>
             </div>
