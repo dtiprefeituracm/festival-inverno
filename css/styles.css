@@ -1,0 +1,6 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+/* (todo o CSS que estava dentro do <style> do index (3).html) */
+.header { background: #1a56a0; color: white; padding: 20px 16px 24px; text-align: center; }
+/* ... todo o resto do CSS ... */
