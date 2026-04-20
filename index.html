@@ -28,16 +28,15 @@
 
   <div class="container">
 
-    <!-- ABA NOVA INSCRIÇÃO -->
     <div id="aba-inscricao">
       <div id="formulario">
 
-        <!-- 1. Dados Pessoais -->
+        <!-- Dados Pessoais -->
         <div class="card">
           <h2>Dados pessoais — Participante</h2>
           
           <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
-          <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name">
+          <input type="text" id="nome" placeholder="Seu nome completo">
 
           <label class="campo">CPF <span class="obrigatorio">*</span></label>
           <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14">
@@ -67,7 +66,7 @@
             <div>
               <label class="campo">Cidade <span class="obrigatorio">*</span></label>
               <div class="cidade-wrap" id="cidade-wrap">
-                <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off">
+                <input type="text" id="cidade" placeholder="Digite o nome da cidade...">
                 <div class="cidade-lista" id="cidade-lista"></div>
               </div>
               <input type="hidden" id="cidade-valor">
@@ -79,7 +78,7 @@
           </div>
         </div>
 
-        <!-- 2. Eventos -->
+        <!-- Eventos -->
         <div class="card">
           <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
           
@@ -88,111 +87,77 @@
           </div>
 
           <div class="eventos-conteudo" id="eventos-conteudo">
-
             <!-- Esportes de Areia -->
             <div class="section-cat">Esportes de Areia</div>
             <div class="eventos-grid">
-
-              <!-- 1 - Vôlei Masculino -->
               <div class="evento-wrapper" id="wrapper-ev1">
                 <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Vôlei de Areia</div>
-                      <div class="evento-sub">Masculino · Dupla</div>
-                    </div>
+                    <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Masculino · Dupla</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-areia">Esporte de Areia</span>
                 </div>
-                <div class="parceiro-box" id="parceiro-1"></div>
               </div>
 
-              <!-- 2 - Vôlei Feminino -->
               <div class="evento-wrapper" id="wrapper-ev2">
                 <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Vôlei de Areia</div>
-                      <div class="evento-sub">Feminino · Dupla</div>
-                    </div>
+                    <div><div class="evento-nome">Vôlei de Areia</div><div class="evento-sub">Feminino · Dupla</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-areia">Esporte de Areia</span>
                 </div>
-                <div class="parceiro-box" id="parceiro-2"></div>
               </div>
 
-              <!-- 3 - Futevôlei -->
               <div class="evento-wrapper" id="wrapper-ev3">
                 <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Futevôlei</div>
-                      <div class="evento-sub">Masculino · Dupla</div>
-                    </div>
+                    <div><div class="evento-nome">Futevôlei</div><div class="evento-sub">Masculino · Dupla</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-areia">Esporte de Areia</span>
                 </div>
-                <div class="parceiro-box" id="parceiro-3"></div>
               </div>
             </div>
 
-            <!-- Esportes Aquáticos e Pesca -->
+            <!-- Aquáticos e Pesca -->
             <div class="section-cat">Esportes Aquáticos e Pesca</div>
             <div class="eventos-grid">
-
-              <!-- 4 - Canoagem -->
               <div class="evento-wrapper" id="wrapper-ev4">
                 <div class="evento-card" id="ev4" onclick="toggleEvento(4)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Canoagem</div>
-                      <div class="evento-sub">Aberto · Dupla</div>
-                    </div>
+                    <div><div class="evento-nome">Canoagem</div><div class="evento-sub">Aberto · Dupla</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-agua">Esporte Aquático</span>
                 </div>
               </div>
 
-              <!-- 5 - Caiaque -->
               <div class="evento-wrapper" id="wrapper-ev5">
                 <div class="evento-card" id="ev5" onclick="toggleEvento(5)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Caiaque</div>
-                      <div class="evento-sub">Aberto · Individual</div>
-                    </div>
+                    <div><div class="evento-nome">Caiaque</div><div class="evento-sub">Aberto · Individual</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-agua">Esporte Aquático</span>
                 </div>
               </div>
 
-              <!-- 6 - Pesca Masculino -->
               <div class="evento-wrapper" id="wrapper-ev6">
                 <div class="evento-card" id="ev6" onclick="toggleEvento(6)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Pesca</div>
-                      <div class="evento-sub">Masculino · Equipe</div>
-                    </div>
+                    <div><div class="evento-nome">Pesca</div><div class="evento-sub">Masculino · Equipe</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
                 </div>
               </div>
 
-              <!-- 7 - Pesca Feminino -->
               <div class="evento-wrapper" id="wrapper-ev7">
                 <div class="evento-card" id="ev7" onclick="toggleEvento(7)">
                   <div class="evento-header">
-                    <div>
-                      <div class="evento-nome">Pesca</div>
-                      <div class="evento-sub">Feminino · Equipe</div>
-                    </div>
+                    <div><div class="evento-nome">Pesca</div><div class="evento-sub">Feminino · Equipe</div></div>
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-pesca">Pesca Esportiva</span>
@@ -202,16 +167,16 @@
           </div>
         </div>
 
-        <!-- 3. Autorização e Regulamento -->
+        <!-- Autorização -->
         <div class="card autorizacao-card">
           <h2>Autorização e Regulamento</h2>
-          <div class="checkbox-linha" id="label-autorizo">
+          <div class="checkbox-linha">
             <input type="checkbox" id="cb-autorizo">
-            <label class="checkbox-label">Autorizo o uso de minha imagem pelo evento <span class="obrigatorio">*</span></label>
+            <label class="checkbox-label">Autorizo o uso de minha imagem <span class="obrigatorio">*</span></label>
           </div>
           <div class="checkbox-linha">
             <input type="checkbox" id="aceite-regulamento">
-            <label class="checkbox-label">Li e aceito o Regulamento do Festival <span class="obrigatorio">*</span></label>
+            <label class="checkbox-label">Aceito o Regulamento do Festival <span class="obrigatorio">*</span></label>
           </div>
         </div>
 
@@ -220,28 +185,18 @@
 
       </div>
 
-      <!-- TELA DE SUCESSO -->
+      <!-- Sucesso -->
       <div id="sucesso" class="sucesso">
         <div class="sucesso-icone">🏆</div>
-        <h2>Inscrição realizada com sucesso!</h2>
+        <h2>Inscrição realizada!</h2>
         <div class="ficha-box">
           <div class="numero-ficha" id="numero-ficha">FI-XXXX</div>
         </div>
-        <a href="#" id="share-link" class="share-btn" target="_blank">Compartilhar no WhatsApp</a>
-      </div>
-    </div>
-
-    <!-- ABA CONSULTA -->
-    <div id="secao-consulta" style="display: none;">
-      <div class="card">
-        <h2>Consultar inscrição</h2>
-        <p>Funcionalidade em desenvolvimento...</p>
       </div>
     </div>
 
   </div>
 
-  <!-- SCRIPTS -->
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/app.js"></script>
