@@ -87,9 +87,11 @@
           </div>
 
           <div class="eventos-conteudo" id="eventos-conteudo">
-            <!-- Esportes de Areia -->
+
             <div class="section-cat">Esportes de Areia</div>
             <div class="eventos-grid">
+
+              <!-- Vôlei Masculino -->
               <div class="evento-wrapper" id="wrapper-ev1">
                 <div class="evento-card" id="ev1" onclick="toggleEvento(1)">
                   <div class="evento-header">
@@ -98,8 +100,18 @@
                   </div>
                   <span class="evento-tipo tipo-areia">Esporte de Areia</span>
                 </div>
+                <div class="parceiro-box" id="parceiro-1">
+                  <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
+                  <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p1-nome" placeholder="Nome do parceiro">
+                  <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p1-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                  <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                  <input type="tel" id="p1-tel" placeholder="(69) 9 0000-0000">
+                </div>
               </div>
 
+              <!-- Vôlei Feminino -->
               <div class="evento-wrapper" id="wrapper-ev2">
                 <div class="evento-card" id="ev2" onclick="toggleEvento(2)">
                   <div class="evento-header">
@@ -108,8 +120,18 @@
                   </div>
                   <span class="evento-tipo tipo-areia">Esporte de Areia</span>
                 </div>
+                <div class="parceiro-box" id="parceiro-2">
+                  <div class="parceiro-titulo">Dados da parceira <span class="parceiro-restricao restricao-f">♀ feminino</span></div>
+                  <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p2-nome" placeholder="Nome da parceira">
+                  <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p2-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                  <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                  <input type="tel" id="p2-tel" placeholder="(69) 9 0000-0000">
+                </div>
               </div>
 
+              <!-- Futevôlei -->
               <div class="evento-wrapper" id="wrapper-ev3">
                 <div class="evento-card" id="ev3" onclick="toggleEvento(3)">
                   <div class="evento-header">
@@ -117,6 +139,15 @@
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                </div>
+                <div class="parceiro-box" id="parceiro-3">
+                  <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
+                  <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p3-nome" placeholder="Nome do parceiro">
+                  <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p3-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                  <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                  <input type="tel" id="p3-tel" placeholder="(69) 9 0000-0000">
                 </div>
               </div>
             </div>
@@ -131,6 +162,15 @@
                     <div class="check"></div>
                   </div>
                   <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+                </div>
+                <div class="parceiro-box" id="parceiro-4">
+                  <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
+                  <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p4-nome" placeholder="Nome do parceiro">
+                  <label class="campo">CPF <span class="obrigatorio">*</span></label>
+                  <input type="text" id="p4-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascararCPF(this)">
+                  <label class="campo">Telefone <span class="obrigatorio">*</span></label>
+                  <input type="tel" id="p4-tel" placeholder="(69) 9 0000-0000">
                 </div>
               </div>
 
@@ -172,7 +212,7 @@
           <h2>Autorização e Regulamento</h2>
           <div class="checkbox-linha">
             <input type="checkbox" id="cb-autorizo">
-            <label class="checkbox-label">Autorizo o uso de minha imagem <span class="obrigatorio">*</span></label>
+            <label class="checkbox-label">Autorizo o uso de minha imagem pelo evento <span class="obrigatorio">*</span></label>
           </div>
           <div class="checkbox-linha">
             <input type="checkbox" id="aceite-regulamento">
@@ -185,13 +225,14 @@
 
       </div>
 
-      <!-- Sucesso -->
+      <!-- TELA DE SUCESSO -->
       <div id="sucesso" class="sucesso">
         <div class="sucesso-icone">🏆</div>
-        <h2>Inscrição realizada!</h2>
+        <h2>Inscrição realizada com sucesso!</h2>
         <div class="ficha-box">
           <div class="numero-ficha" id="numero-ficha">FI-XXXX</div>
         </div>
+        <a href="#" id="share-link" class="share-btn" target="_blank">Compartilhar no WhatsApp</a>
       </div>
     </div>
 
