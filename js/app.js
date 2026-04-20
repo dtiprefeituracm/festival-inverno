@@ -1,4 +1,4 @@
-// js/app.js — Versão corrigida (campos de parceiro + pesca)
+// js/app.js — Versão corrigida (campos de parceiro só abrem ao clicar no card)
 
 let selecionados = new Set();
 
@@ -42,13 +42,17 @@ function selecionarSexo(s) {
       : [2, 4, 5, 7].includes(id);
 
     wrapper.style.display = mostrar ? 'block' : 'none';
+
+    // Esconde os campos de parceiro ao trocar de sexo
+    const parceiroBox = document.getElementById('parceiro-' + id);
+    if (parceiroBox) parceiroBox.style.display = 'none';
   });
 
   document.getElementById('eventos-bloqueio').style.display = 'none';
   document.getElementById('eventos-conteudo').style.display = 'block';
 }
 
-// ==================== TOGGLE EVENTO + MOSTRAR CAMPOS ====================
+// ==================== TOGGLE EVENTO (só abre parceiro ao clicar no card) ====================
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
   const parceiroBox = document.getElementById('parceiro-' + id);
@@ -56,15 +60,17 @@ function toggleEvento(id) {
   if (!card) return;
 
   if (selecionados.has(id)) {
+    // Desmarca
     selecionados.delete(id);
     card.classList.remove('selecionado', 'feminino-selecionado');
     if (parceiroBox) parceiroBox.style.display = 'none';
   } else {
+    // Marca
     selecionados.add(id);
     const isFem = document.getElementById('sexo').value === 'F';
     card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
     
-    // Mostra campos de parceiro para duplas (1,2,3,4) e para Pesca (6,7)
+    // Mostra campos de parceiro apenas para modalidades que precisam (duplas e pesca)
     if (parceiroBox && [1,2,3,4,6,7].includes(id)) {
       parceiroBox.style.display = 'block';
     }
@@ -150,14 +156,6 @@ async function enviarInscricao() {
     sucessoDiv.style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
 
-    const mods = Array.from(selecionados).map(id => {
-      const nomes = {1:"Vôlei M", 2:"Vôlei F", 3:"Futevôlei", 4:"Canoagem", 5:"Caiaque", 6:"Pesca M", 7:"Pesca F"};
-      return nomes[id] || `Modalidade ${id}`;
-    }).join(", ");
-
-    const texto = `Estou inscrito no Festival de Inverno 2026!\nFicha: ${ficha}\nModalidades: ${mods}`;
-    document.getElementById('share-link').href = `https://wa.me/?text=${encodeURIComponent(texto)}`;
-
   } catch (e) {
     console.error(e);
     erro.textContent = "Erro ao enviar. Tente novamente.";
@@ -170,7 +168,6 @@ async function enviarInscricao() {
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
-  // Máscara CPF principal
   const cpfEl = document.getElementById('cpf');
   if (cpfEl) cpfEl.addEventListener('input', () => mascararCPF(cpfEl));
 
@@ -184,5 +181,5 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia escondendo os eventos
   document.getElementById('eventos-conteudo').style.display = 'none';
 
-  console.log('%c✅ Sistema Festival de Inverno 2026 carregado com sucesso!', 'color:#1a56a0; font-weight:bold');
+  console.log('%c✅ Sistema Festival de Inverno 2026 carregado!', 'color:#1a56a0; font-weight:bold');
 });
