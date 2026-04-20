@@ -1,4 +1,4 @@
-// js/app.js — Versão melhorada (sucesso + máscara de parceiro)
+// js/app.js — Versão corrigida (campos de parceiro + pesca)
 
 let selecionados = new Set();
 
@@ -48,7 +48,7 @@ function selecionarSexo(s) {
   document.getElementById('eventos-conteudo').style.display = 'block';
 }
 
-// ==================== TOGGLE EVENTO ====================
+// ==================== TOGGLE EVENTO + MOSTRAR CAMPOS ====================
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
   const parceiroBox = document.getElementById('parceiro-' + id);
@@ -64,8 +64,8 @@ function toggleEvento(id) {
     const isFem = document.getElementById('sexo').value === 'F';
     card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
     
-    // Mostra campos de parceiro para duplas
-    if (parceiroBox && [1,2,3,4].includes(id)) {
+    // Mostra campos de parceiro para duplas (1,2,3,4) e para Pesca (6,7)
+    if (parceiroBox && [1,2,3,4,6,7].includes(id)) {
       parceiroBox.style.display = 'block';
     }
   }
@@ -144,18 +144,17 @@ async function enviarInscricao() {
       });
     }
 
-    // Mostrar sucesso
+    // Sucesso
     document.getElementById('formulario').style.display = 'none';
     const sucessoDiv = document.getElementById('sucesso');
     sucessoDiv.style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
 
-    // Link de compartilhamento
     const mods = Array.from(selecionados).map(id => {
       const nomes = {1:"Vôlei M", 2:"Vôlei F", 3:"Futevôlei", 4:"Canoagem", 5:"Caiaque", 6:"Pesca M", 7:"Pesca F"};
-      return nomes[id] || id;
+      return nomes[id] || `Modalidade ${id}`;
     }).join(", ");
-    
+
     const texto = `Estou inscrito no Festival de Inverno 2026!\nFicha: ${ficha}\nModalidades: ${mods}`;
     document.getElementById('share-link').href = `https://wa.me/?text=${encodeURIComponent(texto)}`;
 
@@ -175,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cpfEl = document.getElementById('cpf');
   if (cpfEl) cpfEl.addEventListener('input', () => mascararCPF(cpfEl));
 
-  // Máscara nos campos de parceiro (quando existirem)
+  // Máscara nos campos de parceiro
   document.querySelectorAll('input[id$="-cpf"]').forEach(input => {
     input.addEventListener('input', () => mascararCPF(input));
   });
