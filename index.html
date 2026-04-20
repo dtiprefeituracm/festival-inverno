@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Festival de Inverno — Inscrições 2026</title>
-  
-  <!-- CSS separado -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -34,12 +32,12 @@
     <div id="aba-inscricao">
       <div id="formulario">
 
-        <!-- Dados Pessoais -->
+        <!-- 1. Dados Pessoais -->
         <div class="card">
           <h2>Dados pessoais — Participante</h2>
           
           <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
-          <input type="text" id="nome" placeholder="Seu nome completo">
+          <input type="text" id="nome" placeholder="Seu nome completo" autocomplete="name">
 
           <label class="campo">CPF <span class="obrigatorio">*</span></label>
           <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14">
@@ -54,7 +52,7 @@
           <div class="row">
             <div>
               <label class="campo">Data de nascimento</label>
-              <input type="date" id="nascimento" oninput="verificarMenor()">
+              <input type="date" id="nascimento">
             </div>
             <div>
               <label class="campo">Telefone / WhatsApp <span class="obrigatorio">*</span></label>
@@ -69,7 +67,7 @@
             <div>
               <label class="campo">Cidade <span class="obrigatorio">*</span></label>
               <div class="cidade-wrap" id="cidade-wrap">
-                <input type="text" id="cidade" placeholder="Digite o nome da cidade..." oninput="filtrarCidades()">
+                <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off">
                 <div class="cidade-lista" id="cidade-lista"></div>
               </div>
               <input type="hidden" id="cidade-valor">
@@ -81,34 +79,39 @@
           </div>
         </div>
 
-        <!-- Eventos -->
+        <!-- 2. Eventos -->
         <div class="card">
           <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
-          
           <div class="eventos-bloqueio visivel" id="eventos-bloqueio">
             ⬆️ Selecione seu sexo acima para ver as modalidades disponíveis.
           </div>
-
           <div class="eventos-conteudo" id="eventos-conteudo">
-            <!-- Os cards de eventos serão gerados pelo JavaScript -->
+            <!-- Eventos serão inseridos via JavaScript -->
           </div>
         </div>
 
-        <!-- Autorização e Regulamento (será completado depois) -->
-        <div class="autorizacao-card card">
-          <h2>Autorização de Imagem e Regulamento</h2>
-          <!-- Checkboxes virão aqui via JS ou HTML estático -->
+        <!-- 3. Autorização + Regulamento -->
+        <div class="card autorizacao-card">
+          <h2>Autorização e Regulamento</h2>
+          <div class="checkbox-linha" id="label-autorizo">
+            <input type="checkbox" id="cb-autorizo">
+            <label class="checkbox-label">Autorizo o uso de minha imagem pelo evento <span class="obrigatorio">*</span></label>
+          </div>
+          <div class="checkbox-linha">
+            <input type="checkbox" id="aceite-regulamento">
+            <label class="checkbox-label">Li e aceito o Regulamento do Festival <span class="obrigatorio">*</span></label>
+          </div>
         </div>
 
-        <button class="btn" id="btn-enviar" onclick="enviarInscricao()">Enviar Inscrição</button>
+        <button class="btn" id="btn-enviar">Enviar Inscrição</button>
         <div class="msg-erro" id="erro"></div>
 
       </div>
 
-      <!-- Tela de Sucesso -->
+      <!-- TELA DE SUCESSO -->
       <div id="sucesso" class="sucesso">
         <div class="sucesso-icone">🏆</div>
-        <h2>Inscrição realizada com sucesso!</h2>
+        <h2>Inscrição realizada!</h2>
         <div class="ficha-box">
           <div class="numero-ficha" id="numero-ficha">FI-XXXX</div>
         </div>
@@ -116,14 +119,17 @@
       </div>
     </div>
 
-    <!-- ABA CONSULTA (vazia por enquanto - vamos completar depois) -->
-    <div id="secao-consulta" style="display:none;">
-      <p>Consulta em desenvolvimento...</p>
+    <!-- ABA CONSULTA (por enquanto simples) -->
+    <div id="secao-consulta" style="display: none;">
+      <div class="card">
+        <h2>Consultar inscrição</h2>
+        <p>Funcionalidade em desenvolvimento...</p>
+      </div>
     </div>
 
   </div>
 
-  <!-- Scripts -->
+  <!-- SCRIPTS -->
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/app.js"></script>
