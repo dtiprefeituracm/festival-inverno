@@ -3,29 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Festival de Inverno — Inscrições</title>
+  <title>Festival de Inverno — Inscrições 2026</title>
   
   <!-- CSS separado -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-  <!-- Cabeçalho (header) -->
-  <div class="header"> ... (mesmo header que você já tinha) ... </div>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logos">
+      <img src="logogestao.png" alt="Prefeitura de Costa Marques" class="logo-prefeitura">
+      <div class="header-divider"></div>
+      <img src="10.png" alt="SEMESP" class="logo-semesp">
+    </div>
+    <div class="badge">01, 02 e 03 de Maio de 2026</div>
+    <h1>Festival de Inverno</h1>
+    <p>Secretaria Municipal de Esporte — Costa Marques / RO</p>
+  </div>
 
-  <!-- Nav tabs -->
+  <!-- NAV TABS -->
   <div class="nav-tabs">
     <button class="nav-tab ativo" id="tab-inscricao" onclick="mudarTab('inscricao')">📋 Nova inscrição</button>
     <button class="nav-tab" id="tab-consulta" onclick="mudarTab('consulta')">🔍 Já inscrito?</button>
   </div>
 
   <div class="container">
-    <!-- Todo o conteúdo do formulário vai aqui (vamos preencher no próximo passo) -->
+
+    <!-- ABA NOVA INSCRIÇÃO -->
+    <div id="aba-inscricao">
+      <div id="formulario">
+
+        <!-- Dados Pessoais -->
+        <div class="card">
+          <h2>Dados pessoais — Participante</h2>
+          
+          <label class="campo">Nome completo <span class="obrigatorio">*</span></label>
+          <input type="text" id="nome" placeholder="Seu nome completo">
+
+          <label class="campo">CPF <span class="obrigatorio">*</span></label>
+          <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14">
+
+          <label class="campo">Sexo <span class="obrigatorio">*</span></label>
+          <div class="sexo-toggle">
+            <button type="button" id="sexo-btn-m" class="sexo-btn" onclick="selecionarSexo('M')">♂ Masculino</button>
+            <button type="button" id="sexo-btn-f" class="sexo-btn" onclick="selecionarSexo('F')">♀ Feminino</button>
+          </div>
+          <input type="hidden" id="sexo" value="">
+
+          <div class="row">
+            <div>
+              <label class="campo">Data de nascimento</label>
+              <input type="date" id="nascimento" oninput="verificarMenor()">
+            </div>
+            <div>
+              <label class="campo">Telefone / WhatsApp <span class="obrigatorio">*</span></label>
+              <input type="tel" id="telefone" placeholder="(69) 9 0000-0000">
+            </div>
+          </div>
+
+          <label class="campo">E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com">
+
+          <div class="row">
+            <div>
+              <label class="campo">Cidade <span class="obrigatorio">*</span></label>
+              <div class="cidade-wrap" id="cidade-wrap">
+                <input type="text" id="cidade" placeholder="Digite o nome da cidade..." oninput="filtrarCidades()">
+                <div class="cidade-lista" id="cidade-lista"></div>
+              </div>
+              <input type="hidden" id="cidade-valor">
+            </div>
+            <div>
+              <label class="campo">UF</label>
+              <input type="text" id="uf" value="RO" readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- Eventos -->
+        <div class="card">
+          <h2>Escolha os eventos <span class="obrigatorio">*</span></h2>
+          
+          <div class="eventos-bloqueio visivel" id="eventos-bloqueio">
+            ⬆️ Selecione seu sexo acima para ver as modalidades disponíveis.
+          </div>
+
+          <div class="eventos-conteudo" id="eventos-conteudo">
+            <!-- Os cards de eventos serão gerados pelo JavaScript -->
+          </div>
+        </div>
+
+        <!-- Autorização e Regulamento (será completado depois) -->
+        <div class="autorizacao-card card">
+          <h2>Autorização de Imagem e Regulamento</h2>
+          <!-- Checkboxes virão aqui via JS ou HTML estático -->
+        </div>
+
+        <button class="btn" id="btn-enviar" onclick="enviarInscricao()">Enviar Inscrição</button>
+        <div class="msg-erro" id="erro"></div>
+
+      </div>
+
+      <!-- Tela de Sucesso -->
+      <div id="sucesso" class="sucesso">
+        <div class="sucesso-icone">🏆</div>
+        <h2>Inscrição realizada com sucesso!</h2>
+        <div class="ficha-box">
+          <div class="numero-ficha" id="numero-ficha">FI-XXXX</div>
+        </div>
+        <a href="#" id="share-link" class="share-btn" target="_blank">Compartilhar no WhatsApp</a>
+      </div>
+    </div>
+
+    <!-- ABA CONSULTA (vazia por enquanto - vamos completar depois) -->
+    <div id="secao-consulta" style="display:none;">
+      <p>Consulta em desenvolvimento...</p>
+    </div>
+
   </div>
 
-  <!-- Scripts externos (carregados no final) -->
+  <!-- Scripts -->
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/app.js"></script>
+
 </body>
 </html>
