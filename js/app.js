@@ -1,8 +1,8 @@
-// js/app.js — Versão corrigida com filtro de sexo funcionando
+// js/app.js — Versão corrigida (filtro de sexo funcionando)
 
 let selecionados = new Set();
 
-// ==================== API (Proxy Seguro) ====================
+// ==================== API ====================
 async function get(tabela, query = '') {
   const res = await fetch('/api/supabase', {
     method: 'POST',
@@ -24,7 +24,6 @@ async function post(tabela, dados) {
 // ==================== MUDAR ABA ====================
 function mudarTab(aba) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('ativo'));
-  
   if (aba === 'inscricao') {
     document.getElementById('tab-inscricao').classList.add('ativo');
     document.getElementById('aba-inscricao').style.display = 'block';
@@ -36,31 +35,26 @@ function mudarTab(aba) {
   }
 }
 
-// ==================== SELECIONAR SEXO + FILTRO CORRETO ====================
+// ==================== SELECIONAR SEXO ====================
 function selecionarSexo(s) {
   document.getElementById('sexo').value = s;
   
-  // Atualiza visual dos botões
   document.getElementById('sexo-btn-m').classList.toggle('ativo-m', s === 'M');
   document.getElementById('sexo-btn-f').classList.toggle('ativo-f', s === 'F');
 
   const isMasculino = s === 'M';
 
-  // Filtro correto:
-  // Masculino → mostra: 1(Vôlei M), 3(Futevôlei), 4(Canoagem), 5(Caiaque), 6(Pesca M)
-  // Feminino  → mostra: 2(Vôlei F), 4(Canoagem), 5(Caiaque), 7(Pesca F)
   document.querySelectorAll('.evento-wrapper').forEach(wrapper => {
     const id = parseInt(wrapper.id.replace('wrapper-ev', '')) || 0;
     if (id === 0) return;
 
     const deveMostrar = isMasculino 
-      ? [1, 3, 4, 5, 6].includes(id) 
-      : [2, 4, 5, 7].includes(id);
+      ? [1, 3, 4, 5, 6].includes(id)   // Masculino
+      : [2, 4, 5, 7].includes(id);     // Feminino
 
     wrapper.classList.toggle('oculto', !deveMostrar);
   });
 
-  // Mostra a área de eventos
   document.getElementById('eventos-bloqueio').classList.remove('visivel');
   document.getElementById('eventos-conteudo').classList.add('visivel');
 }
@@ -144,10 +138,8 @@ async function enviarInscricao() {
       });
     }
 
-    // Sucesso
     document.getElementById('formulario').style.display = 'none';
-    const suc = document.getElementById('sucesso');
-    suc.style.display = 'block';
+    document.getElementById('sucesso').style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
 
   } catch (e) {
