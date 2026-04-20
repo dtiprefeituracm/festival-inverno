@@ -1,4 +1,4 @@
-// js/app.js — Versão com filtro de sexo + campos de parceiro
+// js/app.js — Versão melhorada (sucesso + máscara de parceiro)
 
 let selecionados = new Set();
 
@@ -48,7 +48,7 @@ function selecionarSexo(s) {
   document.getElementById('eventos-conteudo').style.display = 'block';
 }
 
-// ==================== TOGGLE EVENTO + MOSTRAR PARCEIRO ====================
+// ==================== TOGGLE EVENTO ====================
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
   const parceiroBox = document.getElementById('parceiro-' + id);
@@ -64,11 +64,20 @@ function toggleEvento(id) {
     const isFem = document.getElementById('sexo').value === 'F';
     card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
     
-    // Mostra campos de parceiro se for dupla
+    // Mostra campos de parceiro para duplas
     if (parceiroBox && [1,2,3,4].includes(id)) {
       parceiroBox.style.display = 'block';
     }
   }
+}
+
+// ==================== MÁSCARA CPF ====================
+function mascararCPF(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d+)/, '$1.$2');
+  el.value = v;
 }
 
 // ==================== ENVIAR INSCRIÇÃO ====================
@@ -110,7 +119,6 @@ async function enviarInscricao() {
   try {
     const ficha = "FI-" + String(Math.floor(Math.random() * 9000) + 1000);
 
-    // Salvar participante
     const part = await post('participantes', {
       nome_completo: nome,
       cpf: cpf,
@@ -127,7 +135,6 @@ async function enviarInscricao() {
 
     const pid = part[0].id;
 
-    // Salvar inscrições
     for (const modId of selecionados) {
       await post('inscricoes', {
         participante_id: pid,
@@ -139,8 +146,18 @@ async function enviarInscricao() {
 
     // Mostrar sucesso
     document.getElementById('formulario').style.display = 'none';
-    document.getElementById('sucesso').style.display = 'block';
+    const sucessoDiv = document.getElementById('sucesso');
+    sucessoDiv.style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
+
+    // Link de compartilhamento
+    const mods = Array.from(selecionados).map(id => {
+      const nomes = {1:"Vôlei M", 2:"Vôlei F", 3:"Futevôlei", 4:"Canoagem", 5:"Caiaque", 6:"Pesca M", 7:"Pesca F"};
+      return nomes[id] || id;
+    }).join(", ");
+    
+    const texto = `Estou inscrito no Festival de Inverno 2026!\nFicha: ${ficha}\nModalidades: ${mods}`;
+    document.getElementById('share-link').href = `https://wa.me/?text=${encodeURIComponent(texto)}`;
 
   } catch (e) {
     console.error(e);
@@ -154,8 +171,14 @@ async function enviarInscricao() {
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
+  // Máscara CPF principal
   const cpfEl = document.getElementById('cpf');
   if (cpfEl) cpfEl.addEventListener('input', () => mascararCPF(cpfEl));
+
+  // Máscara nos campos de parceiro (quando existirem)
+  document.querySelectorAll('input[id$="-cpf"]').forEach(input => {
+    input.addEventListener('input', () => mascararCPF(input));
+  });
 
   document.getElementById('btn-enviar').addEventListener('click', enviarInscricao);
 
