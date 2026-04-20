@@ -1,4 +1,4 @@
-// js/app.js — Versão corrigida (campos de parceiro só abrem ao clicar no card)
+// js/app.js — Versão final com Pesca progressiva
 
 let selecionados = new Set();
 
@@ -43,7 +43,7 @@ function selecionarSexo(s) {
 
     wrapper.style.display = mostrar ? 'block' : 'none';
 
-    // Esconde os campos de parceiro ao trocar de sexo
+    // Esconde todos os campos de parceiro ao trocar sexo
     const parceiroBox = document.getElementById('parceiro-' + id);
     if (parceiroBox) parceiroBox.style.display = 'none';
   });
@@ -52,7 +52,7 @@ function selecionarSexo(s) {
   document.getElementById('eventos-conteudo').style.display = 'block';
 }
 
-// ==================== TOGGLE EVENTO (só abre parceiro ao clicar no card) ====================
+// ==================== TOGGLE EVENTO ====================
 function toggleEvento(id) {
   const card = document.getElementById('ev' + id);
   const parceiroBox = document.getElementById('parceiro-' + id);
@@ -60,17 +60,15 @@ function toggleEvento(id) {
   if (!card) return;
 
   if (selecionados.has(id)) {
-    // Desmarca
     selecionados.delete(id);
     card.classList.remove('selecionado', 'feminino-selecionado');
     if (parceiroBox) parceiroBox.style.display = 'none';
   } else {
-    // Marca
     selecionados.add(id);
     const isFem = document.getElementById('sexo').value === 'F';
     card.classList.add(isFem ? 'feminino-selecionado' : 'selecionado');
     
-    // Mostra campos de parceiro apenas para modalidades que precisam (duplas e pesca)
+    // Mostra campos de parceiro para duplas e pesca
     if (parceiroBox && [1,2,3,4,6,7].includes(id)) {
       parceiroBox.style.display = 'block';
     }
@@ -181,5 +179,5 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia escondendo os eventos
   document.getElementById('eventos-conteudo').style.display = 'none';
 
-  console.log('%c✅ Sistema Festival de Inverno 2026 carregado!', 'color:#1a56a0; font-weight:bold');
+  console.log('%c✅ Sistema Festival de Inverno 2026 carregado com sucesso!', 'color:#1a56a0; font-weight:bold');
 });
