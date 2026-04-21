@@ -5,7 +5,6 @@
 // ================================================================
 
 // ── Comunicação segura com o servidor (/api/supabase) ──────────
-// As chaves do banco ficam no servidor (Vercel), nunca no navegador
 async function get(tabela, query = '') {
   const r = await fetch('/api/supabase', {
     method: 'POST',
@@ -33,6 +32,72 @@ function mascararCPF(el) {
   el.value = v;
 }
 
+// ── Validação de CPF (algoritmo oficial) ───────────────────────
+function validarCPF(cpf) {
+  // Remove tudo que não é dígito
+  const c = cpf.replace(/\D/g, '');
+
+  // Deve ter exatamente 11 dígitos
+  if (c.length !== 11) return false;
+
+  // Rejeita sequências repetidas (000.000.000-00, 111.111.111-11...)
+  if (/^(\d)\1{10}$/.test(c)) return false;
+
+  // Valida o primeiro dígito verificador
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += parseInt(c[i]) * (10 - i);
+  let resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(c[9])) return false;
+
+  // Valida o segundo dígito verificador
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += parseInt(c[i]) * (11 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(c[10])) return false;
+
+  return true;
+}
+
+// ── Validação visual em tempo real (chamado no blur do campo) ──
+function validarCampoCPF(el) {
+  const cpf = el.value.trim();
+  // Só valida se o campo tiver conteúdo (não valida campo vazio)
+  if (!cpf) { marcarCPFok(el); return; }
+
+  const digits = cpf.replace(/\D/g, '');
+  // Só valida quando o campo está completo (11 dígitos)
+  if (digits.length < 11) { marcarCPFok(el); return; }
+
+  if (validarCPF(cpf)) {
+    marcarCPFok(el);
+  } else {
+    marcarCPFerro(el);
+  }
+}
+
+function marcarCPFerro(el) {
+  el.style.borderColor = '#dc2626';
+  el.style.boxShadow   = '0 0 0 3px rgba(220,38,38,0.1)';
+  // Adiciona ou atualiza msg de erro abaixo do campo
+  let msg = el.parentElement.querySelector('.cpf-erro-msg');
+  if (!msg) {
+    msg = document.createElement('div');
+    msg.className = 'cpf-erro-msg';
+    msg.style.cssText = 'color:#dc2626;font-size:11px;margin-top:4px;';
+    el.parentElement.appendChild(msg);
+  }
+  msg.textContent = '⚠️ CPF inválido. Verifique os números digitados.';
+}
+
+function marcarCPFok(el) {
+  el.style.borderColor = '';
+  el.style.boxShadow   = '';
+  const msg = el.parentElement.querySelector('.cpf-erro-msg');
+  if (msg) msg.remove();
+}
+
 // ── Normalizar texto (remover acentos para autocomplete) ────────
 function normalizar(s) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -57,12 +122,10 @@ function eMenor() {
 function mascararConsultaInput(el) {
   limparResultadoConsulta();
   const v = el.value;
-  // Se começa com letra → número de ficha (ex: FI-1234)
   if (/^[a-zA-Z]/.test(v.replace(/\s/g, ''))) {
     el.value = v.toUpperCase();
     return;
   }
-  // Senão, formata como CPF
   let d = v.replace(/\D/g, '').slice(0, 11);
   if      (d.length > 9) d = d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
   else if (d.length > 6) d = d.replace(/(\d{3})(\d{3})(\d+)/,            '$1.$2.$3');
