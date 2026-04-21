@@ -277,3 +277,27 @@
     .consulta-busca-wrap { flex-direction: column; }
     .btn-acao { min-width: 100%; }
   }
+
+/* ── Prêmio no card de evento (aparece ao selecionar) ── */
+.evento-premio {
+  display: none;
+  font-size: 11px;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.evento-card.selecionado .evento-premio {
+  display: block;
+}
+.evento-card.feminino-selecionado .evento-premio {
+  display: block;
+  color: #9d174d;
+  background: #fdf2f8;
+  border-color: #fbcfe8;
+}
