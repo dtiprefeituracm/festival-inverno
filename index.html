@@ -143,6 +143,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                <div class="evento-premio">🏆 1º R$ 1.000 · 2º R$ 500</div>
               </div>
               <div class="parceiro-box" id="parceiro-1">
                 <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
@@ -194,6 +195,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                <div class="evento-premio">🏆 1º R$ 1.000 · 2º R$ 500</div>
               </div>
               <div class="parceiro-box feminino" id="parceiro-2">
                 <div class="parceiro-titulo">Dados da parceira <span class="parceiro-restricao restricao-f">♀ feminino</span></div>
@@ -243,6 +245,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-areia">Esporte de Areia</span>
+                <div class="evento-premio">🏆 1º R$ 1.000 · 2º R$ 500</div>
               </div>
               <div class="parceiro-box" id="parceiro-3">
                 <div class="parceiro-titulo">Dados do parceiro <span class="parceiro-restricao restricao-m">♂ masculino</span></div>
@@ -291,6 +294,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-agua">Esporte Aquático</span>
+                <div class="evento-premio">🏆 1º R$ 1.000 · 2º R$ 500</div>
               </div>
               <div class="aviso-feminino" id="aviso-canoagem">
                 <span class="aviso-feminino-icone">⚠️</span>
@@ -330,6 +334,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-individual">Individual</span>
+                <div class="evento-premio">🏆 1º R$ 1.000 · 2º R$ 500</div>
               </div>
               <div class="aviso-feminino" id="aviso-caiaque">
                 <span class="aviso-feminino-icone">⚠️</span>
@@ -378,6 +383,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-pesca">Equipe (até 4)</span>
+                <div class="evento-premio">🏆 1º R$ 2.000 · 2º R$ 1.000 · 3º R$ 500</div>
               </div>
               <div class="parceiro-box" id="parceiro-6">
                 <div class="parceiro-titulo">Membros da equipe <span class="parceiro-restricao restricao-m">♂ masculino · máx. 4</span></div>
@@ -473,6 +479,7 @@
                   <div class="check"></div>
                 </div>
                 <span class="evento-tipo tipo-pesca">Equipe (até 4)</span>
+                <div class="evento-premio">🏆 1º R$ 2.000 · 2º R$ 1.000 · 3º R$ 500</div>
               </div>
               <div class="parceiro-box feminino" id="parceiro-7">
                 <div class="parceiro-titulo">Membros da equipe <span class="parceiro-restricao restricao-f">♀ feminino · máx. 4</span></div>
@@ -574,7 +581,7 @@
 
         <!-- Checkbox principal -->
         <label class="checkbox-linha" id="label-autorizo" onclick="toggleAutorizacao()">
-          <input type="checkbox" id="cb-autorizo" onclick="event.stopPropagation(); toggleAutorizacao()">
+          <input type="checkbox" id="cb-autorizo" onclick="event.stopPropagation(); sincronizarAutorizacao()">
           <span class="checkbox-label">
             Autorizo o uso da minha imagem conforme descrito acima. <span>*</span>
           </span>
@@ -745,6 +752,14 @@ const a0_0x1bfaa0=a0_0x17f7;(function(_0x506719,_0x680a86){const _0x861b1f=a0_0x
 
 <script>
 // ── Patch: Pesca (ev6/ev7), Regulamento, selecionarSexo (suporte ev7) ──
+
+// FIX: Sincroniza o visual do checkbox de autorização de imagem
+// Chamado quando o usuário clica DIRETAMENTE no checkbox (não no label)
+function sincronizarAutorizacao() {
+  const c = document.getElementById('cb-autorizo');
+  document.getElementById('label-autorizo').classList.toggle('marcado', c.checked);
+  verificarMenor();
+}
 // ── API Serverless — chaves ficam no servidor, nunca no browser ─────────────
 // Override de get() e post() do bloco ofuscado para usar /api/supabase
 get = async function(tabela, query = '') {
