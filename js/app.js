@@ -268,6 +268,15 @@ async function enviarInscricao() {
     window.scrollTo({ top: erro.offsetTop - 80, behavior: 'smooth' });
     return;
   }
+  // Validar CPF do participante principal
+  if (!validarCPF(cpf)) {
+    erro.textContent = 'CPF inválido. Verifique os números digitados e tente novamente.';
+    erro.style.display = 'block';
+    const cpfEl = document.getElementById('cpf');
+    marcarCPFerro(cpfEl);
+    cpfEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   if (!sexo) {
     erro.textContent = 'Selecione seu sexo para ver as modalidades disponíveis.';
     erro.style.display = 'block';
@@ -315,11 +324,19 @@ async function enviarInscricao() {
       const pN = document.getElementById('p' + id + '-nome')?.value.trim();
       const pC = document.getElementById('p' + id + '-cpf')?.value.trim();
       const pT = document.getElementById('p' + id + '-tel')?.value.trim();
+      const label = sexo === 'F' ? 'parceira' : 'parceiro';
       if (!pN || !pC || !pT) {
-        const label = sexo === 'F' ? 'parceira' : 'parceiro';
         erro.textContent = `Preencha os dados do(a) ${label} para ${NOMES_MOD[id]}.`;
         erro.style.display = 'block';
         document.getElementById('p' + id + '-nome').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      if (!validarCPF(pC)) {
+        erro.textContent = `CPF do(a) ${label} em ${NOMES_MOD[id]} é inválido.`;
+        erro.style.display = 'block';
+        const pCEl = document.getElementById('p' + id + '-cpf');
+        marcarCPFerro(pCEl);
+        pCEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     }
@@ -389,6 +406,21 @@ async function enviarInscricao() {
 
     // Equipes (Pesca): até 3 membros adicionais
     if (EQUIPES_IDS.has(id)) {
+      // Validar CPFs dos membros preenchidos
+      for (const m of ['m2', 'm3', 'm4']) {
+        const mNome = document.getElementById(`p${id}-${m}-nome`)?.value.trim();
+        const mCpf  = document.getElementById(`p${id}-${m}-cpf`)?.value.trim();
+        if (mNome && mCpf && !validarCPF(mCpf)) {
+          erro.textContent = `CPF do Membro ${m.slice(1)} da Pesca é inválido.`;
+          erro.style.display = 'block';
+          const mEl = document.getElementById(`p${id}-${m}-cpf`);
+          marcarCPFerro(mEl);
+          mEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          btn.disabled = false;
+          btn.textContent = 'Enviar inscrição';
+          return;
+        }
+      }
       const m2nome = document.getElementById('p' + id + '-m2-nome')?.value.trim();
       if (m2nome) {
         insc.parceiro_nome     = m2nome;
@@ -670,10 +702,33 @@ async function submeterAdicao() {
 // ══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   // Máscara de CPF no campo principal
-  document.getElementById('cpf').addEventListener('input', function() {
+  const cpfEl = document.getElementById('cpf');
+  cpfEl.addEventListener('input', function() {
     mascararCPF(this);
+    marcarCPFok(this);
     document.getElementById('erro-ja-inscrito').style.display = 'none';
     document.getElementById('erro').style.display = 'none';
+  });
+  cpfEl.addEventListener('blur', function() { validarCampoCPF(this); });
+
+  // Validação em tempo real nos CPFs dos parceiros (duplas)
+  [1,2,3,4].forEach(id => {
+    const el = document.getElementById('p' + id + '-cpf');
+    if (el) {
+      el.addEventListener('input', function() { mascararCPF(this); marcarCPFok(this); });
+      el.addEventListener('blur',  function() { validarCampoCPF(this); });
+    }
+  });
+
+  // Validação em tempo real nos CPFs dos membros da Pesca
+  ['6','7'].forEach(box => {
+    ['m2','m3','m4'].forEach(m => {
+      const el = document.getElementById(`p${box}-${m}-cpf`);
+      if (el) {
+        el.addEventListener('input', function() { mascararCPF(this); marcarCPFok(this); });
+        el.addEventListener('blur',  function() { validarCampoCPF(this); });
+      }
+    });
   });
 
   // Configurar autorização de imagem dos membros (Pesca)
