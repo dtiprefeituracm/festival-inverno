@@ -281,22 +281,24 @@
 /* ── Prêmio no card de evento (aparece ao selecionar) ── */
 .evento-premio {
   display: none;
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 500;
   color: #166534;
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: 10px;
+  padding: 3px 8px;
   margin-top: 6px;
-  text-align: center;
-  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   letter-spacing: 0.01em;
 }
 .evento-card.selecionado .evento-premio {
-  display: block;
+  display: inline-block;
 }
 .evento-card.feminino-selecionado .evento-premio {
-  display: block;
+  display: inline-block;
   color: #9d174d;
   background: #fdf2f8;
   border-color: #fbcfe8;
