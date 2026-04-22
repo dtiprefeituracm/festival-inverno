@@ -823,7 +823,7 @@ function imprimirFicha() {
     </div>`;
   }).join('');
 
-  const html = `
+  let html = `
     <div style="font-family:system-ui,sans-serif;max-width:500px;margin:0 auto;padding:20px;">
       <div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:16px;">
         <img src="${LOGO_URL}" style="height:50px;">
@@ -855,32 +855,32 @@ function imprimirFicha() {
       </div>
     </div>`;
 
-  // Gera o QR Code localmente via QRCode.js (sem dependência externa)
-  const tmpDiv = document.createElement('div');
-  tmpDiv.style.cssText = 'position:absolute;left:-9999px;';
-  document.body.appendChild(tmpDiv);
-  new QRCode(tmpDiv, {
-    text: ficha, width: 100, height: 100,
-    colorDark: '#0f172a', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M
-  });
+  // Injeta o HTML na área de impressão primeiro
+  const printArea = document.getElementById('print-area');
+  printArea.innerHTML = html;
+  printArea.style.display = 'block';
 
-  // Aguarda o canvas do QRCode ser gerado, depois imprime
-  setTimeout(() => {
-    const qrCanvas = tmpDiv.querySelector('canvas');
-    if (qrCanvas) {
-      const qrDataUrl = qrCanvas.toDataURL('image/png');
-      html = html.replace(
-        `<div id="qr-print-${ficha}"`,
-        `<img src="${qrDataUrl}"`
-      ).replace(
-        `style="width:100px;height:100px;flex-shrink:0;"></div>`,
-        `style="width:100px;height:100px;border-radius:8px;flex-shrink:0;">`
-      );
-    }
-    document.body.removeChild(tmpDiv);
-    imprimirHTML(html);
-  }, 300);
+  // Gera o QR Code no elemento já inserido no DOM
+  const qrTarget = printArea.querySelector(`#qr-print-${ficha}`);
+  if (qrTarget && typeof QRCode !== 'undefined') {
+    new QRCode(qrTarget, {
+      text: ficha,
+      width: 100,
+      height: 100,
+      colorDark: '#0f172a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    // Aguarda render do canvas e então imprime
+    setTimeout(() => {
+      window.print();
+      printArea.style.display = 'none';
+    }, 350);
+  } else {
+    // QRCode.js não carregou ou elemento não encontrado — imprime sem QR
+    window.print();
+    printArea.style.display = 'none';
+  }
 }
 
 // ================================================================
