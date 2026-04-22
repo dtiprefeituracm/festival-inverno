@@ -408,6 +408,17 @@ async function enviarInscricao() {
 
     // Equipes (Pesca): até 3 membros adicionais
     if (EQUIPES_IDS.has(id)) {
+      // Nome da equipe
+      const nomeEquipe = document.getElementById('p' + id + '-equipe')?.value.trim();
+      if (!nomeEquipe) {
+        erro.textContent = `Informe o nome da equipe para ${NOMES_MOD[id]}.`;
+        erro.style.display = 'block';
+        document.getElementById('p' + id + '-equipe').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        btn.disabled = false;
+        btn.textContent = 'Enviar inscrição';
+        return;
+      }
+      insc.nome_equipe = nomeEquipe;
       // Validar CPFs dos membros preenchidos
       for (const m of ['m2', 'm3', 'm4']) {
         const mNome = document.getElementById(`p${id}-${m}-nome`)?.value.trim();
