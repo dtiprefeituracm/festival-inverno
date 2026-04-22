@@ -162,6 +162,26 @@
   .admin-footer-inner { line-height: 1.9; margin-top: 6px; }
 
   /* ── Impressão ── */
+  /* ── Lista de espera ── */
+  .espera-mod-titulo { font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:8px; }
+  .espera-mod-bloco { background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 14px;margin-bottom:12px; }
+  .espera-item { display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #fde68a;font-size:13px; }
+  .espera-item:last-child { border-bottom:none; }
+  .espera-pos { font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .espera-nome { flex:1;margin:0 10px;font-weight:600;color:#1e293b; }
+  .espera-detalhe { font-size:11px;color:#64748b; }
+  .promover-btn { padding:4px 10px;background:#16a34a;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600; }
+  .promover-btn:hover { background:#15803d; }
+  /* ── Relatório quantitativo ── */
+  .rel-table { width:100%;border-collapse:collapse;font-size:13px; }
+  .rel-table th { padding:8px 12px;background:#f8fafc;color:#64748b;font-size:11px;font-weight:600;text-transform:uppercase;border-bottom:1px solid #e2e8f0;text-align:left; }
+  .rel-table td { padding:9px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b;vertical-align:middle; }
+  .rel-table tr:last-child td { border-bottom:none; }
+  .rel-table .total-row td { font-weight:700;background:#f0f9ff;color:#1a56a0;border-top:2px solid #bfdbfe; }
+  .badge-confirmado { background:#dcfce7;color:#166534;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600; }
+  .badge-espera { background:#fef3c7;color:#92400e;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600; }
+  .badge-total { background:#eff6ff;color:#1a56a0;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600; }
+
   @media print {
     body * { visibility: hidden; }
     .print-area, .print-area * { visibility: visible; }
@@ -235,6 +255,11 @@
       <div class="metric-val" id="m-cidades">—</div>
       <div class="metric-sub">municípios</div>
     </div>
+    <div class="metric" style="border-left:3px solid #f59e0b;">
+      <div class="metric-label">Lista de espera</div>
+      <div class="metric-val" id="m-espera" style="color:#92400e;">—</div>
+      <div class="metric-sub">aguardando vaga</div>
+    </div>
   </div>
 
   <!-- Vagas por modalidade (cards clicáveis) -->
@@ -244,6 +269,28 @@
       <button class="print-btn outline" onclick="imprimirVagas()">Imprimir relatório</button>
     </div>
     <div class="vagas-grid" id="vagas-grid">
+      <div class="loading">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Lista de espera por modalidade -->
+  <div class="section" style="margin-bottom:16px;" id="section-espera" style="display:none;">
+    <div class="section-header">
+      <span class="section-titulo">⏳ Lista de Espera por Modalidade</span>
+      <button class="print-btn outline" onclick="imprimirEspera()">Imprimir lista de espera</button>
+    </div>
+    <div id="espera-grid" style="padding:16px;">
+      <div class="loading">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Relatório quantitativo -->
+  <div class="section" style="margin-bottom:16px;">
+    <div class="section-header">
+      <span class="section-titulo">📊 Relatório Quantitativo</span>
+      <button class="print-btn outline" onclick="imprimirQuantitativo()">Imprimir relatório</button>
+    </div>
+    <div id="relatorio-grid" style="padding:16px;">
       <div class="loading">Carregando...</div>
     </div>
   </div>
@@ -447,6 +494,8 @@ async function carregarDados() {
     atualizarVagas(inscricoes);
     preencherUFs(todosInscritos);
     renderTabela(todosInscritos);
+    renderEspera(todosInscritos);
+    renderRelatorio(todosInscritos, inscricoes);
   } catch (e) {
     document.getElementById('tabela-body').innerHTML =
       '<tr><td colspan="8" class="vazio">Erro ao carregar dados. Recarregue a página.</td></tr>';
@@ -466,6 +515,11 @@ function atualizarMetricas(participantes, inscricoes) {
 
   const cidades = new Set(participantes.map(p => (p.cidade || '') + (p.uf || '')));
   document.getElementById('m-cidades').textContent = cidades.size;
+
+  // Lista de espera
+  const totalEspera = inscricoes.filter(i => i.status === 'lista_espera').length;
+  const mEspera = document.getElementById('m-espera');
+  if (mEspera) mEspera.textContent = totalEspera;
 
   const contagem = {};
   inscricoes.forEach(i => {
@@ -976,6 +1030,245 @@ function imprimirHTML(html) {
   area.style.display = 'block';
   window.print();
   area.style.display = 'none';
+}
+
+// ================================================================
+// LISTA DE ESPERA
+// ================================================================
+function renderEspera(inscricoes) {
+  const grid = document.getElementById('espera-grid');
+  const secao = document.getElementById('section-espera');
+  const porMod = {};
+
+  inscricoes.forEach(p => {
+    p.inscricoes.filter(i => i.status === 'lista_espera').forEach(i => {
+      if (!porMod[i.modalidade_id]) porMod[i.modalidade_id] = [];
+      porMod[i.modalidade_id].push({ p, i });
+    });
+  });
+
+  const ids = Object.keys(porMod);
+  if (ids.length === 0) {
+    secao.style.display = 'none';
+    return;
+  }
+
+  secao.style.display = 'block';
+  grid.innerHTML = ids.map(id => {
+    const mod   = MODALIDADES[id];
+    const itens = porMod[id];
+    const rows  = itens.map((item, idx) => `
+      <div class="espera-item">
+        <div class="espera-pos">${idx + 1}</div>
+        <div>
+          <div class="espera-nome">${item.p.nome_completo}</div>
+          <div class="espera-detalhe">${item.p.telefone || '—'} · ${item.p.cidade || '—'}/${item.p.uf || '—'} · Ficha: ${item.i.numero_ficha}</div>
+        </div>
+        <button class="promover-btn" onclick="promoverParaConfirmado('${item.i.id}', '${item.p.nome_completo}')">✓ Promover</button>
+      </div>`).join('');
+
+    return `<div class="espera-mod-bloco">
+      <div class="espera-mod-titulo">
+        ⏳ ${mod ? mod.nome + ' — ' + mod.sub : 'Modalidade ' + id}
+        <span style="font-size:11px;font-weight:500;color:#64748b;">${itens.length} na espera</span>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+async function promoverParaConfirmado(inscricaoId, nomeParticipante) {
+  if (!confirm(`Promover "${nomeParticipante}" para CONFIRMADO?
+
+Esta ação liberará a vaga e o participante será confirmado.`)) return;
+
+  try {
+    const r = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'atualizar', tabela: 'inscricoes', id: inscricaoId, dados: { status: 'confirmado' } })
+    });
+    const data = await r.json();
+    if (Array.isArray(data) && data.length > 0) {
+      alert(`✅ ${nomeParticipante} foi promovido(a) para CONFIRMADO com sucesso!`);
+      carregarDados(); // Recarrega tudo
+    } else {
+      alert('Erro ao promover. Tente novamente.');
+    }
+  } catch (e) {
+    alert('Erro de conexão: ' + e.message);
+  }
+}
+
+// ================================================================
+// RELATÓRIO QUANTITATIVO
+// ================================================================
+function renderRelatorio(participantes, inscricoes) {
+  const grid = document.getElementById('relatorio-grid');
+
+  const porMod = {};
+  Object.entries(MODALIDADES).forEach(([id, mod]) => {
+    porMod[id] = { mod, confirmados: 0, espera: 0 };
+  });
+
+  inscricoes.forEach(i => {
+    if (!porMod[i.modalidade_id]) return;
+    if (i.status === 'lista_espera') porMod[i.modalidade_id].espera++;
+    else porMod[i.modalidade_id].confirmados++;
+  });
+
+  let totalConf = 0, totalEsp = 0;
+  const rows = Object.entries(porMod).map(([id, d]) => {
+    totalConf += d.confirmados;
+    totalEsp  += d.espera;
+    const total = d.confirmados + d.espera;
+    return `<tr>
+      <td><strong>${d.mod.nome}</strong></td>
+      <td>${d.mod.sub}</td>
+      <td style="text-align:center"><span class="badge-confirmado">${d.confirmados}</span></td>
+      <td style="text-align:center"><span class="badge-espera">${d.espera}</span></td>
+      <td style="text-align:center"><span class="badge-total">${total}</span></td>
+      <td style="text-align:center">${MAX_VAGAS}</td>
+      <td style="text-align:center">${Math.max(0, MAX_VAGAS - d.confirmados)}</td>
+    </tr>`;
+  }).join('');
+
+  grid.innerHTML = `<table class="rel-table">
+    <thead>
+      <tr>
+        <th>Modalidade</th>
+        <th>Categoria</th>
+        <th style="text-align:center">✅ Confirmados</th>
+        <th style="text-align:center">⏳ Espera</th>
+        <th style="text-align:center">Total inscritos</th>
+        <th style="text-align:center">Vagas</th>
+        <th style="text-align:center">Disponíveis</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+      <tr class="total-row">
+        <td colspan="2">TOTAL GERAL</td>
+        <td style="text-align:center">${totalConf}</td>
+        <td style="text-align:center">${totalEsp}</td>
+        <td style="text-align:center">${totalConf + totalEsp}</td>
+        <td style="text-align:center">${Object.keys(MODALIDADES).length * MAX_VAGAS}</td>
+        <td style="text-align:center">—</td>
+      </tr>
+    </tbody>
+  </table>`;
+}
+
+// ================================================================
+// IMPRESSÃO — Lista de espera
+// ================================================================
+function imprimirEspera() {
+  const cabecalho = `<div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:16px;">
+    <img src="${LOGO_URL}" style="height:50px;">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#1a56a0;">Lista de Espera — Festival de Inverno 2026</div>
+      <div style="font-size:11px;color:#64748b;">SEMESP — Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    </div>
+  </div>`;
+
+  const porMod = {};
+  todosInscritos.forEach(p => {
+    p.inscricoes.filter(i => i.status === 'lista_espera').forEach(i => {
+      if (!porMod[i.modalidade_id]) porMod[i.modalidade_id] = [];
+      porMod[i.modalidade_id].push({ p, i });
+    });
+  });
+
+  if (Object.keys(porMod).length === 0) {
+    alert('Não há participantes na lista de espera.');
+    return;
+  }
+
+  let blocos = Object.entries(porMod).map(([id, itens]) => {
+    const mod   = MODALIDADES[id];
+    const linhas = itens.map((item, idx) => `<tr style="background:${idx%2===0?'#fff':'#fffbeb'}">
+      <td style="padding:6px 10px;border:1px solid #fde68a;font-weight:700;color:#92400e;">${idx+1}º</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;font-weight:600;">${item.p.nome_completo}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${item.p.telefone || '—'}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${item.p.cidade || '—'}/${item.p.uf || '—'}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${item.i.numero_ficha}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;text-align:center;">[ ]</td>
+    </tr>`).join('');
+
+    return `<div style="margin-bottom:20px;">
+      <div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:8px;">
+        ⏳ ${mod ? mod.nome + ' — ' + mod.sub : 'Modalidade ' + id} (${itens.length} na espera)
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#f59e0b;color:white;">
+          <th style="padding:7px 10px;text-align:left;">Pos.</th>
+          <th style="padding:7px 10px;text-align:left;">Participante</th>
+          <th style="padding:7px 10px;text-align:left;">Telefone</th>
+          <th style="padding:7px 10px;text-align:left;">Cidade/UF</th>
+          <th style="padding:7px 10px;text-align:left;">Ficha</th>
+          <th style="padding:7px 10px;text-align:center;">Chamado</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  imprimirHTML(`<div style="font-family:system-ui,sans-serif;padding:20px;">${cabecalho}${blocos}</div>`);
+}
+
+// ================================================================
+// IMPRESSÃO — Relatório quantitativo
+// ================================================================
+function imprimirQuantitativo() {
+  const cabecalho = `<div style="display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:16px;">
+    <img src="${LOGO_URL}" style="height:50px;">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#1a56a0;">Relatório Quantitativo — Festival de Inverno 2026</div>
+      <div style="font-size:11px;color:#64748b;">SEMESP — Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+    </div>
+  </div>`;
+
+  const todasInscricoes = todosInscritos.flatMap(p => p.inscricoes);
+  let totalConf = 0, totalEsp = 0;
+
+  const linhas = Object.entries(MODALIDADES).map(([id, mod]) => {
+    const conf = todasInscricoes.filter(i => i.modalidade_id == id && i.status !== 'lista_espera').length;
+    const esp  = todasInscricoes.filter(i => i.modalidade_id == id && i.status === 'lista_espera').length;
+    totalConf += conf; totalEsp += esp;
+    const disp = Math.max(0, MAX_VAGAS - conf);
+    return `<tr style="background:${id%2===0?'#fff':'#f8fafc'}">
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:600;">${mod.nome}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;">${mod.sub}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#166534;">${conf}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#92400e;">${esp}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1a56a0;">${conf+esp}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${MAX_VAGAS}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;color:${disp===0?'#dc2626':'#166534'};font-weight:700;">${disp}</td>
+    </tr>`;
+  }).join('');
+
+  imprimirHTML(`<div style="font-family:system-ui,sans-serif;padding:20px;">${cabecalho}
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:#1a56a0;color:white;">
+        <th style="padding:9px 12px;text-align:left;">Modalidade</th>
+        <th style="padding:9px 12px;text-align:left;">Categoria</th>
+        <th style="padding:9px 12px;text-align:center;">✅ Confirmados</th>
+        <th style="padding:9px 12px;text-align:center;">⏳ Espera</th>
+        <th style="padding:9px 12px;text-align:center;">Total</th>
+        <th style="padding:9px 12px;text-align:center;">Vagas</th>
+        <th style="padding:9px 12px;text-align:center;">Disponíveis</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+      <tfoot><tr style="background:#eff6ff;font-weight:700;color:#1a56a0;border-top:2px solid #bfdbfe;">
+        <td colspan="2" style="padding:9px 12px;border:1px solid #e2e8f0;">TOTAL GERAL</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalConf}</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalEsp}</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalConf+totalEsp}</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${Object.keys(MODALIDADES).length * MAX_VAGAS}</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">—</td>
+      </tfoot>
+    </table>
+  </div>`);
 }
 </script>
 
