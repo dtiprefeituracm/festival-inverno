@@ -349,7 +349,9 @@ async function enviarInscricao() {
   for (const id of selecionados) {
     const check = await get('inscricoes', `modalidade_id=eq.${id}&select=id`);
     if (Array.isArray(check) && check.length >= MAX_VAGAS) {
-      erro.textContent = `Vagas esgotadas para ${NOMES_MOD[id]}. Tente outra modalidade.`;
+      erro.textContent = `As vagas para ${NOMES_MOD[id]} estão esgotadas. Escolha outra modalidade.`;
+      // Marcar o card visualmente
+      carregarVagas();
       erro.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Enviar inscrição';
@@ -394,7 +396,7 @@ async function enviarInscricao() {
       participante_id: pid,
       modalidade_id:   id,
       numero_ficha:    ficha,
-      status:          'confirmado',
+      status:          statusPorModalidade[id] || 'confirmado',
     };
 
     // Duplas: parceiro obrigatório
@@ -448,18 +450,48 @@ async function enviarInscricao() {
     await post('inscricoes', insc);
   }
 
-  // Sucesso!
-  document.getElementById('formulario').style.display = 'none';
-  document.getElementById('sucesso').style.display    = 'block';
-  document.getElementById('numero-ficha').textContent = ficha;
+  // Verificar se alguma modalidade ficou na lista de espera
+  const algumEspera     = Object.values(statusPorModalidade).some(s => s === 'lista_espera');
+  const todosEspera     = Object.values(statusPorModalidade).every(s => s === 'lista_espera');
+  const modsEspera      = Array.from(selecionados).filter(id => statusPorModalidade[id] === 'lista_espera').map(id => NOMES_MOD[id]);
+  const modsConfirmados = Array.from(selecionados).filter(id => statusPorModalidade[id] === 'confirmado').map(id => NOMES_MOD[id]);
 
-  const mods = Array.from(selecionados).map(id => NOMES_MOD[id]).join(', ');
-  const msg  = encodeURIComponent(
-    `🏆 Estou inscrito no *Festival de Inverno 2026* de Costa Marques/RO (01, 02 e 03 de Maio de 2026).\n` +
-    `📋 Minha ficha é *${ficha}* — Modalidades: ${mods}.\n\n` +
-    `📲 Inscreva-se também:\nhttps://festival-inverno.vercel.app`
-  );
-  document.getElementById('share-link').href = 'https://wa.me/?text=' + msg;
+  document.getElementById('formulario').style.display = 'none';
+
+  if (todosEspera) {
+    // Todas na lista de espera
+    const posicao = await calcularPosicaoEspera(Array.from(selecionados)[0], pid);
+    document.getElementById('sucesso-espera').style.display = 'block';
+    document.getElementById('numero-ficha-espera').textContent = ficha;
+    document.getElementById('espera-modalidade').textContent = modsEspera.join(', ');
+    document.getElementById('espera-posicao').textContent = posicao + 'º';
+    document.getElementById('espera-posicao-texto').textContent =
+      `Você é o ${posicao}º na fila de espera. A SEMESP entrará em contato se uma vaga for liberada.`;
+    const msgE = encodeURIComponent(`⏳ Estou na lista de espera do *Festival de Inverno 2026* de Costa Marques/RO!\n📋 Ficha: *${ficha}*\n📲 Inscreva-se: https://festival-inverno.vercel.app`);
+    document.getElementById('share-link-espera').href = 'https://wa.me/?text=' + msgE;
+  } else {
+    // Pelo menos uma confirmada (mostra tela normal, com aviso se houver espera)
+    document.getElementById('sucesso').style.display = 'block';
+    document.getElementById('numero-ficha').textContent = ficha;
+    if (algumEspera) {
+      // Adiciona aviso de que parte foi para espera
+      const avisoDiv = document.getElementById('aviso-espera-parcial') || (() => {
+        const d = document.createElement('div');
+        d.id = 'aviso-espera-parcial';
+        d.style.cssText = 'margin-top:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px;font-size:13px;color:#78350f;text-align:left;';
+        document.getElementById('sucesso').appendChild(d);
+        return d;
+      })();
+      avisoDiv.innerHTML = `<strong>⚠️ Atenção:</strong> Para <strong>${modsEspera.join(', ')}</strong> você entrou na lista de espera (vagas esgotadas). Para <strong>${modsConfirmados.join(', ')}</strong> sua inscrição está confirmada!`;
+    }
+    const mods = Array.from(selecionados).map(id => NOMES_MOD[id]).join(', ');
+    const msg  = encodeURIComponent(
+      `🏆 Estou inscrito no *Festival de Inverno 2026* de Costa Marques/RO (01, 02 e 03 de Maio de 2026).\n` +
+      `📋 Minha ficha é *${ficha}* — Modalidades: ${mods}.\n\n` +
+      `📲 Inscreva-se também:\nhttps://festival-inverno.vercel.app`
+    );
+    document.getElementById('share-link').href = 'https://wa.me/?text=' + msg;
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -697,6 +729,81 @@ async function submeterAdicao() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── Calcular posição na lista de espera ────────────────────────
+async function calcularPosicaoEspera(modalidadeId, participanteId) {
+  try {
+    const espera = await get('inscricoes',
+      `modalidade_id=eq.${modalidadeId}&status=eq.lista_espera&select=id,participante_id,created_at&order=created_at.asc`
+    );
+    if (!Array.isArray(espera)) return 1;
+    const pos = espera.findIndex(i => i.participante_id === participanteId);
+    return pos >= 0 ? pos + 1 : espera.length;
+  } catch (e) {
+    return 1;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// VAGAS — Carregar contagem e bloquear cards esgotados
+// ══════════════════════════════════════════════════════════════
+async function carregarVagas() {
+  try {
+    const inscricoes = await get('inscricoes', 'select=modalidade_id,status');
+    if (!Array.isArray(inscricoes)) return;
+
+    // Contar apenas confirmados por modalidade
+    const contagem = {};
+    inscricoes.forEach(i => {
+      if (i.status === 'confirmado' || !i.status) {
+        contagem[i.modalidade_id] = (contagem[i.modalidade_id] || 0) + 1;
+      }
+    });
+
+    // Para cada modalidade, verificar se está esgotada
+    Object.entries(MODALIDADES).forEach(([id, mod]) => {
+      const qtd   = contagem[id] || 0;
+      const card  = document.getElementById('ev' + id);
+      if (!card) return;
+
+      if (qtd >= MAX_VAGAS) {
+        // Vagas esgotadas — abre lista de espera (não bloqueia, mas avisa)
+        card.dataset.listaEspera = 'true';
+
+        // Badge laranja de lista de espera
+        const tipo = card.querySelector('.evento-tipo');
+        if (tipo && !card.querySelector('.vagas-espera-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'vagas-espera-badge';
+          badge.textContent = '⏳ Lista de espera';
+          tipo.parentElement.insertBefore(badge, tipo.nextSibling);
+        }
+
+        // Atualiza badge de prêmio
+        const premio = card.querySelector('.evento-premio');
+        if (premio) {
+          premio.textContent = '⏳ Vagas confirmadas esgotadas — lista de espera';
+          premio.classList.add('espera-badge');
+        }
+      } else {
+        // Mostra vagas restantes se estiver quase cheio (≤ 5 restantes)
+        const restantes = MAX_VAGAS - qtd;
+        if (restantes <= 5) {
+          const tipo = card.querySelector('.evento-tipo');
+          if (tipo && !card.querySelector('.vagas-aviso')) {
+            const aviso = document.createElement('span');
+            aviso.className = 'vagas-aviso';
+            aviso.textContent = `⚠️ Últimas ${restantes} vaga${restantes > 1 ? 's' : ''}`;
+            tipo.parentElement.insertBefore(aviso, tipo.nextSibling);
+          }
+        }
+      }
+    });
+  } catch (e) {
+    // Silencioso — se falhar, o formulário continua funcionando normalmente
+    console.warn('Não foi possível carregar status de vagas:', e.message);
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 // INICIALIZAÇÃO
 // ══════════════════════════════════════════════════════════════
@@ -733,6 +840,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Configurar autorização de imagem dos membros (Pesca)
   _setupAutorizacaoMembros();
+
+  // Carregar status de vagas e bloquear cards esgotados
+  carregarVagas();
 
   // Data/hora de acesso no rodapé
   const el = document.getElementById('data-acesso');
