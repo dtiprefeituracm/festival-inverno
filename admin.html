@@ -842,10 +842,18 @@ function abrirModal(id) {
         </div>`;
     }
 
+    const botaoEditar = (ehPesca)
+      ? `<button onclick="abrirEditarMembros('${i.id}','${(i.nome_equipe||'').replace(/'/g,"\'")}')" 
+           style="margin-top:8px;padding:5px 12px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;">
+           ✏️ Editar membros da equipe
+         </button>`
+      : '';
+
     return `
       <div class="modal-evento-item">
         <div class="modal-evento-nome">${mod.nome} — ${mod.sub}</div>
         ${parceiro}
+        ${botaoEditar}
       </div>`;
   }).join('');
 
@@ -1153,7 +1161,7 @@ function renderSemInscricao(participantes, inscricoes) {
         <div>
           <div class="sem-insc-nome">${p.nome_completo}</div>
           <div class="sem-insc-detalhe">CPF: ${p.cpf || '—'} · Tel: ${p.telefone || '—'} · ${p.cidade || '—'}/${p.uf || '—'}</div>
-          <div class="sem-insc-detalhe" style="color:#94a3b8;">Cadastrado em: ${new Date(p.created_at).toLocaleString('pt-BR')}</div>
+          <div class="sem-insc-detalhe" style="color:#94a3b8;">Cadastrado em: ${p.criado_em ? new Date(p.criado_em).toLocaleString('pt-BR') : '—'}</div>
         </div>
         <div class="sem-insc-acoes">
           <button class="promover-btn" onclick="abrirModalInscricao('${p.id}', '${p.nome_completo.replace(/'/g, "\'")}')">➕ Adicionar</button>
@@ -1224,6 +1232,68 @@ Esta ação remove o cadastro permanentemente do banco de dados.`)) return;
 
 function resolverSemInscricao() {
   document.getElementById('sem-inscricao-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ================================================================
+// EDITAR MEMBROS DA EQUIPE (Pesca)
+// ================================================================
+function abrirEditarMembros(inscId, nomeEquipe) {
+  document.getElementById('modal-membros-insc-id').value = inscId;
+  document.getElementById('mm-equipe').value  = nomeEquipe || '';
+  // Limpa os campos
+  ['m2','m3','m4'].forEach(m => {
+    document.getElementById('mm-' + m + '-nome').value = '';
+    document.getElementById('mm-' + m + '-cpf').value  = '';
+    const tel = document.getElementById('mm-' + m + '-tel');
+    if (tel) tel.value = '';
+  });
+  // Preenche com dados existentes
+  const p = participanteAtual;
+  if (p) {
+    const insc = p.inscricoes.find(i => i.id == inscId);
+    if (insc) {
+      if (insc.parceiro_nome)  document.getElementById('mm-m2-nome').value = insc.parceiro_nome;
+      if (insc.parceiro_cpf)   document.getElementById('mm-m2-cpf').value  = insc.parceiro_cpf;
+      if (insc.parceiro_telefone) document.getElementById('mm-m2-tel').value = insc.parceiro_telefone;
+      if (insc.membro3_nome)   document.getElementById('mm-m3-nome').value = insc.membro3_nome;
+      if (insc.membro3_cpf)    document.getElementById('mm-m3-cpf').value  = insc.membro3_cpf;
+      if (insc.membro4_nome)   document.getElementById('mm-m4-nome').value = insc.membro4_nome;
+      if (insc.membro4_cpf)    document.getElementById('mm-m4-cpf').value  = insc.membro4_cpf;
+    }
+  }
+  document.getElementById('modal-membros').classList.add('show');
+}
+
+function fecharModalMembros() {
+  document.getElementById('modal-membros').classList.remove('show');
+}
+
+async function salvarMembros() {
+  const id    = document.getElementById('modal-membros-insc-id').value;
+  const dados = {
+    nome_equipe:        document.getElementById('mm-equipe').value.trim() || null,
+    parceiro_nome:      document.getElementById('mm-m2-nome').value.trim() || null,
+    parceiro_cpf:       document.getElementById('mm-m2-cpf').value.trim() || null,
+    parceiro_telefone:  document.getElementById('mm-m2-tel').value.trim() || null,
+    membro3_nome:       document.getElementById('mm-m3-nome').value.trim() || null,
+    membro3_cpf:        document.getElementById('mm-m3-cpf').value.trim() || null,
+    membro4_nome:       document.getElementById('mm-m4-nome').value.trim() || null,
+    membro4_cpf:        document.getElementById('mm-m4-cpf').value.trim() || null,
+  };
+
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'atualizar', tabela: 'inscricoes', id, dados })
+  });
+  const d = await r.json();
+  if (Array.isArray(d) && d.length > 0) {
+    fecharModalMembros();
+    alert('✅ Membros da equipe salvos com sucesso!');
+    carregarDados();
+  } else {
+    alert('Erro ao salvar. Verifique se o SQL da migration foi executado no Supabase.');
+  }
 }
 
 function imprimirHTML(html) {
@@ -1473,6 +1543,33 @@ function imprimirQuantitativo() {
   </div>`);
 }
 </script>
+
+<!-- Modal: editar membros da equipe de pesca -->
+<div class="modal-overlay" id="modal-membros">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-titulo">🎣 Editar membros da equipe</div>
+    <div class="modal-sub" id="modal-membros-sub">Preencha os dados dos membros da equipe.</div>
+    <input type="hidden" id="modal-membros-insc-id">
+    <div class="modal-field">
+      <label>Nome da equipe *</label>
+      <input type="text" id="mm-equipe" placeholder="Ex: Pescadoras do Guaporé" maxlength="60">
+    </div>
+    <div style="margin-top:14px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Membro 2 <span style="font-weight:400;color:#94a3b8;">(opcional)</span></div>
+    <div class="modal-field"><label>Nome</label><input type="text" id="mm-m2-nome" placeholder="Nome completo"></div>
+    <div class="modal-field"><label>CPF</label><input type="text" id="mm-m2-cpf" placeholder="000.000.000-00" maxlength="14"></div>
+    <div class="modal-field"><label>Telefone</label><input type="tel" id="mm-m2-tel" placeholder="(69) 9 0000-0000"></div>
+    <div style="margin-top:14px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Membro 3 <span style="font-weight:400;color:#94a3b8;">(opcional)</span></div>
+    <div class="modal-field"><label>Nome</label><input type="text" id="mm-m3-nome" placeholder="Nome completo"></div>
+    <div class="modal-field"><label>CPF</label><input type="text" id="mm-m3-cpf" placeholder="000.000.000-00" maxlength="14"></div>
+    <div style="margin-top:14px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Membro 4 <span style="font-weight:400;color:#94a3b8;">(opcional)</span></div>
+    <div class="modal-field"><label>Nome</label><input type="text" id="mm-m4-nome" placeholder="Nome completo"></div>
+    <div class="modal-field"><label>CPF</label><input type="text" id="mm-m4-cpf" placeholder="000.000.000-00" maxlength="14"></div>
+    <div class="modal-acoes">
+      <button class="btn-modal-cancelar" onclick="fecharModalMembros()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="salvarMembros()">💾 Salvar membros</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal: adicionar inscrição manualmente -->
 <div class="modal-overlay" id="modal-inscricao">
