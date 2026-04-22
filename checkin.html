@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<!--
+  checkin.html — Credenciamento do Festival de Inverno 2026
+  Página mobile para leitura de QR Code e confirmação de presença
+  © 2026 Ewerson Luiz de Oliveira — DTI / Prefeitura de Costa Marques/RO
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Credenciamento — Festival de Inverno 2026</title>
+<!-- Biblioteca de leitura de QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; min-height: 100vh; color: white; }
+
+  /* ── Login ── */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-box { background: #1e293b; border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 360px; border: 1px solid #334155; }
+  .login-logo { text-align: center; margin-bottom: 24px; }
+  .login-logo img { height: 60px; margin-bottom: 10px; }
+  .login-logo h1 { font-size: 18px; color: white; }
+  .login-logo p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  .login-box label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; margin-top: 14px; }
+  .login-box input { width: 100%; padding: 12px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: white; font-size: 15px; outline: none; }
+  .login-box input:focus { border-color: #3b82f6; }
+  .login-btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 18px; }
+  .login-btn:active { background: #154794; }
+  .login-erro { color: #f87171; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+
+  /* ── App principal ── */
+  .app { display: none; }
+  .topbar { background: #1a56a0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-titulo { font-size: 14px; font-weight: 700; }
+  .topbar-sub { font-size: 11px; opacity: 0.75; }
+  .sair-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+  /* ── Tabs de modo ── */
+  .modo-tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; }
+  .modo-tab { flex: 1; padding: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .modo-tab.ativo { color: #60a5fa; border-bottom-color: #60a5fa; background: #0f172a; }
+
+  /* ── Scanner QR ── */
+  .scanner-wrap { position: relative; background: #000; }
+  #scanner-video { width: 100%; display: block; max-height: 65vh; object-fit: cover; }
+  .scanner-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .scanner-frame { width: 220px; height: 220px; border: 3px solid #60a5fa; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.55); position: relative; }
+  .scanner-frame::before, .scanner-frame::after {
+    content: ''; position: absolute; width: 30px; height: 30px;
+    border-color: #3b82f6; border-style: solid;
+  }
+  .scanner-frame::before { top: -4px; left: -4px; border-width: 4px 0 0 4px; border-radius: 8px 0 0 0; }
+  .scanner-frame::after  { bottom: -4px; right: -4px; border-width: 0 4px 4px 0; border-radius: 0 0 8px 0; }
+  .scanner-linha { position: absolute; left: 8px; right: 8px; height: 2px; background: #60a5fa; animation: scan 2s linear infinite; box-shadow: 0 0 6px #60a5fa; }
+  @keyframes scan { 0%{top:10px} 50%{top:calc(100% - 12px)} 100%{top:10px} }
+  .scanner-hint { text-align: center; padding: 12px 16px; font-size: 12px; color: #94a3b8; }
+  .scanner-status { text-align: center; padding: 8px 16px; font-size: 13px; font-weight: 600; }
+  .scanner-status.lendo { color: #60a5fa; }
+  .scanner-status.encontrou { color: #34d399; }
+  .scanner-status.erro { color: #f87171; }
+
+  /* ── Busca manual ── */
+  .busca-wrap { padding: 20px 16px; }
+  .busca-wrap label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
+  .busca-input { width: 100%; padding: 14px 16px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; color: white; font-size: 16px; outline: none; margin-bottom: 12px; }
+  .busca-input:focus { border-color: #3b82f6; }
+  .busca-btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .busca-btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+  .busca-btn:active:not(:disabled) { background: #154794; }
+
+  /* ── Resultado do participante ── */
+  .resultado { display: none; padding: 0 16px 24px; }
+  .resultado-card { background: #1e293b; border-radius: 16px; overflow: hidden; border: 1px solid #334155; }
+
+  /* Header do resultado — verde se confirmado, amarelo se espera */
+  .resultado-header { padding: 16px; display: flex; align-items: center; gap: 12px; }
+  .resultado-header.confirmado { background: #064e3b; border-bottom: 1px solid #065f46; }
+  .resultado-header.espera     { background: #78350f; border-bottom: 1px solid #92400e; }
+  .resultado-header.ja-presente { background: #1e3a5f; border-bottom: 1px solid #1a56a0; }
+  .resultado-icone { font-size: 36px; flex-shrink: 0; }
+  .resultado-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; margin-bottom: 2px; }
+  .resultado-nome { font-size: 18px; font-weight: 800; line-height: 1.2; }
+  .resultado-ficha { font-size: 12px; opacity: 0.7; margin-top: 3px; }
+
+  /* Detalhes */
+  .resultado-body { padding: 16px; }
+  .detalhe-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 13px; }
+  .detalhe-row:last-child { border-bottom: none; }
+  .detalhe-label { color: #64748b; }
+  .detalhe-val { color: white; font-weight: 500; text-align: right; max-width: 60%; }
+  .mod-badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 8px; margin: 2px; font-weight: 500; }
+  .mod-confirmado { background: #064e3b; color: #34d399; }
+  .mod-espera     { background: #78350f; color: #fbbf24; }
+
+  /* Botão confirmar presença */
+  .confirmar-btn { width: 100%; padding: 16px; background: #16a34a; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .confirmar-btn:active { background: #15803d; }
+  .confirmar-btn:disabled { background: #1e3a5f; color: #60a5fa; cursor: default; }
+  .confirmar-btn.ja-presente { background: #1e3a5f; color: #60a5fa; }
+  .novo-btn { width: 100%; padding: 12px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+  .novo-btn:active { background: #0f172a; }
+
+  /* Alerta de lista de espera */
+  .alerta-espera { background: #78350f; border: 1px solid #92400e; border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 13px; color: #fde68a; line-height: 1.5; }
+
+  /* Feedback de sucesso */
+  .feedback { display: none; position: fixed; inset: 0; background: rgba(5,150,105,0.95); align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 99; }
+  .feedback.show { display: flex; }
+  .feedback-icone { font-size: 80px; }
+  .feedback-nome { font-size: 22px; font-weight: 800; text-align: center; }
+  .feedback-sub { font-size: 14px; opacity: 0.85; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="10.png" alt="SEMESP">
+      <h1>Credenciamento</h1>
+      <p>Festival de Inverno 2026 — SEMESP</p>
+    </div>
+    <label>Senha de acesso</label>
+    <input type="password" id="login-senha" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter') entrar()" autocomplete="current-password">
+    <button class="login-btn" onclick="entrar()">Entrar</button>
+    <div class="login-erro" id="login-erro">Senha incorreta.</div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div class="app" id="app">
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-titulo">📋 Credenciamento</div>
+      <div class="topbar-sub">Festival de Inverno 2026 · SEMESP</div>
+    </div>
+    <button class="sair-btn" onclick="sair()">Sair</button>
+  </div>
+
+  <div class="modo-tabs">
+    <div class="modo-tab ativo" id="tab-qr" onclick="mudarModo('qr')">📷 QR Code</div>
+    <div class="modo-tab"       id="tab-busca" onclick="mudarModo('busca')">🔍 Buscar</div>
+  </div>
+
+  <!-- Modo QR -->
+  <div id="modo-qr">
+    <div class="scanner-wrap">
+      <video id="scanner-video" autoplay playsinline muted></video>
+      <canvas id="scanner-canvas" style="display:none;"></canvas>
+      <div class="scanner-overlay">
+        <div class="scanner-frame">
+          <div class="scanner-linha"></div>
+        </div>
+      </div>
+    </div>
+    <div class="scanner-hint">Aponte a câmera para o QR Code da ficha do participante</div>
+    <div class="scanner-status lendo" id="scanner-status">🔍 Aguardando QR Code...</div>
+  </div>
+
+  <!-- Modo busca manual -->
+  <div id="modo-busca" style="display:none;">
+    <div class="busca-wrap">
+      <label>Número da ficha (ex: FI-1234) ou CPF</label>
+      <input type="text" id="busca-input" class="busca-input"
+             placeholder="FI-1234 ou 000.000.000-00"
+             oninput="mascararBusca(this)"
+             onkeydown="if(event.key==='Enter') buscar()">
+      <button class="busca-btn" id="busca-btn" onclick="buscar()">Buscar</button>
+    </div>
+  </div>
+
+  <!-- Resultado -->
+  <div class="resultado" id="resultado">
+    <div class="resultado-card" id="resultado-card">
+      <div class="resultado-header" id="resultado-header">
+        <div class="resultado-icone" id="resultado-icone">✅</div>
+        <div>
+          <div class="resultado-status" id="resultado-status">Confirmado</div>
+          <div class="resultado-nome" id="resultado-nome">—</div>
+          <div class="resultado-ficha" id="resultado-ficha">Ficha: —</div>
+        </div>
+      </div>
+      <div class="resultado-body">
+        <div id="resultado-detalhes"></div>
+        <div id="alerta-espera" class="alerta-espera" style="display:none;">
+          ⚠️ <strong>Atenção:</strong> Este participante está na <strong>lista de espera</strong>.
+          Só poderá participar se houver desistência confirmada pela SEMESP.
+        </div>
+        <button class="confirmar-btn" id="confirmar-btn" onclick="confirmarPresenca()">
+          ✅ Confirmar presença
+        </button>
+        <button class="novo-btn" onclick="novaLeitura()">🔄 Nova leitura</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Feedback visual de confirmação -->
+<div class="feedback" id="feedback">
+  <div class="feedback-icone">✅</div>
+  <div class="feedback-nome" id="feedback-nome">Presença confirmada!</div>
+  <div class="feedback-sub" id="feedback-sub"></div>
+</div>
+
+<script>
+// ================================================================
+// CONFIGURAÇÃO
+// ================================================================
+const MODALIDADES = {
+  1:{nome:'Vôlei de Areia',sub:'Masculino'}, 2:{nome:'Vôlei de Areia',sub:'Feminino'},
+  3:{nome:'Futevôlei',sub:'Masculino'},      4:{nome:'Canoagem',sub:'Dupla'},
+  5:{nome:'Caiaque',sub:'Individual'},       6:{nome:'Pesca',sub:'Masculino'},
+  7:{nome:'Pesca',sub:'Feminino'},
+};
+
+// ================================================================
+// LOGIN
+// ================================================================
+async function entrar() {
+  const senha = document.getElementById('login-senha').value;
+  const erro  = document.getElementById('login-erro');
+  erro.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: 'admin', senha })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      sessionStorage.setItem('checkin-token', d.token);
+      document.getElementById('login-wrap').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      iniciarScanner();
+    } else {
+      erro.style.display = 'block';
+    }
+  } catch(e) {
+    erro.textContent = 'Erro de conexão.';
+    erro.style.display = 'block';
+  }
+}
+
+function sair() {
+  sessionStorage.removeItem('checkin-token');
+  pararScanner();
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('resultado').style.display = 'none';
+}
+
+// ================================================================
+// MODO (QR / BUSCA)
+// ================================================================
+let modoAtual = 'qr';
+
+function mudarModo(modo) {
+  modoAtual = modo;
+  document.getElementById('modo-qr').style.display    = modo === 'qr' ? 'block' : 'none';
+  document.getElementById('modo-busca').style.display = modo === 'busca' ? 'block' : 'none';
+  document.getElementById('tab-qr').classList.toggle('ativo', modo === 'qr');
+  document.getElementById('tab-busca').classList.toggle('ativo', modo === 'busca');
+  document.getElementById('resultado').style.display = 'none';
+
+  if (modo === 'qr') {
+    iniciarScanner();
+    document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
+    document.getElementById('scanner-status').className = 'scanner-status lendo';
+  } else {
+    pararScanner();
+    document.getElementById('busca-input').focus();
+  }
+}
+
+// ================================================================
+// SCANNER QR
+// ================================================================
+let streamAtivo = null;
+let animFrame   = null;
+let scanBloqueado = false;
+
+async function iniciarScanner() {
+  const video  = document.getElementById('scanner-video');
+  const canvas = document.getElementById('scanner-canvas');
+  const status = document.getElementById('scanner-status');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    streamAtivo = stream;
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      video.play();
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      scanFrame(video, canvas, status);
+    };
+  } catch(e) {
+    status.textContent = '📵 Câmera indisponível — use a busca manual';
+    status.className   = 'scanner-status erro';
+    mudarModo('busca');
+  }
+}
+
+function pararScanner() {
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  if (streamAtivo) {
+    streamAtivo.getTracks().forEach(t => t.stop());
+    streamAtivo = null;
+  }
+}
+
+function scanFrame(video, canvas, status) {
+  if (video.readyState === video.HAVE_ENOUGH_DATA && !scanBloqueado) {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+    if (code && code.data) {
+      const texto = code.data.trim().toUpperCase();
+      if (/^FI-\d+$/.test(texto)) {
+        scanBloqueado = true;
+        status.textContent = `✅ QR lido: ${texto}`;
+        status.className   = 'scanner-status encontrou';
+        buscarPorFicha(texto);
+      }
+    }
+  }
+  animFrame = requestAnimationFrame(() => scanFrame(video, canvas, status));
+}
+
+// ================================================================
+// BUSCA
+// ================================================================
+function mascararBusca(el) {
+  const v = el.value;
+  if (/^[a-zA-Z]/.test(v)) { el.value = v.toUpperCase(); return; }
+  let d = v.replace(/\D/g, '').slice(0, 11);
+  if      (d.length > 9) d = d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  else if (d.length > 6) d = d.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+  else if (d.length > 3) d = d.replace(/(\d{3})(\d+)/, '$1.$2');
+  el.value = d;
+}
+
+async function buscar() {
+  const inp = document.getElementById('busca-input').value.trim();
+  const btn = document.getElementById('busca-btn');
+  if (!inp) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Buscando...';
+
+  const fi = inp.toUpperCase().replace(/\s/g,'').replace(/^FI\-?(\d+)$/, 'FI-$1');
+  if (/^FI-\d+$/.test(fi)) {
+    await buscarPorFicha(fi);
+  } else {
+    await buscarPorCPF(inp);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Buscar';
+}
+
+async function buscarPorFicha(ficha) {
+  const r = await apiGet('inscricoes', `numero_ficha=eq.${encodeURIComponent(ficha)}&select=participante_id&limit=1`);
+  if (!Array.isArray(r) || r.length === 0) {
+    mostrarNaoEncontrado(ficha);
+    return;
+  }
+  const pid = r[0].participante_id;
+  await buscarParticipante(pid);
+}
+
+async function buscarPorCPF(cpf) {
+  const fmt = cpf.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  let r = await apiGet('participantes', `cpf=eq.${encodeURIComponent(fmt)}&select=id&limit=1`);
+  if (!Array.isArray(r) || r.length === 0) {
+    r = await apiGet('participantes', `cpf=eq.${encodeURIComponent(cpf.replace(/\D/g,''))}&select=id&limit=1`);
+  }
+  if (!Array.isArray(r) || r.length === 0) {
+    mostrarNaoEncontrado(cpf);
+    return;
+  }
+  await buscarParticipante(r[0].id);
+}
+
+async function buscarParticipante(pid) {
+  const [partic, inscr] = await Promise.all([
+    apiGet('participantes', `id=eq.${pid}&select=*`),
+    apiGet('inscricoes', `participante_id=eq.${pid}&select=*`)
+  ]);
+
+  if (!Array.isArray(partic) || partic.length === 0) {
+    mostrarNaoEncontrado('—');
+    return;
+  }
+
+  mostrarResultado(partic[0], Array.isArray(inscr) ? inscr : []);
+}
+
+// ================================================================
+// EXIBIR RESULTADO
+// ================================================================
+let participanteAtual = null;
+let inscricoesAtuais  = [];
+
+function mostrarResultado(p, inscricoes) {
+  participanteAtual = p;
+  inscricoesAtuais  = inscricoes;
+
+  const temEspera   = inscricoes.some(i => i.status === 'lista_espera');
+  const todasEspera = inscricoes.every(i => i.status === 'lista_espera');
+  const jaPresente  = inscricoes.some(i => i.presenca === true);
+  const ficha       = inscricoes[0]?.numero_ficha || '—';
+
+  // Header
+  const header  = document.getElementById('resultado-header');
+  const icone   = document.getElementById('resultado-icone');
+  const statusEl = document.getElementById('resultado-status');
+
+  if (jaPresente) {
+    header.className = 'resultado-header ja-presente';
+    icone.textContent = '🔵';
+    statusEl.textContent = 'Presença já confirmada';
+  } else if (todasEspera) {
+    header.className = 'resultado-header espera';
+    icone.textContent = '⏳';
+    statusEl.textContent = 'Lista de espera';
+  } else {
+    header.className = 'resultado-header confirmado';
+    icone.textContent = '✅';
+    statusEl.textContent = 'Confirmado';
+  }
+
+  document.getElementById('resultado-nome').textContent  = p.nome_completo;
+  document.getElementById('resultado-ficha').textContent = `Ficha: ${ficha}`;
+
+  // Detalhes
+  const nasc = p.data_nascimento
+    ? new Date(p.data_nascimento + 'T00:00').toLocaleDateString('pt-BR')
+    : '—';
+
+  const modsBadges = inscricoes.map(i => {
+    const m   = MODALIDADES[i.modalidade_id];
+    const cls = i.status === 'lista_espera' ? 'mod-espera' : 'mod-confirmado';
+    const pre = i.status === 'lista_espera' ? '⏳ ' : '✅ ';
+    return `<span class="mod-badge ${cls}">${pre}${m ? m.nome + ' ' + m.sub : 'Mod.' + i.modalidade_id}</span>`;
+  }).join('');
+
+  document.getElementById('resultado-detalhes').innerHTML = `
+    <div class="detalhe-row"><span class="detalhe-label">Cidade/UF</span><span class="detalhe-val">${p.cidade || '—'} / ${p.uf || '—'}</span></div>
+    <div class="detalhe-row"><span class="detalhe-label">Nascimento</span><span class="detalhe-val">${nasc}</span></div>
+    <div class="detalhe-row"><span class="detalhe-label">Telefone</span><span class="detalhe-val">${p.telefone || '—'}</span></div>
+    <div class="detalhe-row"><span class="detalhe-label">Modalidades</span><span class="detalhe-val">${modsBadges}</span></div>
+    <div class="detalhe-row"><span class="detalhe-label">Uso de imagem</span><span class="detalhe-val">${p.autorizacao_imagem ? '✅ Autorizado' : '❌ Não autorizado'}</span></div>
+  `;
+
+  // Alerta espera
+  document.getElementById('alerta-espera').style.display = temEspera ? 'block' : 'none';
+
+  // Botão confirmar
+  const btn = document.getElementById('confirmar-btn');
+  if (jaPresente) {
+    btn.textContent = '🔵 Presença já confirmada';
+    btn.disabled    = true;
+    btn.className   = 'confirmar-btn ja-presente';
+  } else if (todasEspera) {
+    btn.textContent = '⚠️ Lista de espera — não confirmar';
+    btn.disabled    = true;
+    btn.className   = 'confirmar-btn';
+    btn.style.background = '#92400e';
+  } else {
+    btn.textContent = '✅ Confirmar presença';
+    btn.disabled    = false;
+    btn.className   = 'confirmar-btn';
+    btn.style.background = '';
+  }
+
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth' });
+}
+
+function mostrarNaoEncontrado(ref) {
+  document.getElementById('scanner-status').textContent = `❌ Ficha ${ref} não encontrada`;
+  document.getElementById('scanner-status').className   = 'scanner-status erro';
+  scanBloqueado = false;
+  setTimeout(() => {
+    document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
+    document.getElementById('scanner-status').className   = 'scanner-status lendo';
+  }, 3000);
+}
+
+// ================================================================
+// CONFIRMAR PRESENÇA
+// ================================================================
+async function confirmarPresenca() {
+  if (!participanteAtual) return;
+  const btn = document.getElementById('confirmar-btn');
+  btn.disabled = true;
+  btn.textContent = 'Confirmando...';
+
+  // Confirmar presença em todas as inscrições confirmadas
+  const inscConf = inscricoesAtuais.filter(i => i.status !== 'lista_espera');
+  let ok = true;
+  for (const i of inscConf) {
+    const r = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao: 'atualizar',
+        tabela: 'inscricoes',
+        id: i.id,
+        dados: { presenca: true, presenca_em: new Date().toISOString() }
+      })
+    });
+    const d = await r.json();
+    if (!Array.isArray(d) || d.length === 0) ok = false;
+  }
+
+  if (ok) {
+    // Feedback visual verde
+    const fb = document.getElementById('feedback');
+    document.getElementById('feedback-nome').textContent = participanteAtual.nome_completo;
+    document.getElementById('feedback-sub').textContent  =
+      `Ficha ${inscricoesAtuais[0]?.numero_ficha || '—'} · Presença confirmada ✅`;
+    fb.classList.add('show');
+    setTimeout(() => {
+      fb.classList.remove('show');
+      novaLeitura();
+    }, 2500);
+  } else {
+    btn.textContent = 'Erro — tente novamente';
+    btn.disabled = false;
+  }
+}
+
+// ================================================================
+// NOVA LEITURA
+// ================================================================
+function novaLeitura() {
+  participanteAtual = null;
+  inscricoesAtuais  = [];
+  document.getElementById('resultado').style.display = 'none';
+  scanBloqueado = false;
+  if (modoAtual === 'qr') {
+    document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
+    document.getElementById('scanner-status').className   = 'scanner-status lendo';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    document.getElementById('busca-input').value = '';
+    document.getElementById('busca-input').focus();
+  }
+}
+
+// ================================================================
+// API
+// ================================================================
+async function apiGet(tabela, query) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'buscar', tabela, query: query || 'select=*' })
+  });
+  return r.json();
+}
+</script>
+</body>
+</html>
