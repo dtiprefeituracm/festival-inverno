@@ -149,7 +149,7 @@
   <!-- Modo QR -->
   <div id="modo-qr">
     <div class="scanner-wrap">
-      <video id="scanner-video" autoplay playsinline muted></video>
+      <video id="scanner-video" autoplay playsinline muted webkit-playsinline style="width:100%;min-height:200px;display:block;background:#000;"></video>
       <canvas id="scanner-canvas" style="display:none;"></canvas>
       <div class="scanner-overlay">
         <div class="scanner-frame">
@@ -269,71 +269,147 @@ function mudarModo(modo) {
   document.getElementById('resultado').style.display = 'none';
 
   if (modo === 'qr') {
-    iniciarScanner();
-    document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
+    // Para stream anterior se existir (para reiniciar limpo)
+    pararScanner();
+    document.getElementById('scanner-status').textContent = '⏳ Iniciando câmera...';
     document.getElementById('scanner-status').className = 'scanner-status lendo';
+    scanBloqueado = false;
+    // Pequeno delay para o DOM atualizar antes de pedir a câmera
+    setTimeout(iniciarScanner, 150);
   } else {
     pararScanner();
-    document.getElementById('busca-input').focus();
+    setTimeout(() => document.getElementById('busca-input').focus(), 100);
   }
 }
 
 // ================================================================
 // SCANNER QR
 // ================================================================
-let streamAtivo = null;
-let animFrame   = null;
+let streamAtivo   = null;
+let animFrame     = null;
 let scanBloqueado = false;
 
 async function iniciarScanner() {
+  // Se já tem stream ativo, não reinicia
+  if (streamAtivo) return;
+
   const video  = document.getElementById('scanner-video');
   const canvas = document.getElementById('scanner-canvas');
   const status = document.getElementById('scanner-status');
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
-    streamAtivo = stream;
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      video.play();
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      scanFrame(video, canvas, status);
-    };
-  } catch(e) {
-    status.textContent = '📵 Câmera indisponível — use a busca manual';
-    status.className   = 'scanner-status erro';
-    mudarModo('busca');
+  // Verificar se o navegador suporta getUserMedia
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    mostrarErroCamera(status, 'Seu navegador não suporta câmera. Use o modo Busca.');
+    return;
   }
+
+  status.textContent = '⏳ Iniciando câmera...';
+  status.className   = 'scanner-status lendo';
+
+  // Tentar primeiro a câmera traseira (environment), depois qualquer câmera
+  const tentativas = [
+    { video: { facingMode: { exact: 'environment' } } },
+    { video: { facingMode: 'environment' } },
+    { video: true },
+  ];
+
+  let stream = null;
+  for (const constraints of tentativas) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      break; // sucesso — para de tentar
+    } catch (e) {
+      // tenta a próxima opção
+    }
+  }
+
+  if (!stream) {
+    mostrarErroCamera(status, 'Câmera não encontrada ou permissão negada. Use o modo Busca.');
+    return;
+  }
+
+  streamAtivo    = stream;
+  video.srcObject = stream;
+
+  // Aguarda o vídeo estar pronto de forma confiável
+  video.addEventListener('loadedmetadata', function onMeta() {
+    video.removeEventListener('loadedmetadata', onMeta);
+    video.play().then(() => {
+      // Define tamanho do canvas igual ao vídeo real
+      canvas.width  = video.videoWidth  || 640;
+      canvas.height = video.videoHeight || 480;
+      status.textContent = '🔍 Aguardando QR Code...';
+      status.className   = 'scanner-status lendo';
+      scanFrame(video, canvas, status);
+    }).catch(() => {
+      mostrarErroCamera(status, 'Não foi possível iniciar o vídeo. Use o modo Busca.');
+    });
+  });
+
+  // Fallback: alguns navegadores não disparam loadedmetadata
+  setTimeout(() => {
+    if (canvas.width === 0 && video.readyState >= 2) {
+      canvas.width  = video.videoWidth  || 640;
+      canvas.height = video.videoHeight || 480;
+      if (!animFrame) {
+        status.textContent = '🔍 Aguardando QR Code...';
+        scanFrame(video, canvas, status);
+      }
+    }
+  }, 2000);
+}
+
+function mostrarErroCamera(status, msg) {
+  status.textContent = '📵 ' + msg;
+  status.className   = 'scanner-status erro';
+  // Muda para busca manual automaticamente após 2s
+  setTimeout(() => mudarModo('busca'), 2000);
 }
 
 function pararScanner() {
-  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  if (animFrame) {
+    cancelAnimationFrame(animFrame);
+    animFrame = null;
+  }
   if (streamAtivo) {
     streamAtivo.getTracks().forEach(t => t.stop());
     streamAtivo = null;
   }
+  const video = document.getElementById('scanner-video');
+  if (video) video.srcObject = null;
 }
 
 function scanFrame(video, canvas, status) {
-  if (video.readyState === video.HAVE_ENOUGH_DATA && !scanBloqueado) {
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
+  // Para se o stream foi encerrado
+  if (!streamAtivo) return;
 
-    if (code && code.data) {
-      const texto = code.data.trim().toUpperCase();
-      if (/^FI-\d+$/.test(texto)) {
-        scanBloqueado = true;
-        status.textContent = `✅ QR lido: ${texto}`;
-        status.className   = 'scanner-status encontrou';
-        buscarPorFicha(texto);
+  if (!scanBloqueado && video.readyState >= 2 && canvas.width > 0) {
+    try {
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, {
+        inversionAttempts: 'dontInvert', // mais rápido
+      });
+
+      if (code && code.data) {
+        const texto = code.data.trim().toUpperCase().replace(/\s/g, '');
+        // Aceita FI-1234 ou FI1234
+        const ficha = texto.replace(/^FI\-?(\d+)$/, 'FI-$1');
+        if (/^FI-\d+$/.test(ficha)) {
+          scanBloqueado = true;
+          status.textContent = `✅ Código lido: ${ficha}`;
+          status.className   = 'scanner-status encontrou';
+          // Vibração tátil (se suportado)
+          if (navigator.vibrate) navigator.vibrate(100);
+          buscarPorFicha(ficha);
+        }
       }
+    } catch (e) {
+      // ignora erros de frame individual
     }
   }
+
   animFrame = requestAnimationFrame(() => scanFrame(video, canvas, status));
 }
 
@@ -554,6 +630,8 @@ function novaLeitura() {
     document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
     document.getElementById('scanner-status').className   = 'scanner-status lendo';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Garante que o scanner está rodando
+    if (!streamAtivo) iniciarScanner();
   } else {
     document.getElementById('busca-input').value = '';
     document.getElementById('busca-input').focus();
