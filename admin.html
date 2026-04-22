@@ -635,20 +635,23 @@ function abrirModalModalidade(id) {
       const cidade = `${p.cidade || '—'}/${p.uf || '—'}`;
 
       let parceiroHTML = '';
-      if (insc?.parceiro_nome) {
-        parceiroHTML = `
-          <div class="mod-item-parceiro">
-            <span>🤝</span>
-            <span>${insc.parceiro_nome}${insc.parceiro_cpf ? ` · ${insc.parceiro_cpf}` : ''}</span>
-          </div>`;
-      }
-      // Membros de equipe (Pesca)
-      let membroHTML = '';
-      if (insc?.membro3_nome) {
-        membroHTML += `<div class="mod-item-parceiro"><span>🎣</span><span>${insc.membro3_nome}</span></div>`;
-      }
-      if (insc?.membro4_nome) {
-        membroHTML += `<div class="mod-item-parceiro"><span>🎣</span><span>${insc.membro4_nome}</span></div>`;
+      let membroHTML   = '';
+      const isPesca = insc?.modalidade_id == 6 || insc?.modalidade_id == 7;
+      if (isPesca) {
+        if (insc?.nome_equipe) {
+          parceiroHTML += `<div class="mod-item-parceiro" style="background:#fffbeb;"><span>🎣</span><strong style="color:#92400e;">${insc.nome_equipe}</strong></div>`;
+        }
+        if (insc?.parceiro_nome) {
+          parceiroHTML += `<div class="mod-item-parceiro"><span>👤</span><span>Mbr2: ${insc.parceiro_nome}${insc.parceiro_cpf ? ` · ${insc.parceiro_cpf}` : ''}</span></div>`;
+        }
+        if (insc?.membro3_nome) {
+          membroHTML += `<div class="mod-item-parceiro"><span>👤</span><span>Mbr3: ${insc.membro3_nome}</span></div>`;
+        }
+        if (insc?.membro4_nome) {
+          membroHTML += `<div class="mod-item-parceiro"><span>👤</span><span>Mbr4: ${insc.membro4_nome}</span></div>`;
+        }
+      } else if (insc?.parceiro_nome) {
+        parceiroHTML = `<div class="mod-item-parceiro"><span>🤝</span><span>${insc.parceiro_nome}${insc.parceiro_cpf ? ` · ${insc.parceiro_cpf}` : ''}</span></div>`;
       }
 
       return `
@@ -735,10 +738,20 @@ function renderTabela(lista) {
       const tipoCss = mod.tipo === 'agua'
         ? (mod.dupla ? 'agua' : 'individual')
         : mod.tipo === 'pesca' ? 'pesca' : 'areia';
-      const parceiro = i.parceiro_nome
-        ? `<div class="dupla-info">c/ ${i.parceiro_nome}</div>`
-        : '';
-      return `<div><span class="badge badge-${tipoCss}">${mod.nome} ${mod.sub}</span>${parceiro}</div>`;
+      // Pesca: mostrar nome da equipe + membros
+      let membrosHTML = '';
+      if (i.modalidade_id == 6 || i.modalidade_id == 7) {
+        if (i.nome_equipe) {
+          membrosHTML += `<div class="dupla-info" style="font-weight:700;color:#92400e;">🎣 ${i.nome_equipe}</div>`;
+        }
+        if (i.parceiro_nome)  membrosHTML += `<div class="dupla-info">👤 ${i.parceiro_nome}</div>`;
+        if (i.membro3_nome)   membrosHTML += `<div class="dupla-info">👤 ${i.membro3_nome}</div>`;
+        if (i.membro4_nome)   membrosHTML += `<div class="dupla-info">👤 ${i.membro4_nome}</div>`;
+      } else {
+        // Duplas normais
+        if (i.parceiro_nome) membrosHTML = `<div class="dupla-info">c/ ${i.parceiro_nome}</div>`;
+      }
+      return `<div><span class="badge badge-${tipoCss}">${mod.nome} ${mod.sub}</span>${membrosHTML}</div>`;
     }).join('');
 
     return `<tr>
@@ -791,7 +804,35 @@ function abrirModal(id) {
     if (!mod) return '';
 
     let parceiro = '';
-    if (i.parceiro_nome) {
+    const ehPesca = i.modalidade_id == 6 || i.modalidade_id == 7;
+
+    if (ehPesca) {
+      // Nome da equipe
+      if (i.nome_equipe) {
+        parceiro += `
+          <div class="modal-parceiro" style="background:#fffbeb;border-color:#fcd34d;">
+            <div class="modal-parceiro-label" style="color:#92400e;">🎣 Nome da equipe</div>
+            <div style="font-weight:700;color:#92400e;">${i.nome_equipe}</div>
+          </div>`;
+      }
+      // Membros 2, 3, 4
+      const membros = [
+        { label: 'Membro 2', nome: i.parceiro_nome,  cpf: i.parceiro_cpf,  tel: i.parceiro_telefone },
+        { label: 'Membro 3', nome: i.membro3_nome,   cpf: i.membro3_cpf,   tel: null },
+        { label: 'Membro 4', nome: i.membro4_nome,   cpf: i.membro4_cpf,   tel: null },
+      ];
+      membros.forEach(m => {
+        if (m.nome) {
+          parceiro += `
+            <div class="modal-parceiro" style="margin-top:6px;">
+              <div class="modal-parceiro-label">👤 ${m.label}</div>
+              <div>${m.nome}</div>
+              ${m.cpf ? `<div style="font-size:11px;color:#64748b;">CPF: ${m.cpf}</div>` : ''}
+              ${m.tel ? `<div style="font-size:11px;color:#64748b;">Tel: ${m.tel}</div>` : ''}
+            </div>`;
+        }
+      });
+    } else if (i.parceiro_nome) {
       parceiro = `
         <div class="modal-parceiro">
           <div class="modal-parceiro-label">Parceiro(a)</div>
@@ -800,17 +841,6 @@ function abrirModal(id) {
           ${i.parceiro_telefone ? `<div style="font-size:11px;color:#64748b;">Tel: ${i.parceiro_telefone}</div>` : ''}
         </div>`;
     }
-    // Membros adicionais da pesca
-    ['membro3', 'membro4'].forEach(m => {
-      if (i[m + '_nome']) {
-        parceiro += `
-          <div class="modal-parceiro" style="margin-top:6px;">
-            <div class="modal-parceiro-label">Membro adicional</div>
-            <div>${i[m + '_nome']}</div>
-            ${i[m + '_cpf'] ? `<div style="font-size:11px;color:#64748b;">CPF: ${i[m + '_cpf']}</div>` : ''}
-          </div>`;
-      }
-    });
 
     return `
       <div class="modal-evento-item">
