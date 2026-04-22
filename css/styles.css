@@ -304,73 +304,69 @@
   border-color: #fbcfe8;
 }
 
-/* ── Vagas esgotadas e aviso de últimas vagas ── */
-
-/* Card bloqueado quando esgotado */
-.evento-card.esgotado {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: #f8fafc;
-  border-color: #cbd5e1 !important;
-  pointer-events: none;
+/* ── Indicador de vagas nos cards de evento ── */
+.vaga-indicador {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
 }
-.evento-card.esgotado .evento-nome,
-.evento-card.esgotado .evento-sub {
+
+/* Barra de progresso */
+.vaga-barra-wrap {
+  height: 5px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.vaga-barra {
+  height: 100%;
+  border-radius: 4px;
+  min-width: 2px;
+  transition: width 0.4s ease;
+}
+.vaga-barra-ok    { background: #22c55e; }
+.vaga-barra-quase { background: #f59e0b; }
+.vaga-barra-cheia { background: #ef4444; width: 100%; }
+
+/* Texto de status de vagas */
+.vaga-texto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.vaga-ok    { color: #16a34a; }
+.vaga-quase { color: #d97706; }
+.vaga-esgotada {
+  color: #dc2626;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.vaga-num {
+  font-size: 10px;
+  font-weight: 500;
   color: #94a3b8;
 }
-.evento-card.esgotado .check {
-  display: none;
-}
-
-/* Badge vermelho ESGOTADO (visível sempre, sem selecionar) */
-.vagas-esgotadas-badge {
-  display: inline-block;
+.vaga-espera-hint {
   font-size: 10px;
-  font-weight: 700;
-  color: #dc2626;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  padding: 3px 8px;
-  margin-top: 6px;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  color: #f59e0b;
+  display: block;
 }
 
-/* Aviso amarelo de últimas vagas */
-.vagas-aviso {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 600;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  border-radius: 10px;
-  padding: 3px 8px;
-  margin-top: 6px;
-}
+/* Quando o card esgotado é selecionado (lista de espera) */
+.evento-card.selecionado .vaga-esgotada,
+.evento-card.feminino-selecionado .vaga-esgotada { color: #b45309; }
 
-/* Badge de prêmio quando esgotado */
-.evento-premio.esgotado-badge {
-  color: #dc2626 !important;
-  background: #fef2f2 !important;
-  border-color: #fecaca !important;
-}
-
-/* ── Badge lista de espera no card de evento ── */
-.vagas-espera-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 600;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  border-radius: 10px;
-  padding: 3px 8px;
-  margin-top: 6px;
-}
+/* ── Badge de prêmio no estado de lista de espera ── */
 .evento-premio.espera-badge {
   color: #92400e !important;
   background: #fef3c7 !important;
   border-color: #fcd34d !important;
   font-size: 9px !important;
+  white-space: normal !important;
 }
