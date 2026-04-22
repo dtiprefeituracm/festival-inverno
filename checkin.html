@@ -148,17 +148,37 @@
 
   <!-- Modo QR -->
   <div id="modo-qr">
-    <div class="scanner-wrap">
-      <video id="scanner-video" autoplay playsinline muted webkit-playsinline style="width:100%;min-height:200px;display:block;background:#000;"></video>
-      <canvas id="scanner-canvas" style="display:none;"></canvas>
-      <div class="scanner-overlay">
-        <div class="scanner-frame">
-          <div class="scanner-linha"></div>
-        </div>
+    <!-- Tela inicial: botão para ativar câmera -->
+    <div id="camera-inicio" style="padding:32px 20px;text-align:center;">
+      <div style="font-size:56px;margin-bottom:16px;">📷</div>
+      <div style="font-size:16px;font-weight:700;color:white;margin-bottom:8px;">Leitor de QR Code</div>
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:24px;line-height:1.6;">
+        Toque no botão abaixo para ativar a câmera.<br>
+        Permita o acesso quando o navegador pedir.
+      </div>
+      <button onclick="pedirCameraPermissao()" style="padding:16px 32px;background:#1a56a0;color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:280px;">
+        📷 Ativar câmera
+      </button>
+      <div style="margin-top:14px;font-size:12px;color:#475569;">
+        Ou use a aba <strong style="color:#60a5fa;">🔍 Buscar</strong> para digitar a ficha
       </div>
     </div>
-    <div class="scanner-hint">Aponte a câmera para o QR Code da ficha do participante</div>
-    <div class="scanner-status lendo" id="scanner-status">🔍 Aguardando QR Code...</div>
+
+    <!-- Câmera ativa -->
+    <div id="camera-ativa" style="display:none;">
+      <div class="scanner-wrap">
+        <video id="scanner-video" autoplay playsinline muted webkit-playsinline style="width:100%;min-height:200px;display:block;background:#000;"></video>
+        <canvas id="scanner-canvas" style="display:none;"></canvas>
+        <div class="scanner-overlay">
+          <div class="scanner-frame">
+            <div class="scanner-linha"></div>
+          </div>
+        </div>
+      </div>
+      <div class="scanner-hint">Aponte a câmera para o QR Code da ficha</div>
+    </div>
+
+    <div class="scanner-status lendo" id="scanner-status" style="display:none;">🔍 Aguardando QR Code...</div>
   </div>
 
   <!-- Modo busca manual -->
@@ -237,7 +257,8 @@ async function entrar() {
       sessionStorage.setItem('checkin-token', d.token);
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('app').style.display = 'block';
-      iniciarScanner();
+      // Não inicia câmera automaticamente — aguarda clique do usuário
+      // (navegadores mobile bloqueiam getUserMedia sem gesto do usuário)
     } else {
       erro.style.display = 'block';
     }
@@ -269,13 +290,27 @@ function mudarModo(modo) {
   document.getElementById('resultado').style.display = 'none';
 
   if (modo === 'qr') {
-    // Para stream anterior se existir (para reiniciar limpo)
     pararScanner();
-    document.getElementById('scanner-status').textContent = '⏳ Iniciando câmera...';
-    document.getElementById('scanner-status').className = 'scanner-status lendo';
     scanBloqueado = false;
-    // Pequeno delay para o DOM atualizar antes de pedir a câmera
-    setTimeout(iniciarScanner, 150);
+    // Mostra botão de ativar câmera (não auto-inicia)
+    const ci = document.getElementById('camera-inicio');
+    if (ci && !ci.querySelector('button')) {
+      ci.innerHTML = `
+        <div style="padding:32px 20px;text-align:center;">
+          <div style="font-size:56px;margin-bottom:16px;">📷</div>
+          <div style="font-size:16px;font-weight:700;color:white;margin-bottom:8px;">Leitor de QR Code</div>
+          <div style="font-size:13px;color:#94a3b8;margin-bottom:24px;line-height:1.6;">
+            Toque no botão abaixo para ativar a câmera.<br>
+            Permita o acesso quando o navegador pedir.
+          </div>
+          <button onclick="pedirCameraPermissao()" style="padding:16px 32px;background:#1a56a0;color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;width:100%;max-width:280px;">
+            📷 Ativar câmera
+          </button>
+        </div>`;
+    }
+    ci.style.display = 'block';
+    document.getElementById('camera-ativa').style.display = 'none';
+    document.getElementById('scanner-status').style.display = 'none';
   } else {
     pararScanner();
     setTimeout(() => document.getElementById('busca-input').focus(), 100);
@@ -288,6 +323,17 @@ function mudarModo(modo) {
 let streamAtivo   = null;
 let animFrame     = null;
 let scanBloqueado = false;
+
+async function pedirCameraPermissao() {
+  // Mostrar feedback imediato ao usuário
+  document.getElementById('camera-inicio').innerHTML = `
+    <div style="padding:32px 20px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">⏳</div>
+      <div style="font-size:15px;color:white;margin-bottom:8px;">Solicitando permissão...</div>
+      <div style="font-size:13px;color:#94a3b8;">Permita o acesso à câmera quando aparecer a pergunta do navegador.</div>
+    </div>`;
+  await iniciarScanner();
+}
 
 async function iniciarScanner() {
   // Se já tem stream ativo, não reinicia
@@ -303,6 +349,7 @@ async function iniciarScanner() {
     return;
   }
 
+  status.style.display = 'block';
   status.textContent = '⏳ Iniciando câmera...';
   status.className   = 'scanner-status lendo';
 
@@ -331,11 +378,14 @@ async function iniciarScanner() {
   streamAtivo    = stream;
   video.srcObject = stream;
 
+  // Mostra a câmera e esconde o botão inicial
+  document.getElementById('camera-inicio').style.display = 'none';
+  document.getElementById('camera-ativa').style.display  = 'block';
+
   // Aguarda o vídeo estar pronto de forma confiável
   video.addEventListener('loadedmetadata', function onMeta() {
     video.removeEventListener('loadedmetadata', onMeta);
     video.play().then(() => {
-      // Define tamanho do canvas igual ao vídeo real
       canvas.width  = video.videoWidth  || 640;
       canvas.height = video.videoHeight || 480;
       status.textContent = '🔍 Aguardando QR Code...';
@@ -360,10 +410,22 @@ async function iniciarScanner() {
 }
 
 function mostrarErroCamera(status, msg) {
-  status.textContent = '📵 ' + msg;
-  status.className   = 'scanner-status erro';
-  // Muda para busca manual automaticamente após 2s
-  setTimeout(() => mudarModo('busca'), 2000);
+  status.style.display = 'block';
+  status.textContent   = '📵 ' + msg;
+  status.className     = 'scanner-status erro';
+  // Restaura o botão de início com mensagem de erro
+  const ci = document.getElementById('camera-inicio');
+  if (ci) ci.innerHTML = `
+    <div style="padding:32px 20px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">📵</div>
+      <div style="font-size:14px;color:#f87171;font-weight:700;margin-bottom:8px;">Câmera não disponível</div>
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:20px;line-height:1.6;">${msg}</div>
+      <button onclick="mudarModo('busca')" style="padding:14px 28px;background:#334155;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;width:100%;max-width:280px;">
+        🔍 Usar busca manual
+      </button>
+    </div>`;
+  ci.style.display = 'block';
+  document.getElementById('camera-ativa').style.display = 'none';
 }
 
 function pararScanner() {
@@ -630,8 +692,13 @@ function novaLeitura() {
     document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
     document.getElementById('scanner-status').className   = 'scanner-status lendo';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Garante que o scanner está rodando
-    if (!streamAtivo) iniciarScanner();
+    // Se câmera já estava ativa, continua; senão mostra botão
+    if (!streamAtivo) {
+      const ci = document.getElementById('camera-inicio');
+      const ca = document.getElementById('camera-ativa');
+      if (ci) ci.style.display = 'block';
+      if (ca) ca.style.display = 'none';
+    }
   } else {
     document.getElementById('busca-input').value = '';
     document.getElementById('busca-input').focus();
