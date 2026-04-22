@@ -162,6 +162,24 @@
   .admin-footer-inner { line-height: 1.9; margin-top: 6px; }
 
   /* ── Impressão ── */
+  /* ── Sem inscrição ── */
+  .sem-insc-item { display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #fee2e2;font-size:13px;gap:12px; }
+  .sem-insc-item:last-child { border-bottom:none; }
+  .sem-insc-nome { font-weight:600;color:#1e293b;flex:1; }
+  .sem-insc-detalhe { font-size:11px;color:#64748b; }
+  .sem-insc-acoes { display:flex;gap:6px;flex-shrink:0; }
+  .btn-deletar { padding:4px 10px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600; }
+  .btn-deletar:hover { background:#fecaca; }
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:white;border-radius:16px;padding:24px;width:90%;max-width:440px;max-height:90vh;overflow-y:auto; }
+  .modal-titulo { font-size:16px;font-weight:700;color:#1e293b;margin-bottom:4px; }
+  .modal-sub { font-size:13px;color:#64748b;margin-bottom:16px; }
+  .modal-field label { display:block;font-size:12px;color:#64748b;margin-bottom:4px;margin-top:12px; }
+  .modal-field select, .modal-field input { width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#1e293b; }
+  .modal-acoes { display:flex;gap:8px;margin-top:16px; }
+  .btn-modal-ok { flex:1;padding:10px;background:#1a56a0;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer; }
+  .btn-modal-cancelar { padding:10px 16px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:14px;cursor:pointer; }
   /* ── Lista de espera ── */
   .espera-mod-titulo { font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:8px; }
   .espera-mod-bloco { background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 14px;margin-bottom:12px; }
@@ -273,6 +291,17 @@
       <button class="print-btn outline" onclick="imprimirVagas()">Imprimir relatório</button>
     </div>
     <div class="vagas-grid" id="vagas-grid">
+      <div class="loading">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Participantes sem inscrição (ficha "—") -->
+  <div class="section" style="margin-bottom:16px;" id="section-sem-inscricao" style="display:none;">
+    <div class="section-header">
+      <span class="section-titulo" style="color:#dc2626;">⚠️ Participantes sem inscrição</span>
+      <button class="print-btn outline" onclick="resolverSemInscricao()">Ver detalhes</button>
+    </div>
+    <div id="sem-inscricao-grid" style="padding:16px;">
       <div class="loading">Carregando...</div>
     </div>
   </div>
@@ -500,6 +529,7 @@ async function carregarDados() {
     renderTabela(todosInscritos);
     renderEspera(todosInscritos);
     renderRelatorio(todosInscritos, inscricoes);
+    renderSemInscricao(todosInscritos, inscricoes);
   } catch (e) {
     document.getElementById('tabela-body').innerHTML =
       '<tr><td colspan="8" class="vazio">Erro ao carregar dados. Recarregue a página.</td></tr>';
@@ -1057,6 +1087,117 @@ function imprimirVagas() {
     </div>`);
 }
 
+// ================================================================
+// PARTICIPANTES SEM INSCRIÇÃO
+// ================================================================
+function renderSemInscricao(participantes, inscricoes) {
+  const section = document.getElementById('section-sem-inscricao');
+  const grid    = document.getElementById('sem-inscricao-grid');
+
+  // IDs com pelo menos uma inscrição
+  const comInscricao = new Set(inscricoes.map(i => i.participante_id));
+  const semInscricao = participantes.filter(p => !comInscricao.has(p.id));
+
+  // Métrica no topo: badge vermelho na contagem geral
+  const mTotal = document.getElementById('m-total');
+  if (mTotal && semInscricao.length > 0) {
+    mTotal.insertAdjacentHTML('afterend',
+      `<div style="font-size:10px;color:#dc2626;font-weight:600;margin-top:2px;">⚠️ ${semInscricao.length} sem ficha</div>`
+    );
+  }
+
+  if (semInscricao.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  grid.innerHTML = `
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#7f1d1d;line-height:1.6;">
+      <strong>⚠️ ${semInscricao.length} participante${semInscricao.length > 1 ? 's' : ''} registrado${semInscricao.length > 1 ? 's' : ''} sem modalidade.</strong><br>
+      Isso ocorre quando o formulário foi enviado mas houve erro ao salvar as inscrições, ou o participante não selecionou eventos.<br>
+      Use os botões abaixo para <strong>adicionar uma inscrição</strong> ou <strong>excluir</strong> o registro.
+    </div>
+    ${semInscricao.map(p => `
+      <div class="sem-insc-item">
+        <div>
+          <div class="sem-insc-nome">${p.nome_completo}</div>
+          <div class="sem-insc-detalhe">CPF: ${p.cpf || '—'} · Tel: ${p.telefone || '—'} · ${p.cidade || '—'}/${p.uf || '—'}</div>
+          <div class="sem-insc-detalhe" style="color:#94a3b8;">Cadastrado em: ${new Date(p.created_at).toLocaleString('pt-BR')}</div>
+        </div>
+        <div class="sem-insc-acoes">
+          <button class="promover-btn" onclick="abrirModalInscricao('${p.id}', '${p.nome_completo.replace(/'/g, "\'")}')">➕ Adicionar</button>
+          <button class="btn-deletar" onclick="deletarParticipanteSemInscricao('${p.id}', '${p.nome_completo.replace(/'/g, "\'")}')">🗑 Excluir</button>
+        </div>
+      </div>`).join('')}`;
+}
+
+function abrirModalInscricao(pid, nome) {
+  document.getElementById('modal-pid').value   = pid;
+  document.getElementById('modal-nome-part').textContent = nome;
+  // Gera ficha aleatória
+  document.getElementById('modal-ficha').value =
+    'FI-' + String(Math.floor(Math.random() * 9000) + 1000);
+  document.getElementById('modal-inscricao').classList.add('show');
+}
+
+function fecharModal() {
+  document.getElementById('modal-inscricao').classList.remove('show');
+}
+
+async function salvarInscricaoManual() {
+  const pid   = document.getElementById('modal-pid').value;
+  const modId = document.getElementById('modal-mod').value;
+  const ficha = document.getElementById('modal-ficha').value;
+
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      acao: 'inserir', tabela: 'inscricoes',
+      dados: {
+        participante_id: pid,
+        modalidade_id:   parseInt(modId),
+        numero_ficha:    ficha,
+        status:          'confirmado'
+      }
+    })
+  });
+  const d = await r.json();
+  if (Array.isArray(d) && d.length > 0) {
+    fecharModal();
+    alert('✅ Inscrição salva com sucesso! Ficha: ' + ficha);
+    carregarDados();
+  } else {
+    alert('Erro ao salvar. Tente novamente.
+' + JSON.stringify(d));
+  }
+}
+
+async function deletarParticipanteSemInscricao(pid, nome) {
+  if (!confirm(`Excluir o participante "${nome}"?
+
+Esta ação remove o cadastro permanentemente do banco de dados.`)) return;
+
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'deletar', tabela: 'participantes', id: pid })
+  });
+  const d = await r.json();
+  if (d.ok) {
+    alert('✅ Participante excluído.');
+    carregarDados();
+  } else {
+    alert('Erro ao excluir.
+' + JSON.stringify(d));
+  }
+}
+
+function resolverSemInscricao() {
+  document.getElementById('sem-inscricao-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function imprimirHTML(html) {
   const area = document.getElementById('print-area');
   area.innerHTML = html;
@@ -1305,5 +1446,33 @@ function imprimirQuantitativo() {
 }
 </script>
 
+<!-- Modal: adicionar inscrição manualmente -->
+<div class="modal-overlay" id="modal-inscricao">
+  <div class="modal-box">
+    <div class="modal-titulo" id="modal-nome-part">Adicionar inscrição</div>
+    <div class="modal-sub">Participante registrado sem modalidade selecionada.</div>
+    <input type="hidden" id="modal-pid">
+    <div class="modal-field">
+      <label>Modalidade</label>
+      <select id="modal-mod">
+        <option value="1">Vôlei de Areia — Masculino</option>
+        <option value="2">Vôlei de Areia — Feminino</option>
+        <option value="3">Futevôlei — Masculino</option>
+        <option value="4">Canoagem — Dupla</option>
+        <option value="5">Caiaque — Individual</option>
+        <option value="6">Pesca — Masculino</option>
+        <option value="7">Pesca — Feminino</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Número da ficha (gerado automaticamente)</label>
+      <input type="text" id="modal-ficha" readonly style="background:#f8fafc;color:#94a3b8;">
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-modal-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="salvarInscricaoManual()">✅ Salvar inscrição</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
