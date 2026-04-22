@@ -664,7 +664,119 @@ function renderizarConsulta() {
     '<div class="msg-erro" id="add-erro" style="display:none;"></div>' +
     '<button class="btn" style="margin-top:12px;" onclick="submeterAdicao()">➕ Adicionar</button>';
 
+  // ── Seção de edição de parceiros/membros existentes ──
+  const modsComParceiro = inscricoes.filter(i => {
+    const m = MODALIDADES[i.modalidade_id];
+    return m && (m.dupla || EQUIPES_IDS.has(i.modalidade_id));
+  });
+
+  if (modsComParceiro.length > 0) {
+    const editSection = document.createElement('div');
+    editSection.style.cssText = 'margin-top:16px;padding-top:14px;border-top:1px dashed #e2e8f0;';
+    editSection.innerHTML = '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;">✏️ Editar parceiro / equipe</div>';
+
+    modsComParceiro.forEach(i => {
+      const m = MODALIDADES[i.modalidade_id];
+      const isPesca = EQUIPES_IDS.has(i.modalidade_id);
+      const label = isPesca ? `🎣 ${m.nome} ${m.sub}` : `🤝 ${m.nome} ${m.sub}`;
+      const temDados = i.parceiro_nome || i.nome_equipe;
+
+      const bloco = document.createElement('div');
+      bloco.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;';
+      bloco.innerHTML = `
+        <div style="font-size:12px;font-weight:700;color:#1a56a0;margin-bottom:6px;">${label}</div>
+        ${temDados
+          ? `<div style="font-size:12px;color:#475569;margin-bottom:8px;">
+               ${i.nome_equipe ? `<div>🎣 <strong>${i.nome_equipe}</strong></div>` : ''}
+               ${i.parceiro_nome ? `<div>👤 ${i.parceiro_nome}</div>` : ''}
+               ${i.membro3_nome  ? `<div>👤 ${i.membro3_nome}</div>` : ''}
+               ${i.membro4_nome  ? `<div>👤 ${i.membro4_nome}</div>` : ''}
+             </div>`
+          : `<div style="font-size:12px;color:#f59e0b;margin-bottom:8px;">⚠️ Nenhum participante adicional cadastrado.</div>`
+        }`;
+
+      // Form de edição inline
+      const formId = 'form-edit-' + i.id;
+      bloco.innerHTML += `
+        <div id="${formId}" style="display:none;">
+          ${isPesca ? `
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Nome da equipe</label>
+            <input type="text" id="edit-equipe-${i.id}" value="${i.nome_equipe || ''}" maxlength="60"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+          ` : ''}
+          <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">${isPesca ? 'Membro 2' : 'Parceiro(a)'}</label>
+          <input type="text" id="edit-p2-nome-${i.id}" value="${i.parceiro_nome || ''}" placeholder="Nome completo"
+            style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
+          <input type="text" id="edit-p2-cpf-${i.id}" value="${i.parceiro_cpf || ''}" placeholder="CPF"
+            style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;" maxlength="14">
+          <input type="tel" id="edit-p2-tel-${i.id}" value="${i.parceiro_telefone || ''}" placeholder="Telefone"
+            style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+          ${isPesca ? `
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Membro 3 (opcional)</label>
+            <input type="text" id="edit-p3-nome-${i.id}" value="${i.membro3_nome || ''}" placeholder="Nome completo"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
+            <input type="text" id="edit-p3-cpf-${i.id}" value="${i.membro3_cpf || ''}" placeholder="CPF"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;" maxlength="14">
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Membro 4 (opcional)</label>
+            <input type="text" id="edit-p4-nome-${i.id}" value="${i.membro4_nome || ''}" placeholder="Nome completo"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
+            <input type="text" id="edit-p4-cpf-${i.id}" value="${i.membro4_cpf || ''}" placeholder="CPF"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;" maxlength="14">
+          ` : ''}
+          <button onclick="salvarEdicaoMembros('${i.id}',${i.modalidade_id})"
+            style="width:100%;padding:10px;background:#1a56a0;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
+            💾 Salvar
+          </button>
+          <button onclick="document.getElementById('${formId}').style.display='none'"
+            style="width:100%;padding:8px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:13px;cursor:pointer;">
+            Cancelar
+          </button>
+        </div>
+        <button onclick="document.getElementById('${formId}').style.display=document.getElementById('${formId}').style.display==='none'?'block':'none'"
+          style="padding:6px 14px;background:#eff6ff;color:#1a56a0;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">
+          ✏️ ${temDados ? 'Editar' : 'Adicionar participantes'}
+        </button>`;
+
+      editSection.appendChild(bloco);
+    });
+
+    document.getElementById('consulta-resultado').appendChild(editSection);
+  }
+
   document.getElementById('consulta-resultado').style.display = 'block';
+}
+
+async function salvarEdicaoMembros(inscId, modId) {
+  const isPesca = EQUIPES_IDS.has(Number(modId));
+  const dados = {
+    parceiro_nome:     document.getElementById('edit-p2-nome-' + inscId)?.value.trim() || null,
+    parceiro_cpf:      document.getElementById('edit-p2-cpf-'  + inscId)?.value.trim() || null,
+    parceiro_telefone: document.getElementById('edit-p2-tel-'  + inscId)?.value.trim() || null,
+  };
+  if (isPesca) {
+    dados.nome_equipe  = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
+    dados.membro3_nome = document.getElementById('edit-p3-nome-'+ inscId)?.value.trim() || null;
+    dados.membro3_cpf  = document.getElementById('edit-p3-cpf-' + inscId)?.value.trim() || null;
+    dados.membro4_nome = document.getElementById('edit-p4-nome-'+ inscId)?.value.trim() || null;
+    dados.membro4_cpf  = document.getElementById('edit-p4-cpf-' + inscId)?.value.trim() || null;
+  }
+  try {
+    const r = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'atualizar', tabela: 'inscricoes', id: inscId, dados })
+    });
+    const d = await r.json();
+    if (Array.isArray(d) && d.length > 0) {
+      alert('✅ Salvo com sucesso!');
+      // Recarrega a consulta para mostrar dados atualizados
+      buscarInscricao();
+    } else {
+      alert('Erro ao salvar. Tente novamente.');
+    }
+  } catch(e) {
+    alert('Erro de conexão: ' + e.message);
+  }
 }
 
 function toggleEventoAdd(id, iF) {
