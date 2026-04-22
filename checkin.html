@@ -336,77 +336,83 @@ async function pedirCameraPermissao() {
 }
 
 async function iniciarScanner() {
-  // Se já tem stream ativo, não reinicia
   if (streamAtivo) return;
 
   const video  = document.getElementById('scanner-video');
   const canvas = document.getElementById('scanner-canvas');
   const status = document.getElementById('scanner-status');
+  status.style.display = 'block';
 
-  // Verificar se o navegador suporta getUserMedia
+  // Suporte a getUserMedia
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    mostrarErroCamera(status, 'Seu navegador não suporta câmera. Use o modo Busca.');
+    mostrarErroCamera(status, 'Navegador sem suporte a câmera. Use o modo Busca.');
     return;
   }
 
-  status.style.display = 'block';
-  status.textContent = '⏳ Iniciando câmera...';
-  status.className   = 'scanner-status lendo';
+  // Constraints simplificadas — apenas câmera traseira preferencial
+  // Sem "exact" para evitar NotFoundError em desktop/alguns Android
+  let stream = null;
+  let erroFinal = '';
 
-  // Tentar primeiro a câmera traseira (environment), depois qualquer câmera
   const tentativas = [
-    { video: { facingMode: { exact: 'environment' } } },
+    { video: { facingMode: 'environment', width: { ideal: 1280 } } },
     { video: { facingMode: 'environment' } },
     { video: true },
   ];
 
-  let stream = null;
-  for (const constraints of tentativas) {
+  for (const c of tentativas) {
     try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      break; // sucesso — para de tentar
+      stream = await navigator.mediaDevices.getUserMedia(c);
+      break;
     } catch (e) {
-      // tenta a próxima opção
+      erroFinal = e.name + ': ' + e.message;
     }
   }
 
   if (!stream) {
-    mostrarErroCamera(status, 'Câmera não encontrada ou permissão negada. Use o modo Busca.');
+    // Mostra o erro real para facilitar diagnóstico
+    const msgErro = erroFinal.includes('NotAllowed') || erroFinal.includes('Permission')
+      ? 'Permissão negada. Vá em Configurações do navegador e permita o acesso à câmera para este site.'
+      : erroFinal.includes('NotFound') || erroFinal.includes('Devices')
+        ? 'Nenhuma câmera encontrada neste dispositivo. Use o modo Busca.'
+        : 'Câmera indisponível (' + erroFinal + '). Use o modo Busca.';
+    mostrarErroCamera(status, msgErro);
     return;
   }
 
-  streamAtivo    = stream;
+  streamAtivo     = stream;
   video.srcObject = stream;
 
-  // Mostra a câmera e esconde o botão inicial
   document.getElementById('camera-inicio').style.display = 'none';
   document.getElementById('camera-ativa').style.display  = 'block';
 
-  // Aguarda o vídeo estar pronto de forma confiável
-  video.addEventListener('loadedmetadata', function onMeta() {
-    video.removeEventListener('loadedmetadata', onMeta);
-    video.play().then(() => {
+  // Iniciar varredura assim que o vídeo tiver dados
+  let scanIniciado = false;
+
+  function tentarIniciarScan() {
+    if (scanIniciado) return;
+    if (video.readyState >= 2) {
+      scanIniciado = true;
       canvas.width  = video.videoWidth  || 640;
       canvas.height = video.videoHeight || 480;
-      status.textContent = '🔍 Aguardando QR Code...';
+      status.textContent = '🔍 Aponte para o QR Code';
       status.className   = 'scanner-status lendo';
       scanFrame(video, canvas, status);
-    }).catch(() => {
-      mostrarErroCamera(status, 'Não foi possível iniciar o vídeo. Use o modo Busca.');
-    });
-  });
-
-  // Fallback: alguns navegadores não disparam loadedmetadata
-  setTimeout(() => {
-    if (canvas.width === 0 && video.readyState >= 2) {
-      canvas.width  = video.videoWidth  || 640;
-      canvas.height = video.videoHeight || 480;
-      if (!animFrame) {
-        status.textContent = '🔍 Aguardando QR Code...';
-        scanFrame(video, canvas, status);
-      }
     }
-  }, 2000);
+  }
+
+  video.addEventListener('loadedmetadata', () => video.play().then(tentarIniciarScan).catch(() => {}));
+  video.addEventListener('loadeddata',     tentarIniciarScan);
+  video.addEventListener('canplay',        tentarIniciarScan);
+
+  // Garantia: força play e verifica a cada 500ms por até 5s
+  video.play().catch(() => {});
+  let tentativas2 = 0;
+  const intervalo = setInterval(() => {
+    tentativas2++;
+    tentarIniciarScan();
+    if (scanIniciado || tentativas2 >= 10) clearInterval(intervalo);
+  }, 500);
 }
 
 function mostrarErroCamera(status, msg) {
@@ -419,7 +425,7 @@ function mostrarErroCamera(status, msg) {
     <div style="padding:32px 20px;text-align:center;">
       <div style="font-size:48px;margin-bottom:12px;">📵</div>
       <div style="font-size:14px;color:#f87171;font-weight:700;margin-bottom:8px;">Câmera não disponível</div>
-      <div style="font-size:13px;color:#94a3b8;margin-bottom:20px;line-height:1.6;">${msg}</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:20px;line-height:1.6;word-break:break-word;">${msg}</div>
       <button onclick="mudarModo('busca')" style="padding:14px 28px;background:#334155;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;width:100%;max-width:280px;">
         🔍 Usar busca manual
       </button>
