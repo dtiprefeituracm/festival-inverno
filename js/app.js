@@ -744,7 +744,7 @@ async function calcularPosicaoEspera(modalidadeId, participanteId) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// VAGAS — Carregar contagem e bloquear cards esgotados
+// VAGAS — Carregar contagem e exibir disponibilidade em todos os cards
 // ══════════════════════════════════════════════════════════════
 async function carregarVagas() {
   try {
@@ -759,47 +759,68 @@ async function carregarVagas() {
       }
     });
 
-    // Para cada modalidade, verificar se está esgotada
+    // Atualizar cada card com o status de vagas
     Object.entries(MODALIDADES).forEach(([id, mod]) => {
-      const qtd   = contagem[id] || 0;
-      const card  = document.getElementById('ev' + id);
+      const qtd       = contagem[id] || 0;
+      const restantes = MAX_VAGAS - qtd;
+      const card      = document.getElementById('ev' + id);
       if (!card) return;
 
+      // Remove indicador anterior (para atualização dinâmica)
+      const anterior = card.querySelector('.vaga-indicador');
+      if (anterior) anterior.remove();
+
+      // Cria o indicador de vagas
+      const indicador = document.createElement('div');
+      indicador.className = 'vaga-indicador';
+
       if (qtd >= MAX_VAGAS) {
-        // Vagas esgotadas — abre lista de espera (não bloqueia, mas avisa)
+        // ── ESGOTADO — abre lista de espera ──
         card.dataset.listaEspera = 'true';
-
-        // Badge laranja de lista de espera
-        const tipo = card.querySelector('.evento-tipo');
-        if (tipo && !card.querySelector('.vagas-espera-badge')) {
-          const badge = document.createElement('span');
-          badge.className = 'vagas-espera-badge';
-          badge.textContent = '⏳ Lista de espera';
-          tipo.parentElement.insertBefore(badge, tipo.nextSibling);
-        }
-
-        // Atualiza badge de prêmio
+        indicador.innerHTML = `
+          <div class="vaga-barra-wrap">
+            <div class="vaga-barra vaga-barra-cheia"></div>
+          </div>
+          <div class="vaga-texto vaga-esgotada">
+            🔴 Vagas esgotadas
+            <span class="vaga-espera-hint">Inscreva-se na lista de espera →</span>
+          </div>`;
+        // Atualiza badge de prêmio se selecionado
         const premio = card.querySelector('.evento-premio');
         if (premio) {
-          premio.textContent = '⏳ Vagas confirmadas esgotadas — lista de espera';
+          premio.textContent = '⏳ Lista de espera — sem garantia de participação';
           premio.classList.add('espera-badge');
         }
+
+      } else if (restantes <= 5) {
+        // ── ÚLTIMAS VAGAS ──
+        const pct = Math.round(qtd / MAX_VAGAS * 100);
+        indicador.innerHTML = `
+          <div class="vaga-barra-wrap">
+            <div class="vaga-barra vaga-barra-quase" style="width:${pct}%"></div>
+          </div>
+          <div class="vaga-texto vaga-quase">
+            ⚠️ Últimas ${restantes} vaga${restantes > 1 ? 's' : ''}
+            <span class="vaga-num">${qtd}/${MAX_VAGAS}</span>
+          </div>`;
+
       } else {
-        // Mostra vagas restantes se estiver quase cheio (≤ 5 restantes)
-        const restantes = MAX_VAGAS - qtd;
-        if (restantes <= 5) {
-          const tipo = card.querySelector('.evento-tipo');
-          if (tipo && !card.querySelector('.vagas-aviso')) {
-            const aviso = document.createElement('span');
-            aviso.className = 'vagas-aviso';
-            aviso.textContent = `⚠️ Últimas ${restantes} vaga${restantes > 1 ? 's' : ''}`;
-            tipo.parentElement.insertBefore(aviso, tipo.nextSibling);
-          }
-        }
+        // ── VAGAS DISPONÍVEIS ──
+        const pct = Math.round(qtd / MAX_VAGAS * 100);
+        indicador.innerHTML = `
+          <div class="vaga-barra-wrap">
+            <div class="vaga-barra vaga-barra-ok" style="width:${pct}%"></div>
+          </div>
+          <div class="vaga-texto vaga-ok">
+            ✅ ${restantes} vaga${restantes > 1 ? 's' : ''} disponíve${restantes > 1 ? 'is' : 'l'}
+            <span class="vaga-num">${qtd}/${MAX_VAGAS}</span>
+          </div>`;
       }
+
+      // Insere o indicador no final do card (antes do parceiro-box)
+      card.appendChild(indicador);
     });
   } catch (e) {
-    // Silencioso — se falhar, o formulário continua funcionando normalmente
     console.warn('Não foi possível carregar status de vagas:', e.message);
   }
 }
