@@ -744,7 +744,7 @@ async function submeterAdicao() {
 async function calcularPosicaoEspera(modalidadeId, participanteId) {
   try {
     const espera = await get('inscricoes',
-      `modalidade_id=eq.${modalidadeId}&status=eq.lista_espera&select=id,participante_id,created_at&order=created_at.asc`
+      `modalidade_id=eq.${modalidadeId}&status=eq.lista_espera&select=id,participante_id,criado_em&order=criado_em.asc`
     );
     if (!Array.isArray(espera)) return 1;
     const pos = espera.findIndex(i => i.participante_id === participanteId);
