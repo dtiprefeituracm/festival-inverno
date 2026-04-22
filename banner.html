@@ -175,9 +175,12 @@
             </div>
         </div>
 
-        <p class="text-blue-200 mt-8 sm:mt-10 text-xs sm:text-sm font-medium px-4">
-            Prefeitura de Costa Marques • Festival de Inverno 2026
-        </p>
+        <div class="text-blue-200 text-xs sm:text-sm font-medium px-4 pb-4 mx-auto max-w-4xl" style="margin-top:20px;padding-top:10px;border-top:1px solid rgba(226,232,240,0.3);line-height:1.9;">
+            Desenvolvido por <strong>Ewerson Luiz de Oliveira</strong><br>
+            Gestor em Tecnologia da Informação<br>
+            Data de acesso: <span id="data-acesso"></span><br>
+            © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
+        </div>
     </footer>
 
     <script>
@@ -234,6 +237,13 @@
                 audioControl.classList.replace('bg-orange-500', 'bg-[#1e3a8a]');
              }
         });
+        
+        // --- Preencher automaticamente a data de acesso ---
+        const spanDataAcesso = document.getElementById('data-acesso');
+        if(spanDataAcesso) {
+            const hoje = new Date();
+            spanDataAcesso.textContent = hoje.toLocaleDateString('pt-BR');
+        }
     </script>
 
 </body>
