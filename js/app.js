@@ -581,7 +581,13 @@ async function buscarInscricao() {
   const insc = await get('inscricoes', 'participante_id=eq.' + enc.id + '&select=*');
   participanteConsulta = enc;
   inscricoesConsulta   = Array.isArray(insc) ? insc : [];
-  renderizarConsulta();
+  try {
+    renderizarConsulta();
+  } catch (e) {
+    erro.textContent = 'Erro ao exibir resultado. Detalhe: ' + e.message;
+    erro.style.display = 'block';
+    console.error('renderizarConsulta error:', e);
+  }
 }
 
 function renderizarConsulta() {
@@ -665,7 +671,7 @@ function renderizarConsulta() {
     '<button class="btn" style="margin-top:12px;" onclick="submeterAdicao()">➕ Adicionar</button>';
 
   // ── Seção de edição de parceiros/membros existentes ──
-  const modsComParceiro = inscricoes.filter(i => {
+  const modsComParceiro = ins.filter(i => {
     const m = MODALIDADES[i.modalidade_id];
     return m && (m.dupla || EQUIPES_IDS.has(i.modalidade_id));
   });
@@ -740,6 +746,10 @@ function renderizarConsulta() {
       editSection.appendChild(bloco);
     });
 
+    // Remove seção anterior se existir (busca repetida)
+    const anterior = document.getElementById('edit-section-membros');
+    if (anterior) anterior.remove();
+    editSection.id = 'edit-section-membros';
     document.getElementById('consulta-resultado').appendChild(editSection);
   }
 
