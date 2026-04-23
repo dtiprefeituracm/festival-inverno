@@ -11,6 +11,7 @@ let itemAtivo         = -1;
 let sexoSelecionado   = '';
 let participanteConsulta = null;
 let inscricoesConsulta   = [];
+let statusPorModalidade  = {};   // mapa modalidade_id → confirmado | lista_espera
 
 // ══════════════════════════════════════════════════════════════
 // ABAS (Nova inscrição / Já inscrito?)
@@ -286,8 +287,6 @@ async function enviarInscricao() {
   if (selecionados.size === 0) {
     erro.textContent = 'Selecione pelo menos um evento para se inscrever.';
     erro.style.display = 'block';
-    const evConteudo = document.getElementById('eventos-conteudo');
-    if (evConteudo) evConteudo.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
   if (!document.getElementById('cb-autorizo').checked) {
@@ -347,6 +346,12 @@ async function enviarInscricao() {
   btn.disabled = true;
   btn.textContent = 'Enviando...';
 
+  // Garantir statusPorModalidade preenchido (fallback caso carregarVagas não tenha rodado)
+  if (!statusPorModalidade || Object.keys(statusPorModalidade).length === 0) {
+    statusPorModalidade = {};
+    for (const id of selecionados) statusPorModalidade[id] = 'confirmado';
+  }
+
   // Verificar vagas disponíveis
   for (const id of selecionados) {
     const check = await get('inscricoes', `modalidade_id=eq.${id}&select=id`);
@@ -380,7 +385,7 @@ async function enviarInscricao() {
     nome_responsavel:   nResp || null,
   });
 
-  if (!resPart || resPart.code || resPart.erro || (!Array.isArray(resPart) && resPart.message)) {
+  if (!resPart || resPart.length === 0 || resPart.code) {
     const dup = resPart?.message?.includes('unique') || resPart?.code === '23505';
     if (dup) {
       erroDup.style.display = 'block';
@@ -394,14 +399,7 @@ async function enviarInscricao() {
     return;
   }
 
-  const pid = resPart[0]?.id;
-  if (!pid) {
-    erro.textContent = 'Erro ao identificar participante cadastrado. Tente novamente.';
-    erro.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Enviar inscrição';
-    return;
-  }
+  const pid = resPart[0].id;
 
   // Salvar inscrições (uma por modalidade)
   for (const id of selecionados) {
@@ -477,23 +475,15 @@ async function enviarInscricao() {
     if (insc.membro4_telefone)  insc.membro4_telefone  = normalizarTelefone(insc.membro4_telefone)  || insc.membro4_telefone;
 
     let resInsc;
-    try {
-      resInsc = await post('inscricoes', insc);
-    } catch (e) {
-      resInsc = { erro: e.message };
-    }
+    try { resInsc = await post('inscricoes', insc); } catch(e) { resInsc = { erro: e.message }; }
 
-    // ── ROLLBACK: só reverte se houver erro explícito (code/erro/message) ──
-    // IMPORTANTE: resInsc pode ser [] (array vazio) quando o Supabase usa
-    // Prefer:return=minimal — isso é SUCESSO, não erro. Não usar .length === 0.
-    const inscFalhou = !resInsc ||
-      (resInsc && !Array.isArray(resInsc) && (resInsc.code || resInsc.erro || resInsc.message));
+    // ── ROLLBACK: só falha se vier erro EXPLÍCITO do Supabase ──
+    // Supabase pode retornar [] (array vazio) em sucesso com Prefer:return=minimal — isso NÃO é erro
+    const inscFalhou = !resInsc || (!Array.isArray(resInsc) && (resInsc.code || resInsc.erro || resInsc.error));
     if (inscFalhou) {
-      try {
-        await deletarPorCampo('inscricoes', 'participante_id', pid);
-        await deletar('participantes', pid);
-      } catch (_) { /* rollback best-effort */ }
-      erro.textContent = 'Erro ao salvar inscrição. Verifique sua conexão e tente novamente.';
+      try { await deletarPorCampo('inscricoes', 'participante_id', pid); } catch(_) {}
+      try { await deletar('participantes', pid); } catch(_) {}
+      erro.textContent = 'Erro ao salvar inscrição (' + (resInsc?.message || resInsc?.erro || 'desconhecido') + '). Tente novamente.';
       erro.style.display = 'block';
       window.scrollTo({ top: erro.offsetTop - 80, behavior: 'smooth' });
       btn.disabled = false;
@@ -1030,6 +1020,13 @@ async function carregarVagas() {
       if (i.status === 'confirmado' || !i.status) {
         contagem[i.modalidade_id] = (contagem[i.modalidade_id] || 0) + 1;
       }
+    });
+
+    // Atualizar statusPorModalidade global (usado em enviarInscricao)
+    statusPorModalidade = {};
+    Object.keys(MODALIDADES).forEach(id => {
+      const qtd = contagem[id] || 0;
+      statusPorModalidade[Number(id)] = (qtd >= MAX_VAGAS) ? 'lista_espera' : 'confirmado';
     });
 
     // Atualizar cada card com o status de vagas
