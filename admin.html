@@ -1400,53 +1400,45 @@ function fecharModalExcluirBg(e) {
 
 async function confirmarExclusao() {
   const pid  = document.getElementById('excluir-pid').value;
-  const nome = document.getElementById('excluir-nome-display').textContent;
   const btn  = document.getElementById('btn-excluir-ok');
 
   btn.disabled = true;
   btn.textContent = 'Excluindo...';
 
   try {
-    // 1. Busca todas as inscrições do participante
-    const participante = todosInscritos.find(p => p.id === pid);
-    if (participante && participante.inscricoes.length > 0) {
-      // 2. Deleta cada inscrição individualmente
-      for (const insc of participante.inscricoes) {
-        const r = await fetch('/api/supabase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acao: 'deletar', tabela: 'inscricoes', id: insc.id })
-        });
-        const d = await r.json();
-        if (!d.ok) {
-          throw new Error('Falha ao excluir inscrição ' + insc.id);
-        }
-      }
-    }
+    // 1. Deleta TODAS as inscrições do participante de uma vez (por participante_id)
+    const rInsc = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao: 'deletarPorCampo',
+        tabela: 'inscricoes',
+        campo: 'participante_id',
+        valor: pid
+      })
+    });
+    const dInsc = await rInsc.json();
+    if (!dInsc.ok) throw new Error('Falha ao excluir inscrições: ' + JSON.stringify(dInsc));
 
-    // 3. Deleta o participante
-    const r = await fetch('/api/supabase', {
+    // 2. Deleta o participante
+    const rPart = await fetch('/api/supabase', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ acao: 'deletar', tabela: 'participantes', id: pid })
     });
-    const d = await r.json();
+    const dPart = await rPart.json();
+    if (!dPart.ok) throw new Error('Falha ao excluir participante: ' + JSON.stringify(dPart));
 
-    if (d.ok) {
-      fecharModalExcluir();
-      // Feedback visual: remove da lista local imediatamente
-      todosInscritos = todosInscritos.filter(p => p.id !== pid);
-      filtrar();
-      atualizarMetricas(todosInscritos, todosInscritos.flatMap(p => p.inscricoes));
-      // Recarrega tudo para garantir consistência
-      carregarDados();
-    } else {
-      throw new Error(JSON.stringify(d));
-    }
+    fecharModalExcluir();
+    todosInscritos = todosInscritos.filter(p => p.id !== pid);
+    filtrar();
+    atualizarMetricas(todosInscritos, todosInscritos.flatMap(p => p.inscricoes));
+    carregarDados();
+
   } catch (err) {
     btn.disabled = false;
     btn.textContent = '🗑 Excluir permanentemente';
-    alert('❌ Erro ao excluir participante: ' + err.message);
+    alert('❌ ' + err.message);
   }
 }
 
