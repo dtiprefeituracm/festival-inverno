@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <!--
   checkin.html — Credenciamento do Festival de Inverno 2026
-  Página mobile para leitura de QR Code e confirmação de presença
+  Leitura de QR Code via BarcodeDetector API (nativa) + jsQR (fallback)
   © 2026 Ewerson Luiz de Oliveira — DTI / Prefeitura de Costa Marques/RO
 -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Credenciamento — Festival de Inverno 2026</title>
-<!-- Biblioteca de leitura de QR Code -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -17,104 +16,143 @@
 
   /* ── Login ── */
   .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .login-box { background: #1e293b; border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 360px; border: 1px solid #334155; }
-  .login-logo { text-align: center; margin-bottom: 24px; }
-  .login-logo img { height: 60px; margin-bottom: 10px; }
-  .login-logo h1 { font-size: 18px; color: white; }
-  .login-logo p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-  .login-box label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; margin-top: 14px; }
-  .login-box input { width: 100%; padding: 12px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: white; font-size: 15px; outline: none; }
+  .login-box  { background: #1e293b; border-radius: 20px; padding: 32px 24px; width: 100%; max-width: 360px; border: 1px solid #334155; }
+  .login-logo { text-align: center; margin-bottom: 28px; }
+  .login-logo img { height: 64px; margin-bottom: 12px; }
+  .login-logo h1  { font-size: 20px; font-weight: 800; color: white; }
+  .login-logo p   { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .login-box label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; margin-top: 16px; }
+  .login-box input { width: 100%; padding: 14px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: white; font-size: 16px; outline: none; }
   .login-box input:focus { border-color: #3b82f6; }
-  .login-btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 18px; }
+  .login-btn  { width: 100%; padding: 15px; background: #1a56a0; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; }
   .login-btn:active { background: #154794; }
   .login-erro { color: #f87171; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
 
-  /* ── App principal ── */
+  /* ── App ── */
   .app { display: none; }
   .topbar { background: #1a56a0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
   .topbar-titulo { font-size: 14px; font-weight: 700; }
-  .topbar-sub { font-size: 11px; opacity: 0.75; }
-  .sair-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+  .topbar-sub    { font-size: 11px; opacity: 0.75; margin-top: 1px; }
+  .sair-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 7px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; }
 
-  /* ── Tabs de modo ── */
+  /* ── Contador de credenciados ── */
+  .contador-bar { background: #0f172a; border-bottom: 1px solid #1e293b; padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+  .contador-num { font-size: 22px; font-weight: 800; color: #34d399; }
+  .contador-label { font-size: 11px; color: #64748b; line-height: 1.4; }
+
+  /* ── Tabs ── */
   .modo-tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; }
-  .modo-tab { flex: 1; padding: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .modo-tab  { flex: 1; padding: 13px; text-align: center; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; }
   .modo-tab.ativo { color: #60a5fa; border-bottom-color: #60a5fa; background: #0f172a; }
 
-  /* ── Scanner QR ── */
-  .scanner-wrap { position: relative; background: #000; }
-  #scanner-video { width: 100%; display: block; max-height: 65vh; object-fit: cover; }
-  .scanner-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .scanner-frame { width: 220px; height: 220px; border: 3px solid #60a5fa; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.55); position: relative; }
-  .scanner-frame::before, .scanner-frame::after {
-    content: ''; position: absolute; width: 30px; height: 30px;
-    border-color: #3b82f6; border-style: solid;
+  /* ── Painel QR ── */
+  .qr-panel { padding: 20px 16px; }
+
+  /* Botão principal de escanear — grande, fácil de tocar */
+  .scan-btn-principal {
+    width: 100%; padding: 22px 16px;
+    background: linear-gradient(135deg, #1a56a0 0%, #1d4ed8 100%);
+    color: white; border: none; border-radius: 18px;
+    font-size: 18px; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    box-shadow: 0 4px 20px rgba(26,86,160,0.4);
+    margin-bottom: 14px; letter-spacing: 0.01em;
   }
-  .scanner-frame::before { top: -4px; left: -4px; border-width: 4px 0 0 4px; border-radius: 8px 0 0 0; }
-  .scanner-frame::after  { bottom: -4px; right: -4px; border-width: 0 4px 4px 0; border-radius: 0 0 8px 0; }
-  .scanner-linha { position: absolute; left: 8px; right: 8px; height: 2px; background: #60a5fa; animation: scan 2s linear infinite; box-shadow: 0 0 6px #60a5fa; }
-  @keyframes scan { 0%{top:10px} 50%{top:calc(100% - 12px)} 100%{top:10px} }
-  .scanner-hint { text-align: center; padding: 12px 16px; font-size: 12px; color: #94a3b8; }
-  .scanner-status { text-align: center; padding: 8px 16px; font-size: 13px; font-weight: 600; }
-  .scanner-status.lendo { color: #60a5fa; }
-  .scanner-status.encontrou { color: #34d399; }
-  .scanner-status.erro { color: #f87171; }
+  .scan-btn-principal:active { transform: scale(0.98); }
+  .scan-btn-principal .icon { font-size: 32px; }
+
+  .scan-btn-secundario {
+    width: 100%; padding: 14px 16px;
+    background: #1e293b; color: #cbd5e1;
+    border: 1px solid #334155; border-radius: 14px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .scan-btn-secundario:active { background: #0f172a; }
+
+  .scan-dica { font-size: 12px; color: #475569; text-align: center; margin-top: 8px; line-height: 1.6; }
+  .scan-dica strong { color: #60a5fa; }
+
+  /* Câmera ao vivo */
+  .camera-wrap { position: relative; background: #000; border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+  #scanner-video { width: 100%; display: block; max-height: 62vh; object-fit: cover; }
+  .camera-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .camera-frame { width: 230px; height: 230px; border: 3px solid #60a5fa; border-radius: 20px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); position: relative; }
+  .camera-linha { position: absolute; left: 10px; right: 10px; height: 2px;
+    background: #60a5fa; animation: scan 2s linear infinite; box-shadow: 0 0 8px #60a5fa; }
+  @keyframes scan { 0%{top:12px} 50%{top:calc(100% - 14px)} 100%{top:12px} }
+  .camera-fechar { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6);
+    border: none; color: white; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; z-index: 10; }
+  .camera-status { text-align: center; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 10px;
+    background: #1e293b; margin-bottom: 12px; }
+  .camera-status.lendo    { color: #60a5fa; }
+  .camera-status.encontrou { color: #34d399; }
+  .camera-status.erro     { color: #f87171; background: #1e0f0f; }
+
+  /* Input oculto para foto */
+  #qr-file-input { display: none; }
 
   /* ── Busca manual ── */
   .busca-wrap { padding: 20px 16px; }
-  .busca-wrap label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
-  .busca-input { width: 100%; padding: 14px 16px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; color: white; font-size: 16px; outline: none; margin-bottom: 12px; }
+  .busca-label { font-size: 13px; color: #94a3b8; margin-bottom: 8px; display: block; }
+  .busca-input { width: 100%; padding: 16px; background: #1e293b; border: 1px solid #334155;
+    border-radius: 14px; color: white; font-size: 17px; outline: none; margin-bottom: 12px;
+    text-transform: uppercase; letter-spacing: 0.05em; }
   .busca-input:focus { border-color: #3b82f6; }
-  .busca-btn { width: 100%; padding: 14px; background: #1a56a0; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
-  .busca-btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
-  .busca-btn:active:not(:disabled) { background: #154794; }
+  .busca-btn { width: 100%; padding: 15px; background: #1a56a0; color: white; border: none;
+    border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .busca-btn:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
 
-  /* ── Resultado do participante ── */
+  /* ── Card de resultado ── */
   .resultado { display: none; padding: 0 16px 24px; }
-  .resultado-card { background: #1e293b; border-radius: 16px; overflow: hidden; border: 1px solid #334155; }
+  .resultado-card { background: #1e293b; border-radius: 18px; overflow: hidden; border: 1px solid #334155; }
 
-  /* Header do resultado — verde se confirmado, amarelo se espera */
-  .resultado-header { padding: 16px; display: flex; align-items: center; gap: 12px; }
-  .resultado-header.confirmado { background: #064e3b; border-bottom: 1px solid #065f46; }
-  .resultado-header.espera     { background: #78350f; border-bottom: 1px solid #92400e; }
+  .resultado-header { padding: 18px 16px; display: flex; align-items: center; gap: 14px; }
+  .resultado-header.confirmado  { background: #064e3b; border-bottom: 1px solid #065f46; }
+  .resultado-header.espera      { background: #78350f; border-bottom: 1px solid #92400e; }
   .resultado-header.ja-presente { background: #1e3a5f; border-bottom: 1px solid #1a56a0; }
-  .resultado-icone { font-size: 36px; flex-shrink: 0; }
-  .resultado-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; margin-bottom: 2px; }
-  .resultado-nome { font-size: 18px; font-weight: 800; line-height: 1.2; }
-  .resultado-ficha { font-size: 12px; opacity: 0.7; margin-top: 3px; }
+  .resultado-icone { font-size: 40px; flex-shrink: 0; }
+  .resultado-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; margin-bottom: 3px; }
+  .resultado-nome   { font-size: 19px; font-weight: 800; line-height: 1.2; }
+  .resultado-ficha  { font-size: 12px; opacity: 0.65; margin-top: 4px; }
 
-  /* Detalhes */
   .resultado-body { padding: 16px; }
-  .detalhe-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; font-size: 13px; }
+  .detalhe-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #334155; font-size: 13px; }
   .detalhe-row:last-child { border-bottom: none; }
   .detalhe-label { color: #64748b; }
-  .detalhe-val { color: white; font-weight: 500; text-align: right; max-width: 60%; }
-  .mod-badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 8px; margin: 2px; font-weight: 500; }
-  .mod-confirmado { background: #064e3b; color: #34d399; }
-  .mod-espera     { background: #78350f; color: #fbbf24; }
+  .detalhe-val   { color: white; font-weight: 500; text-align: right; max-width: 60%; }
+  .mod-badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 8px; margin: 2px; font-weight: 600; }
+  .mod-conf  { background: #064e3b; color: #34d399; }
+  .mod-esp   { background: #78350f; color: #fbbf24; }
 
-  /* Botão confirmar presença */
-  .confirmar-btn { width: 100%; padding: 16px; background: #16a34a; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .confirmar-btn:active { background: #15803d; }
+  .alerta-espera { background: #78350f; border: 1px solid #92400e; border-radius: 12px; padding: 14px; margin-top: 14px; font-size: 13px; color: #fde68a; line-height: 1.6; }
+
+  .confirmar-btn { width: 100%; padding: 18px; background: #16a34a; color: white; border: none;
+    border-radius: 14px; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .confirmar-btn:active  { background: #15803d; }
   .confirmar-btn:disabled { background: #1e3a5f; color: #60a5fa; cursor: default; }
-  .confirmar-btn.ja-presente { background: #1e3a5f; color: #60a5fa; }
-  .novo-btn { width: 100%; padding: 12px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-size: 14px; cursor: pointer; margin-top: 10px; }
-  .novo-btn:active { background: #0f172a; }
+  .confirmar-btn.ja      { background: #1e3a5f; color: #60a5fa; }
+  .novo-btn { width: 100%; padding: 13px; background: #1e293b; color: #94a3b8;
+    border: 1px solid #334155; border-radius: 14px; font-size: 14px; cursor: pointer; margin-top: 10px; }
 
-  /* Alerta de lista de espera */
-  .alerta-espera { background: #78350f; border: 1px solid #92400e; border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 13px; color: #fde68a; line-height: 1.5; }
-
-  /* Feedback de sucesso */
-  .feedback { display: none; position: fixed; inset: 0; background: rgba(5,150,105,0.95); align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 99; }
+  /* ── Feedback full-screen ── */
+  .feedback { display: none; position: fixed; inset: 0; background: #059669;
+    align-items: center; justify-content: center; flex-direction: column; gap: 14px; z-index: 200;
+    padding: 20px; }
   .feedback.show { display: flex; }
-  .feedback-icone { font-size: 80px; }
-  .feedback-nome { font-size: 22px; font-weight: 800; text-align: center; }
-  .feedback-sub { font-size: 14px; opacity: 0.85; text-align: center; }
+  .feedback-icone  { font-size: 90px; }
+  .feedback-nome   { font-size: 24px; font-weight: 800; text-align: center; line-height: 1.2; }
+  .feedback-ficha  { font-size: 15px; opacity: 0.9; }
+  .feedback-hora   { font-size: 14px; opacity: 0.75; }
+  .feedback-sub    { font-size: 13px; opacity: 0.8; text-align: center; margin-top: 4px; }
 </style>
 </head>
 <body>
 
-<!-- ── LOGIN ── -->
+<!-- LOGIN -->
 <div class="login-wrap" id="login-wrap">
   <div class="login-box">
     <div class="login-logo">
@@ -130,7 +168,7 @@
   </div>
 </div>
 
-<!-- ── APP ── -->
+<!-- APP -->
 <div class="app" id="app">
 
   <div class="topbar">
@@ -141,111 +179,117 @@
     <button class="sair-btn" onclick="sair()">Sair</button>
   </div>
 
+  <!-- Contador ao vivo -->
+  <div class="contador-bar">
+    <div class="contador-num" id="contador-num">0</div>
+    <div class="contador-label">
+      credenciados hoje<br>
+      <span style="color:#334155;" id="contador-total">de — inscritos</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
   <div class="modo-tabs">
-    <div class="modo-tab ativo" id="tab-qr" onclick="mudarModo('qr')">📷 QR Code</div>
+    <div class="modo-tab ativo" id="tab-qr"    onclick="mudarModo('qr')">📷 QR Code</div>
     <div class="modo-tab"       id="tab-busca" onclick="mudarModo('busca')">🔍 Buscar</div>
   </div>
 
   <!-- Modo QR -->
   <div id="modo-qr">
-    <canvas id="scanner-canvas" style="display:none;"></canvas>
+    <!-- Canvas oculto para jsQR -->
+    <canvas id="qr-canvas" style="display:none;"></canvas>
+    <!-- Input oculto: abre câmera/galeria para foto -->
     <input type="file" id="qr-file-input" accept="image/*" capture="environment"
-           style="display:none;" onchange="lerImagemQR(this)">
+           onchange="lerFotoQR(this)">
 
-    <!-- Opção 1: Câmera ao vivo (getUserMedia) -->
-    <div id="camera-ativa" style="display:none;">
-      <div class="scanner-wrap">
-        <video id="scanner-video" autoplay playsinline muted webkit-playsinline
-               style="width:100%;min-height:200px;display:block;background:#000;"></video>
-        <canvas id="scanner-canvas-live" style="display:none;"></canvas>
-        <div class="scanner-overlay">
-          <div class="scanner-frame"><div class="scanner-linha"></div></div>
+    <!-- Câmera ao vivo (fica oculta até ativação) -->
+    <div id="camera-vivo" style="display:none;padding:12px 16px 0;">
+      <div class="camera-wrap">
+        <video id="scanner-video" autoplay playsinline muted webkit-playsinline></video>
+        <button class="camera-fechar" onclick="pararCamera()">×</button>
+        <div class="camera-overlay">
+          <div class="camera-frame"><div class="camera-linha"></div></div>
         </div>
       </div>
-      <div class="scanner-hint">Aponte a câmera para o QR Code</div>
-      <div style="padding:8px 16px;text-align:center;">
-        <button onclick="pararScanner();mostrarOpcoes()" style="font-size:12px;color:#94a3b8;background:none;border:none;cursor:pointer;text-decoration:underline;">
-          Câmera não funcionou? Usar outra opção
-        </button>
-      </div>
     </div>
 
-    <!-- Tela de opções -->
-    <div id="camera-opcoes" style="padding:28px 20px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:14px;">📷</div>
-      <div style="font-size:16px;font-weight:700;color:white;margin-bottom:6px;">Ler QR Code</div>
-      <div style="font-size:13px;color:#94a3b8;margin-bottom:24px;">Escolha como quer escanear:</div>
+    <!-- Status (visível durante scanning) -->
+    <div class="camera-status lendo" id="camera-status" style="display:none;margin:8px 16px;"></div>
 
-      <!-- OPÇÃO PRINCIPAL: Foto direta (funciona em TODOS os celulares) -->
-      <button onclick="document.getElementById('qr-file-input').click()"
-              style="width:100%;max-width:300px;padding:16px;background:#1a56a0;color:white;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;gap:12px;justify-content:center;">
-        📸 Tirar foto do QR Code
-        <span style="font-size:11px;font-weight:400;opacity:0.8;display:block;">Abre a câmera diretamente</span>
+    <!-- Painel de opções padrão -->
+    <div class="qr-panel" id="qr-opcoes">
+
+      <!-- BOTÃO 1: Foto (funciona em qualquer celular) -->
+      <button class="scan-btn-principal" onclick="document.getElementById('qr-file-input').click()">
+        <span class="icon">📸</span>
+        <div style="text-align:left;">
+          <div>Escanear QR Code</div>
+          <div style="font-size:12px;font-weight:400;opacity:0.8;margin-top:2px;">Abre a câmera — funciona em todos os celulares</div>
+        </div>
       </button>
 
-      <!-- OPÇÃO 2: Câmera ao vivo (pode pedir permissão) -->
-      <button onclick="tentarCameraVivo()"
-              style="width:100%;max-width:300px;padding:14px;background:#334155;color:#cbd5e1;border:1px solid #475569;border-radius:14px;font-size:14px;cursor:pointer;margin-bottom:12px;">
-        🎥 Câmera ao vivo (tempo real)
+      <!-- BOTÃO 2: Câmera ao vivo (BarcodeDetector nativo ou jsQR) -->
+      <button class="scan-btn-secundario" onclick="iniciarCameraVivo()" id="btn-camera-vivo">
+        🎥 Câmera contínua (leitura automática)
       </button>
 
-      <div style="font-size:12px;color:#475569;margin-top:4px;">
-        Ou use a aba <strong style="color:#60a5fa;">🔍 Buscar</strong> para digitar a ficha
+      <div class="scan-dica">
+        Sem câmera disponível? Use a aba <strong>🔍 Buscar</strong><br>
+        para digitar o número da ficha ou CPF
       </div>
     </div>
-
-    <div class="scanner-status lendo" id="scanner-status" style="display:none;margin:8px 16px;border-radius:10px;padding:10px 14px;"></div>
   </div>
 
   <!-- Modo busca manual -->
   <div id="modo-busca" style="display:none;">
     <div class="busca-wrap">
-      <label>Número da ficha (ex: FI-1234) ou CPF</label>
+      <label class="busca-label">Número da ficha (FI-XXXX) ou CPF</label>
       <input type="text" id="busca-input" class="busca-input"
-             placeholder="FI-1234 ou 000.000.000-00"
-             oninput="mascararBusca(this)"
+             placeholder="FI-1234"
+             oninput="formatarBusca(this)"
              onkeydown="if(event.key==='Enter') buscar()">
-      <button class="busca-btn" id="busca-btn" onclick="buscar()">Buscar</button>
+      <button class="busca-btn" id="busca-btn" onclick="buscar()">🔍 Buscar participante</button>
     </div>
   </div>
 
   <!-- Resultado -->
   <div class="resultado" id="resultado">
-    <div class="resultado-card" id="resultado-card">
+    <div class="resultado-card">
       <div class="resultado-header" id="resultado-header">
         <div class="resultado-icone" id="resultado-icone">✅</div>
         <div>
           <div class="resultado-status" id="resultado-status">Confirmado</div>
-          <div class="resultado-nome" id="resultado-nome">—</div>
-          <div class="resultado-ficha" id="resultado-ficha">Ficha: —</div>
+          <div class="resultado-nome"   id="resultado-nome">—</div>
+          <div class="resultado-ficha"  id="resultado-ficha">Ficha: —</div>
         </div>
       </div>
       <div class="resultado-body">
         <div id="resultado-detalhes"></div>
         <div id="alerta-espera" class="alerta-espera" style="display:none;">
-          ⚠️ <strong>Atenção:</strong> Este participante está na <strong>lista de espera</strong>.
-          Só poderá participar se houver desistência confirmada pela SEMESP.
+          ⚠️ <strong>Lista de espera</strong> — este participante só entra se houver desistência confirmada pela SEMESP.
         </div>
         <button class="confirmar-btn" id="confirmar-btn" onclick="confirmarPresenca()">
-          ✅ Confirmar presença
+          ✅ Confirmar presença + 1kg recebido
         </button>
-        <button class="novo-btn" onclick="novaLeitura()">🔄 Nova leitura</button>
+        <button class="novo-btn" onclick="novaLeitura()">🔄 Novo credenciamento</button>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- Feedback visual de confirmação -->
+<!-- Feedback full-screen -->
 <div class="feedback" id="feedback">
   <div class="feedback-icone">✅</div>
-  <div class="feedback-nome" id="feedback-nome">Presença confirmada!</div>
-  <div class="feedback-sub" id="feedback-sub"></div>
+  <div class="feedback-nome" id="feedback-nome"></div>
+  <div class="feedback-ficha" id="feedback-ficha"></div>
+  <div class="feedback-hora"  id="feedback-hora"></div>
+  <div class="feedback-sub">1kg de alimento recebido ✓</div>
 </div>
 
 <script>
 // ================================================================
-// CONFIGURAÇÃO
+// CONFIG
 // ================================================================
 const MODALIDADES = {
   1:{nome:'Vôlei de Areia',sub:'Masculino'}, 2:{nome:'Vôlei de Areia',sub:'Feminino'},
@@ -254,6 +298,21 @@ const MODALIDADES = {
   7:{nome:'Pesca',sub:'Feminino'},
 };
 
+let modoAtual       = 'qr';
+let participanteAtual = null;
+let inscricoesAtuais  = [];
+let streamAtivo       = null;
+let animFrame         = null;
+let scanBloqueado     = false;
+let barcodeDetector   = null;
+
+// Verifica suporte à BarcodeDetector API (nativa do navegador)
+if ('BarcodeDetector' in window) {
+  try {
+    barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+  } catch(e) { barcodeDetector = null; }
+}
+
 // ================================================================
 // LOGIN
 // ================================================================
@@ -261,7 +320,6 @@ async function entrar() {
   const senha = document.getElementById('login-senha').value;
   const erro  = document.getElementById('login-erro');
   erro.style.display = 'none';
-
   try {
     const r = await fetch('/api/admin-auth', {
       method: 'POST',
@@ -270,11 +328,9 @@ async function entrar() {
     });
     const d = await r.json();
     if (d.ok) {
-      sessionStorage.setItem('checkin-token', d.token);
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('app').style.display = 'block';
-      // Não inicia câmera automaticamente — aguarda clique do usuário
-      // (navegadores mobile bloqueiam getUserMedia sem gesto do usuário)
+      carregarContador();
     } else {
       erro.style.display = 'block';
     }
@@ -285,18 +341,36 @@ async function entrar() {
 }
 
 function sair() {
-  sessionStorage.removeItem('checkin-token');
-  pararScanner();
+  pararCamera();
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('resultado').style.display = 'none';
 }
 
 // ================================================================
-// MODO (QR / BUSCA)
+// CONTADOR AO VIVO
 // ================================================================
-let modoAtual = 'qr';
+async function carregarContador() {
+  try {
+    const [partic, insc] = await Promise.all([
+      apiGet('participantes', 'select=id'),
+      apiGet('inscricoes', 'select=participante_id&presenca=eq.true')
+    ]);
+    const credenciados = new Set((Array.isArray(insc) ? insc : []).map(i => i.participante_id)).size;
+    const total = Array.isArray(partic) ? partic.length : 0;
+    document.getElementById('contador-num').textContent   = credenciados;
+    document.getElementById('contador-total').textContent = `de ${total} inscritos`;
+  } catch(e) {}
+}
 
+function atualizarContador(delta) {
+  const el = document.getElementById('contador-num');
+  el.textContent = Math.max(0, parseInt(el.textContent || '0') + delta);
+}
+
+// ================================================================
+// TABS
+// ================================================================
 function mudarModo(modo) {
   modoAtual = modo;
   document.getElementById('modo-qr').style.display    = modo === 'qr' ? 'block' : 'none';
@@ -304,57 +378,47 @@ function mudarModo(modo) {
   document.getElementById('tab-qr').classList.toggle('ativo', modo === 'qr');
   document.getElementById('tab-busca').classList.toggle('ativo', modo === 'busca');
   document.getElementById('resultado').style.display = 'none';
-
-  if (modo === 'qr') {
-    pararScanner();
-    scanBloqueado = false;
-    document.getElementById('camera-opcoes').style.display = 'block';
-    document.getElementById('camera-ativa').style.display  = 'none';
-    document.getElementById('scanner-status').style.display = 'none';
-  } else {
-    pararScanner();
-    setTimeout(() => document.getElementById('busca-input').focus(), 100);
-  }
+  if (modo !== 'qr') pararCamera();
+  if (modo === 'busca') setTimeout(() => document.getElementById('busca-input').focus(), 100);
 }
 
 // ================================================================
-// SCANNER QR
+// LEITURA POR FOTO — método principal, funciona em todos os celulares
 // ================================================================
-let streamAtivo   = null;
-let animFrame     = null;
-let scanBloqueado = false;
-
-// ── Ler QR Code a partir de FOTO (método principal — sem permissão) ──
-function lerImagemQR(input) {
+async function lerFotoQR(input) {
   const file = input.files[0];
   if (!file) return;
+  mostrarStatus('⏳ Decodificando QR Code...', 'lendo');
 
-  mostrarStatus('⏳ Processando imagem...', 'lendo');
+  // Tenta BarcodeDetector primeiro (muito mais rápido)
+  if (barcodeDetector) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const codes  = await barcodeDetector.detect(bitmap);
+      if (codes.length > 0) {
+        processarQR(codes[0].rawValue);
+        input.value = '';
+        return;
+      }
+    } catch(e) { /* cai para jsQR */ }
+  }
 
+  // Fallback: jsQR via canvas
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = e => {
     const img = new Image();
-    img.onload = function() {
-      const canvas = document.getElementById('scanner-canvas');
+    img.onload = () => {
+      const canvas = document.getElementById('qr-canvas');
       canvas.width  = img.width;
       canvas.height = img.height;
       canvas.getContext('2d').drawImage(img, 0, 0);
-      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      const imageData = canvas.getContext('2d').getImageData(0, 0, img.width, img.height);
       const code = jsQR(imageData.data, imageData.width, imageData.height);
-
       if (code && code.data) {
-        const ficha = code.data.trim().toUpperCase().replace(/^FI\-?(\d+)$/, 'FI-$1');
-        if (/^FI-\d+$/.test(ficha)) {
-          mostrarStatus(`✅ QR lido: ${ficha}`, 'encontrou');
-          if (navigator.vibrate) navigator.vibrate(100);
-          buscarPorFicha(ficha);
-        } else {
-          mostrarStatus('⚠️ QR Code não é uma ficha válida. Tente novamente.', 'erro');
-        }
+        processarQR(code.data);
       } else {
-        mostrarStatus('❌ QR Code não encontrado na imagem. Tente tirar a foto mais perto.', 'erro');
+        mostrarStatus('❌ QR não encontrado. Tente tirar a foto mais próximo.', 'erro');
       }
-      // Limpa o input para permitir nova foto
       input.value = '';
     };
     img.src = e.target.result;
@@ -362,309 +426,243 @@ function lerImagemQR(input) {
   reader.readAsDataURL(file);
 }
 
-function mostrarStatus(msg, tipo) {
-  const el = document.getElementById('scanner-status');
-  el.style.display = 'block';
-  el.textContent   = msg;
-  el.className     = 'scanner-status ' + tipo;
-  if (tipo === 'erro') {
-    setTimeout(() => {
-      el.style.display = 'none';
-    }, 4000);
-  }
-}
-
-function mostrarOpcoes() {
-  document.getElementById('camera-opcoes').style.display = 'block';
-  document.getElementById('camera-ativa').style.display = 'none';
-}
-
-// ── Câmera ao vivo (método alternativo) ──
-async function tentarCameraVivo() {
-  mostrarStatus('⏳ Iniciando câmera...', 'lendo');
-  document.getElementById('camera-opcoes').style.display = 'none';
-  await iniciarScanner();
-}
-
-async function iniciarScanner() {
+// ================================================================
+// CÂMERA AO VIVO — BarcodeDetector nativo ou jsQR frame a frame
+// ================================================================
+async function iniciarCameraVivo() {
   if (streamAtivo) return;
+  mostrarStatus('⏳ Iniciando câmera...', 'lendo');
+  document.getElementById('qr-opcoes').style.display = 'none';
 
-  const video  = document.getElementById('scanner-video');
-  const canvas = document.getElementById('scanner-canvas');
-  const status = document.getElementById('scanner-status');
-  status.style.display = 'block';
-
-  // Suporte a getUserMedia
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    mostrarErroCamera(status, 'Navegador sem suporte a câmera. Use o modo Busca.');
+  if (!navigator.mediaDevices?.getUserMedia) {
+    mostrarStatus('📵 Câmera indisponível. Use o botão Foto acima.', 'erro');
+    document.getElementById('qr-opcoes').style.display = 'block';
     return;
   }
 
-  // Constraints simplificadas — apenas câmera traseira preferencial
-  // Sem "exact" para evitar NotFoundError em desktop/alguns Android
   let stream = null;
-  let erroFinal = '';
-
-  const tentativas = [
+  for (const c of [
     { video: { facingMode: 'environment', width: { ideal: 1280 } } },
     { video: { facingMode: 'environment' } },
-    { video: true },
-  ];
-
-  for (const c of tentativas) {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(c);
-      break;
-    } catch (e) {
-      erroFinal = e.name + ': ' + e.message;
-    }
+    { video: true }
+  ]) {
+    try { stream = await navigator.mediaDevices.getUserMedia(c); break; }
+    catch(e) {}
   }
 
   if (!stream) {
-    // Mostra o erro real para facilitar diagnóstico
-    const msgErro = erroFinal.includes('NotAllowed') || erroFinal.includes('Permission')
-      ? 'Permissão negada. Vá em Configurações do navegador e permita o acesso à câmera para este site.'
-      : erroFinal.includes('NotFound') || erroFinal.includes('Devices')
-        ? 'Nenhuma câmera encontrada neste dispositivo. Use o modo Busca.'
-        : 'Câmera indisponível (' + erroFinal + '). Use o modo Busca.';
-    mostrarErroCamera(status, msgErro);
+    mostrarStatus('📵 Permissão de câmera negada. Use o botão Foto acima.', 'erro');
+    document.getElementById('qr-opcoes').style.display = 'block';
     return;
   }
 
-  streamAtivo     = stream;
+  streamAtivo = stream;
+  const video = document.getElementById('scanner-video');
   video.srcObject = stream;
 
-  document.getElementById('camera-opcoes').style.display = 'none';
-  document.getElementById('camera-ativa').style.display  = 'block';
+  document.getElementById('camera-vivo').style.display = 'block';
+  document.getElementById('camera-status').style.display = 'block';
+  mostrarStatus('🔍 Aponte para o QR Code', 'lendo');
 
-  // Iniciar varredura assim que o vídeo tiver dados
-  let scanIniciado = false;
-
-  function tentarIniciarScan() {
-    if (scanIniciado) return;
-    if (video.readyState >= 2) {
-      scanIniciado = true;
+  video.addEventListener('loadedmetadata', () => video.play());
+  video.addEventListener('canplay', () => {
+    if (barcodeDetector) {
+      scanComBarcodeDetector(video);
+    } else {
+      const canvas = document.getElementById('qr-canvas');
       canvas.width  = video.videoWidth  || 640;
       canvas.height = video.videoHeight || 480;
-      status.textContent = '🔍 Aponte para o QR Code';
-      status.className   = 'scanner-status lendo';
-      scanFrame(video, canvas, status);
+      scanComJsQR(video, canvas);
+    }
+  }, { once: true });
+}
+
+// BarcodeDetector: muito mais rápido, usa hardware do celular
+async function scanComBarcodeDetector(video) {
+  if (!streamAtivo || scanBloqueado) return;
+  try {
+    const codes = await barcodeDetector.detect(video);
+    if (codes.length > 0) {
+      scanBloqueado = true;
+      processarQR(codes[0].rawValue);
+      return;
+    }
+  } catch(e) {}
+  animFrame = requestAnimationFrame(() => scanComBarcodeDetector(video));
+}
+
+// jsQR: fallback frame a frame
+function scanComJsQR(video, canvas) {
+  if (!streamAtivo || scanBloqueado) return;
+  if (video.readyState >= 2) {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+    if (code?.data) {
+      scanBloqueado = true;
+      processarQR(code.data);
+      return;
     }
   }
-
-  video.addEventListener('loadedmetadata', () => video.play().then(tentarIniciarScan).catch(() => {}));
-  video.addEventListener('loadeddata',     tentarIniciarScan);
-  video.addEventListener('canplay',        tentarIniciarScan);
-
-  // Garantia: força play e verifica a cada 500ms por até 5s
-  video.play().catch(() => {});
-  let tentativas2 = 0;
-  const intervalo = setInterval(() => {
-    tentativas2++;
-    tentarIniciarScan();
-    if (scanIniciado || tentativas2 >= 10) clearInterval(intervalo);
-  }, 500);
+  animFrame = requestAnimationFrame(() => scanComJsQR(video, canvas));
 }
 
-function mostrarErroCamera(status, msg) {
-  mostrarStatus('📵 ' + msg, 'erro');
-  // Volta para tela de opções
-  document.getElementById('camera-ativa').style.display  = 'none';
-  document.getElementById('camera-opcoes').style.display = 'block';
-}
-
-function pararScanner() {
-  if (animFrame) {
-    cancelAnimationFrame(animFrame);
-    animFrame = null;
-  }
-  if (streamAtivo) {
-    streamAtivo.getTracks().forEach(t => t.stop());
-    streamAtivo = null;
-  }
-  const video = document.getElementById('scanner-video');
-  if (video) video.srcObject = null;
-}
-
-function scanFrame(video, canvas, status) {
-  // Para se o stream foi encerrado
-  if (!streamAtivo) return;
-
-  if (!scanBloqueado && video.readyState >= 2 && canvas.width > 0) {
-    try {
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(img.data, img.width, img.height, {
-        inversionAttempts: 'dontInvert', // mais rápido
-      });
-
-      if (code && code.data) {
-        const texto = code.data.trim().toUpperCase().replace(/\s/g, '');
-        // Aceita FI-1234 ou FI1234
-        const ficha = texto.replace(/^FI\-?(\d+)$/, 'FI-$1');
-        if (/^FI-\d+$/.test(ficha)) {
-          scanBloqueado = true;
-          status.textContent = `✅ Código lido: ${ficha}`;
-          status.className   = 'scanner-status encontrou';
-          // Vibração tátil (se suportado)
-          if (navigator.vibrate) navigator.vibrate(100);
-          buscarPorFicha(ficha);
-        }
-      }
-    } catch (e) {
-      // ignora erros de frame individual
-    }
-  }
-
-  animFrame = requestAnimationFrame(() => scanFrame(video, canvas, status));
+function pararCamera() {
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  if (streamAtivo) { streamAtivo.getTracks().forEach(t => t.stop()); streamAtivo = null; }
+  const v = document.getElementById('scanner-video');
+  if (v) v.srcObject = null;
+  document.getElementById('camera-vivo').style.display = 'none';
+  document.getElementById('qr-opcoes').style.display   = 'block';
+  document.getElementById('camera-status').style.display = 'none';
+  scanBloqueado = false;
 }
 
 // ================================================================
-// BUSCA
+// PROCESSAR QR — normaliza e busca no banco
 // ================================================================
-function mascararBusca(el) {
-  const v = el.value;
-  if (/^[a-zA-Z]/.test(v)) { el.value = v.toUpperCase(); return; }
-  let d = v.replace(/\D/g, '').slice(0, 11);
-  if      (d.length > 9) d = d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-  else if (d.length > 6) d = d.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
-  else if (d.length > 3) d = d.replace(/(\d{3})(\d+)/, '$1.$2');
-  el.value = d;
+function processarQR(texto) {
+  const ficha = texto.trim().toUpperCase().replace(/\s/g,'').replace(/^FI\-?(\d+)$/, 'FI-$1');
+  if (/^FI-\d+$/.test(ficha)) {
+    mostrarStatus(`✅ Código lido: ${ficha}`, 'encontrou');
+    if (navigator.vibrate) navigator.vibrate([80]);
+    buscarPorFicha(ficha);
+  } else {
+    mostrarStatus('⚠️ QR inválido. Tente novamente.', 'erro');
+    scanBloqueado = false;
+  }
+}
+
+function mostrarStatus(msg, tipo) {
+  const el = document.getElementById('camera-status');
+  el.style.display = 'block';
+  el.textContent   = msg;
+  el.className     = 'camera-status ' + tipo;
+  if (tipo === 'erro') setTimeout(() => { el.style.display = 'none'; scanBloqueado = false; }, 3500);
+}
+
+// ================================================================
+// BUSCA MANUAL
+// ================================================================
+function formatarBusca(el) {
+  let v = el.value.toUpperCase().replace(/\s/g, '');
+  // Se começa com letra assume ficha FI-
+  if (/^[A-Z]/.test(v) && !v.startsWith('FI-') && v.startsWith('FI')) {
+    v = 'FI-' + v.slice(2);
+  }
+  el.value = v;
 }
 
 async function buscar() {
   const inp = document.getElementById('busca-input').value.trim();
-  const btn = document.getElementById('busca-btn');
   if (!inp) return;
+  const btn = document.getElementById('busca-btn');
+  btn.disabled = true; btn.textContent = 'Buscando...';
 
-  btn.disabled = true;
-  btn.textContent = 'Buscando...';
-
-  const fi = inp.toUpperCase().replace(/\s/g,'').replace(/^FI\-?(\d+)$/, 'FI-$1');
+  const fi = inp.toUpperCase().replace(/^FI\-?(\d+)$/, 'FI-$1');
   if (/^FI-\d+$/.test(fi)) {
     await buscarPorFicha(fi);
   } else {
     await buscarPorCPF(inp);
   }
-
-  btn.disabled = false;
-  btn.textContent = 'Buscar';
+  btn.disabled = false; btn.textContent = '🔍 Buscar participante';
 }
 
 async function buscarPorFicha(ficha) {
   const r = await apiGet('inscricoes', `numero_ficha=eq.${encodeURIComponent(ficha)}&select=participante_id&limit=1`);
-  if (!Array.isArray(r) || r.length === 0) {
-    mostrarNaoEncontrado(ficha);
-    return;
-  }
-  const pid = r[0].participante_id;
-  await buscarParticipante(pid);
+  if (!Array.isArray(r) || r.length === 0) { mostrarNaoEncontrado(ficha); return; }
+  await buscarParticipante(r[0].participante_id);
 }
 
 async function buscarPorCPF(cpf) {
   const fmt = cpf.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   let r = await apiGet('participantes', `cpf=eq.${encodeURIComponent(fmt)}&select=id&limit=1`);
-  if (!Array.isArray(r) || r.length === 0) {
+  if (!Array.isArray(r) || r.length === 0)
     r = await apiGet('participantes', `cpf=eq.${encodeURIComponent(cpf.replace(/\D/g,''))}&select=id&limit=1`);
-  }
-  if (!Array.isArray(r) || r.length === 0) {
-    mostrarNaoEncontrado(cpf);
-    return;
-  }
+  if (!Array.isArray(r) || r.length === 0) { mostrarNaoEncontrado(cpf); return; }
   await buscarParticipante(r[0].id);
 }
 
 async function buscarParticipante(pid) {
   const [partic, inscr] = await Promise.all([
     apiGet('participantes', `id=eq.${pid}&select=*`),
-    apiGet('inscricoes', `participante_id=eq.${pid}&select=*`)
+    apiGet('inscricoes',    `participante_id=eq.${pid}&select=*`)
   ]);
-
-  if (!Array.isArray(partic) || partic.length === 0) {
-    mostrarNaoEncontrado('—');
-    return;
-  }
-
+  if (!Array.isArray(partic) || partic.length === 0) { mostrarNaoEncontrado('—'); return; }
   mostrarResultado(partic[0], Array.isArray(inscr) ? inscr : []);
 }
 
 // ================================================================
 // EXIBIR RESULTADO
 // ================================================================
-let participanteAtual = null;
-let inscricoesAtuais  = [];
-
 function mostrarResultado(p, inscricoes) {
   participanteAtual = p;
   inscricoesAtuais  = inscricoes;
 
-  const temEspera   = inscricoes.some(i => i.status === 'lista_espera');
-  const todasEspera = inscricoes.every(i => i.status === 'lista_espera');
   const jaPresente  = inscricoes.some(i => i.presenca === true);
+  const todasEspera = inscricoes.length > 0 && inscricoes.every(i => i.status === 'lista_espera');
+  const temEspera   = inscricoes.some(i => i.status === 'lista_espera');
   const ficha       = inscricoes[0]?.numero_ficha || '—';
 
-  // Header
-  const header  = document.getElementById('resultado-header');
-  const icone   = document.getElementById('resultado-icone');
-  const statusEl = document.getElementById('resultado-status');
+  const header = document.getElementById('resultado-header');
+  const icone  = document.getElementById('resultado-icone');
+  const status = document.getElementById('resultado-status');
 
   if (jaPresente) {
-    header.className = 'resultado-header ja-presente';
+    header.className  = 'resultado-header ja-presente';
     icone.textContent = '🔵';
-    statusEl.textContent = 'Presença já confirmada';
+    status.textContent = 'Já credenciado';
+    const hora = inscricoes.find(i=>i.presenca_em)?.presenca_em;
+    if (hora) status.textContent += ' — ' + new Date(hora).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
   } else if (todasEspera) {
-    header.className = 'resultado-header espera';
+    header.className  = 'resultado-header espera';
     icone.textContent = '⏳';
-    statusEl.textContent = 'Lista de espera';
+    status.textContent = 'Lista de espera';
   } else {
-    header.className = 'resultado-header confirmado';
+    header.className  = 'resultado-header confirmado';
     icone.textContent = '✅';
-    statusEl.textContent = 'Confirmado';
+    status.textContent = 'Inscrito — aguardando credenciamento';
   }
 
   document.getElementById('resultado-nome').textContent  = p.nome_completo;
-  document.getElementById('resultado-ficha').textContent = `Ficha: ${ficha}`;
+  document.getElementById('resultado-ficha').textContent = `Ficha ${ficha}`;
 
-  // Detalhes
   const nasc = p.data_nascimento
     ? new Date(p.data_nascimento + 'T00:00').toLocaleDateString('pt-BR')
     : '—';
 
-  const modsBadges = inscricoes.map(i => {
-    const m   = MODALIDADES[i.modalidade_id];
-    const cls = i.status === 'lista_espera' ? 'mod-espera' : 'mod-confirmado';
+  const badges = inscricoes.map(i => {
+    const m = MODALIDADES[i.modalidade_id];
+    const cls = i.status === 'lista_espera' ? 'mod-esp' : 'mod-conf';
     const pre = i.status === 'lista_espera' ? '⏳ ' : '✅ ';
-    return `<span class="mod-badge ${cls}">${pre}${m ? m.nome + ' ' + m.sub : 'Mod.' + i.modalidade_id}</span>`;
+    return `<span class="mod-badge ${cls}">${pre}${m ? m.nome + ' ' + m.sub : '—'}</span>`;
   }).join('');
 
   document.getElementById('resultado-detalhes').innerHTML = `
     <div class="detalhe-row"><span class="detalhe-label">Cidade/UF</span><span class="detalhe-val">${p.cidade || '—'} / ${p.uf || '—'}</span></div>
     <div class="detalhe-row"><span class="detalhe-label">Nascimento</span><span class="detalhe-val">${nasc}</span></div>
     <div class="detalhe-row"><span class="detalhe-label">Telefone</span><span class="detalhe-val">${p.telefone || '—'}</span></div>
-    <div class="detalhe-row"><span class="detalhe-label">Modalidades</span><span class="detalhe-val">${modsBadges}</span></div>
-    <div class="detalhe-row"><span class="detalhe-label">Uso de imagem</span><span class="detalhe-val">${p.autorizacao_imagem ? '✅ Autorizado' : '❌ Não autorizado'}</span></div>
+    <div class="detalhe-row"><span class="detalhe-label">Modalidades</span><span class="detalhe-val">${badges}</span></div>
+    <div class="detalhe-row"><span class="detalhe-label">Uso de imagem</span><span class="detalhe-val">${p.autorizacao_imagem ? '✅ Sim' : '❌ Não'}</span></div>
   `;
 
-  // Alerta espera
   document.getElementById('alerta-espera').style.display = temEspera ? 'block' : 'none';
 
-  // Botão confirmar
   const btn = document.getElementById('confirmar-btn');
+  btn.style.background = '';
   if (jaPresente) {
-    btn.textContent = '🔵 Presença já confirmada';
+    btn.textContent = '🔵 Já credenciado anteriormente';
     btn.disabled    = true;
-    btn.className   = 'confirmar-btn ja-presente';
+    btn.className   = 'confirmar-btn ja';
   } else if (todasEspera) {
-    btn.textContent = '⚠️ Lista de espera — não confirmar';
-    btn.disabled    = true;
-    btn.className   = 'confirmar-btn';
+    btn.textContent    = '⚠️ Lista de espera — não credenciar';
+    btn.disabled       = true;
     btn.style.background = '#92400e';
   } else {
-    btn.textContent = '✅ Confirmar presença';
+    btn.textContent = '✅ Confirmar presença + 1kg recebido';
     btn.disabled    = false;
     btn.className   = 'confirmar-btn';
-    btn.style.background = '';
   }
 
   document.getElementById('resultado').style.display = 'block';
@@ -672,27 +670,23 @@ function mostrarResultado(p, inscricoes) {
 }
 
 function mostrarNaoEncontrado(ref) {
-  document.getElementById('scanner-status').textContent = `❌ Ficha ${ref} não encontrada`;
-  document.getElementById('scanner-status').className   = 'scanner-status erro';
+  mostrarStatus(`❌ "${ref}" não encontrado`, 'erro');
   scanBloqueado = false;
-  setTimeout(() => {
-    document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
-    document.getElementById('scanner-status').className   = 'scanner-status lendo';
-  }, 3000);
 }
 
 // ================================================================
-// CONFIRMAR PRESENÇA
+// CONFIRMAR PRESENÇA — grava presenca=true e presenca_em no banco
 // ================================================================
 async function confirmarPresenca() {
   if (!participanteAtual) return;
   const btn = document.getElementById('confirmar-btn');
   btn.disabled = true;
-  btn.textContent = 'Confirmando...';
+  btn.textContent = 'Registrando...';
 
-  // Confirmar presença em todas as inscrições confirmadas
+  const agora = new Date().toISOString();
   const inscConf = inscricoesAtuais.filter(i => i.status !== 'lista_espera');
   let ok = true;
+
   for (const i of inscConf) {
     const r = await fetch('/api/supabase', {
       method: 'POST',
@@ -701,27 +695,31 @@ async function confirmarPresenca() {
         acao: 'atualizar',
         tabela: 'inscricoes',
         id: i.id,
-        dados: { presenca: true, presenca_em: new Date().toISOString() }
+        dados: { presenca: true, presenca_em: agora }
       })
     });
     const d = await r.json();
-    if (!Array.isArray(d) || d.length === 0) ok = false;
+    if (!Array.isArray(d) || d.length === 0) { ok = false; }
   }
 
   if (ok) {
-    // Feedback visual verde
+    atualizarContador(1);
+    const ficha  = inscricoesAtuais[0]?.numero_ficha || '—';
+    const horaBR = new Date(agora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    document.getElementById('feedback-nome').textContent  = participanteAtual.nome_completo;
+    document.getElementById('feedback-ficha').textContent = `Ficha ${ficha}`;
+    document.getElementById('feedback-hora').textContent  = `Credenciado às ${horaBR}`;
+
     const fb = document.getElementById('feedback');
-    document.getElementById('feedback-nome').textContent = participanteAtual.nome_completo;
-    document.getElementById('feedback-sub').textContent  =
-      `Ficha ${inscricoesAtuais[0]?.numero_ficha || '—'} · Presença confirmada ✅`;
     fb.classList.add('show');
     setTimeout(() => {
       fb.classList.remove('show');
       novaLeitura();
-    }, 2500);
+    }, 2800);
   } else {
-    btn.textContent = 'Erro — tente novamente';
-    btn.disabled = false;
+    btn.textContent = '❌ Erro — tente novamente';
+    btn.disabled    = false;
   }
 }
 
@@ -731,16 +729,21 @@ async function confirmarPresenca() {
 function novaLeitura() {
   participanteAtual = null;
   inscricoesAtuais  = [];
+  scanBloqueado     = false;
   document.getElementById('resultado').style.display = 'none';
-  scanBloqueado = false;
+  document.getElementById('camera-status').style.display = 'none';
+
   if (modoAtual === 'qr') {
-    document.getElementById('scanner-status').textContent = '🔍 Aguardando QR Code...';
-    document.getElementById('scanner-status').className   = 'scanner-status lendo';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Volta para tela de opções
+    // Se câmera ao vivo ativa, continua; senão mostra opções
     if (!streamAtivo) {
-      document.getElementById('camera-opcoes').style.display = 'block';
-      document.getElementById('camera-ativa').style.display  = 'none';
+      document.getElementById('qr-opcoes').style.display = 'block';
+    } else {
+      // Reativa scan na câmera ao vivo
+      const video  = document.getElementById('scanner-video');
+      const canvas = document.getElementById('qr-canvas');
+      if (barcodeDetector) scanComBarcodeDetector(video);
+      else scanComJsQR(video, canvas);
     }
   } else {
     document.getElementById('busca-input').value = '';
