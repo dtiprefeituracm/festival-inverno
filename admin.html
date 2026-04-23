@@ -589,20 +589,34 @@ async function carregarDados() {
     const participantes = await apiGet('participantes', 'order=criado_em.desc');
     const inscricoes    = await apiGet('inscricoes', 'select=*');
 
+    // Valida resposta — se retornou erro do Supabase, para aqui
+    if (!Array.isArray(participantes) || !Array.isArray(inscricoes)) {
+      throw new Error('Resposta inesperada da API: ' + JSON.stringify(participantes));
+    }
+
     todosInscritos = participantes.map(p => ({
       ...p,
       inscricoes: inscricoes.filter(i => i.participante_id === p.id)
     }));
 
-    atualizarMetricas(todosInscritos, inscricoes);
-    atualizarVagas(inscricoes);
-    preencherUFs(todosInscritos);
-    renderTabela(todosInscritos);
-    renderEspera(todosInscritos);
-    renderRelatorio(todosInscritos, inscricoes);
-    renderSemInscricao(todosInscritos, inscricoes);
-    renderCredenciamento(todosInscritos, inscricoes);
+    // Cada seção tem seu próprio try/catch — erro em uma não trava as outras
+    try { atualizarMetricas(todosInscritos, inscricoes); } catch(e) { console.error('atualizarMetricas:', e); }
+    try { atualizarVagas(inscricoes); }                  catch(e) { console.error('atualizarVagas:', e); }
+    try { preencherUFs(todosInscritos); }                catch(e) { console.error('preencherUFs:', e); }
+    try { renderTabela(todosInscritos); }                catch(e) { console.error('renderTabela:', e); document.getElementById('tabela-body').innerHTML = '<tr><td colspan="10" class="vazio">Erro ao renderizar tabela.</td></tr>'; }
+    try { renderEspera(todosInscritos); }                catch(e) { console.error('renderEspera:', e); document.getElementById('espera-grid').innerHTML = '<div class="vazio">Erro ao carregar lista de espera.</div>'; }
+    try { renderRelatorio(todosInscritos, inscricoes); } catch(e) { console.error('renderRelatorio:', e); document.getElementById('relatorio-grid').innerHTML = '<div class="vazio">Erro ao carregar relatório.</div>'; }
+    try { renderSemInscricao(todosInscritos, inscricoes); } catch(e) { console.error('renderSemInscricao:', e); }
+    try { renderCredenciamento(todosInscritos); }        catch(e) { console.error('renderCredenciamento:', e); document.getElementById('credenciamento-resumo').innerHTML = '<div class="vazio" style="padding:12px;">Erro ao carregar credenciamento.</div>'; }
+
   } catch (e) {
+    console.error('carregarDados ERRO:', e);
+    // Limpa todos os "Carregando..." para não ficar travado
+    const ids = ['vagas-grid','espera-grid','relatorio-grid','sem-inscricao-grid','credenciamento-resumo'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="vazio" style="padding:12px;color:#dc2626;">Erro ao carregar. Recarregue a página.</div>';
+    });
     document.getElementById('tabela-body').innerHTML =
       '<tr><td colspan="10" class="vazio">Erro ao carregar dados. Recarregue a página.</td></tr>';
   }
@@ -1508,66 +1522,67 @@ async function confirmarExclusao() {
 // ================================================================
 // CREDENCIAMENTO — Painel do dia do evento
 // ================================================================
-function renderCredenciamento(participantes, inscricoes) {
+function renderCredenciamento(participantes) {
   const div = document.getElementById('credenciamento-resumo');
+  if (!div) return;
 
-  const credenciados = participantes.filter(p =>
-    p.inscricoes.some(i => i.presenca === true)
-  );
+  const credenciados = participantes.filter(function(p) {
+    return p.inscricoes.some(function(i) { return i.presenca === true; });
+  });
   const total = participantes.length;
   const qtd   = credenciados.length;
   const pct   = total > 0 ? Math.round(qtd / total * 100) : 0;
 
   if (qtd === 0) {
-    div.innerHTML = `<div style="padding:12px 0 16px;font-size:13px;color:#94a3b8;text-align:center;">
-      Nenhum credenciamento registrado ainda.<br>
-      <span style="font-size:11px;">Use o <strong>📷 Credenciamento</strong> no topo para registrar a entrada dos participantes.</span>
-    </div>`;
+    div.innerHTML = '<div style="padding:12px 0 16px;font-size:13px;color:#94a3b8;text-align:center;">'
+      + 'Nenhum credenciamento registrado ainda.<br>'
+      + '<span style="font-size:11px;">Use o <strong>📷 Credenciamento</strong> no topo para registrar a entrada dos participantes.</span>'
+      + '</div>';
     return;
   }
 
   const barColor = pct >= 80 ? '#16a34a' : pct >= 40 ? '#f59e0b' : '#1a56a0';
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:200px;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px;">
-          <span>Progresso do credenciamento</span>
-          <span style="font-weight:700;color:${barColor};">${qtd} / ${total} (${pct}%)</span>
-        </div>
-        <div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:5px;transition:width 0.5s;"></div>
-        </div>
-      </div>
-    </div>
-    <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-      <thead><tr style="background:#f0fdf4;">
-        <th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Ficha</th>
-        <th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Participante</th>
-        <th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Modalidade</th>
-        <th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Horário</th>
-      </tr></thead>
-      <tbody>
-        ${credenciados.map(p => {
-          const insc    = p.inscricoes.find(i => i.presenca === true);
-          const ficha   = insc?.numero_ficha || '—';
-          const mod     = MODALIDADES[insc?.modalidade_id];
-          const horario = insc?.presenca_em
-            ? new Date(insc.presenca_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            : '—';
-          return `<tr style="border-bottom:1px solid #f0fdf4;">
-            <td style="padding:7px 12px;font-weight:700;color:#16a34a;">${ficha}</td>
-            <td style="padding:7px 12px;font-weight:600;">${p.nome_completo}</td>
-            <td style="padding:7px 12px;color:#475569;">${mod ? mod.nome + ' ' + mod.sub : '—'}</td>
-            <td style="padding:7px 12px;color:#16a34a;font-weight:600;">✅ ${horario}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-    </div>
-    <div style="padding:10px 0 6px;font-size:11px;color:#94a3b8;">
-      ${total - qtd} participante${(total - qtd) !== 1 ? 's' : ''} ainda não credenciado${(total - qtd) !== 1 ? 's' : ''}
-    </div>`;
+
+  var linhas = '';
+  credenciados.forEach(function(p) {
+    var insc    = p.inscricoes.find(function(i) { return i.presenca === true; });
+    var ficha   = (insc && insc.numero_ficha) ? insc.numero_ficha : '—';
+    var mod     = insc ? MODALIDADES[insc.modalidade_id] : null;
+    var modNome = mod ? (mod.nome + ' ' + mod.sub) : '—';
+    var horario = (insc && insc.presenca_em)
+      ? new Date(insc.presenca_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      : '—';
+    linhas += '<tr style="border-bottom:1px solid #f0fdf4;">'
+      + '<td style="padding:7px 12px;font-weight:700;color:#16a34a;">' + ficha + '</td>'
+      + '<td style="padding:7px 12px;font-weight:600;">' + p.nome_completo + '</td>'
+      + '<td style="padding:7px 12px;color:#475569;">' + modNome + '</td>'
+      + '<td style="padding:7px 12px;color:#16a34a;font-weight:600;">✅ ' + horario + '</td>'
+      + '</tr>';
+  });
+
+  div.innerHTML = ''
+    + '<div style="flex:1;min-width:200px;margin-bottom:12px;">'
+    + '  <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px;">'
+    + '    <span>Progresso do credenciamento</span>'
+    + '    <span style="font-weight:700;color:' + barColor + ';">' + qtd + ' / ' + total + ' (' + pct + '%)</span>'
+    + '  </div>'
+    + '  <div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;">'
+    + '    <div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:5px;transition:width 0.5s;"></div>'
+    + '  </div>'
+    + '</div>'
+    + '<div style="overflow-x:auto;">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead><tr style="background:#f0fdf4;">'
+    + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Ficha</th>'
+    + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Participante</th>'
+    + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Modalidade</th>'
+    + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Horário</th>'
+    + '</tr></thead>'
+    + '<tbody>' + linhas + '</tbody>'
+    + '</table></div>'
+    + '<div style="padding:10px 0 6px;font-size:11px;color:#94a3b8;">'
+    + (total - qtd) + ' participante' + ((total - qtd) !== 1 ? 's' : '') + ' ainda não credenciado' + ((total - qtd) !== 1 ? 's' : '')
+    + '</div>';
 }
 
 function imprimirCredenciados() {
