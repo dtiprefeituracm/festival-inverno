@@ -388,42 +388,106 @@ function mudarModo(modo) {
 async function lerFotoQR(input) {
   const file = input.files[0];
   if (!file) return;
-  mostrarStatus('⏳ Decodificando QR Code...', 'lendo');
 
-  // Tenta BarcodeDetector primeiro (muito mais rápido)
+  mostrarStatusFoto('⏳ Processando QR Code...', '#60a5fa');
+
+  // ── Tenta BarcodeDetector nativo primeiro (muito mais rápido) ──
   if (barcodeDetector) {
     try {
       const bitmap = await createImageBitmap(file);
       const codes  = await barcodeDetector.detect(bitmap);
+      bitmap.close();
       if (codes.length > 0) {
-        processarQR(codes[0].rawValue);
         input.value = '';
+        processarQR(codes[0].rawValue);
+        limparStatusFoto();
         return;
       }
     } catch(e) { /* cai para jsQR */ }
   }
 
-  // Fallback: jsQR via canvas
+  // ── Fallback: jsQR via canvas com imagem REDIMENSIONADA ──
+  // Fotos de câmera chegam com 8-12MP — jsQR trava nesse tamanho.
+  // Redimensionamos para max 800px antes de processar.
+  const MAX = 800;
+
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
+      // Calcula escala para caber em MAX x MAX
+      const escala  = Math.min(MAX / img.width, MAX / img.height, 1);
+      const largura = Math.round(img.width  * escala);
+      const altura  = Math.round(img.height * escala);
+
       const canvas = document.getElementById('qr-canvas');
-      canvas.width  = img.width;
-      canvas.height = img.height;
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      const imageData = canvas.getContext('2d').getImageData(0, 0, img.width, img.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      canvas.width  = largura;
+      canvas.height = altura;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, largura, altura);
+
+      const imageData = ctx.getImageData(0, 0, largura, altura);
+      const code = jsQR(imageData.data, largura, altura, {
+        inversionAttempts: 'attemptBoth'   // tenta normal e invertido
+      });
+
+      input.value = '';  // permite nova foto imediatamente
+
       if (code && code.data) {
+        limparStatusFoto();
         processarQR(code.data);
       } else {
-        mostrarStatus('❌ QR não encontrado. Tente tirar a foto mais próximo.', 'erro');
+        // Tenta uma segunda vez com imagem menor (às vezes melhora a leitura)
+        const canvas2 = document.getElementById('qr-canvas');
+        canvas2.width  = Math.round(largura * 0.5);
+        canvas2.height = Math.round(altura  * 0.5);
+        ctx.drawImage(img, 0, 0, canvas2.width, canvas2.height);
+        const imageData2 = ctx.getImageData(0, 0, canvas2.width, canvas2.height);
+        const code2 = jsQR(imageData2.data, canvas2.width, canvas2.height, {
+          inversionAttempts: 'attemptBoth'
+        });
+        if (code2 && code2.data) {
+          limparStatusFoto();
+          processarQR(code2.data);
+        } else {
+          mostrarStatusFoto('❌ QR não lido. Tente mais de perto e com boa luz.', '#f87171');
+          setTimeout(limparStatusFoto, 3500);
+        }
       }
-      input.value = '';
+    };
+    img.onerror = () => {
+      mostrarStatusFoto('❌ Erro ao carregar imagem. Tente novamente.', '#f87171');
+      setTimeout(limparStatusFoto, 3000);
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function mostrarStatusFoto(msg, cor) {
+  // Reutiliza o camera-status mas também cria um toast flutuante para o modo foto
+  let toast = document.getElementById('foto-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'foto-toast';
+    toast.style.cssText = `
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+      padding: 12px 20px; font-size: 14px; font-weight: 600;
+      z-index: 999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: opacity 0.2s;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.style.color   = cor;
+  toast.style.opacity = '1';
+  toast.style.display = 'block';
+  toast.textContent   = msg;
+}
+
+function limparStatusFoto() {
+  const toast = document.getElementById('foto-toast');
+  if (toast) toast.style.display = 'none';
 }
 
 // ================================================================
