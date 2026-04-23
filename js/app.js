@@ -361,12 +361,16 @@ async function enviarInscricao() {
 
   // Salvar participante
   const ficha = gerarFicha();
+
+  // Normaliza o telefone antes de salvar (garante formato padrão)
+  const telNormalizado = normalizarTelefone(tel);
+
   const resPart = await post('participantes', {
     nome_completo:      nome,
     cpf,
     sexo,
     email:              email || null,
-    telefone:           tel,
+    telefone:           telNormalizado || tel,
     data_nascimento:    nasc || null,
     cidade,
     uf:                 'RO',
@@ -458,7 +462,24 @@ async function enviarInscricao() {
       insc.autorizacao_imagem_membro4 = document.getElementById(`cb-autorizacao-p${id}-m4`)?.checked || false;
     }
 
-    await post('inscricoes', insc);
+    // Normaliza telefones de parceiros/membros antes de salvar
+    if (insc.parceiro_telefone) insc.parceiro_telefone = normalizarTelefone(insc.parceiro_telefone) || insc.parceiro_telefone;
+    if (insc.membro3_telefone)  insc.membro3_telefone  = normalizarTelefone(insc.membro3_telefone)  || insc.membro3_telefone;
+    if (insc.membro4_telefone)  insc.membro4_telefone  = normalizarTelefone(insc.membro4_telefone)  || insc.membro4_telefone;
+
+    const resInsc = await post('inscricoes', insc);
+
+    // ── ROLLBACK: se a inscrição falhou, desfaz o participante ──
+    if (!resInsc || resInsc.length === 0 || resInsc.code || resInsc.erro) {
+      await deletarPorCampo('inscricoes', 'participante_id', pid);
+      await deletar('participantes', pid);
+      erro.textContent = 'Erro ao salvar inscrição. Verifique sua conexão e tente novamente.';
+      erro.style.display = 'block';
+      window.scrollTo({ top: erro.offsetTop - 80, behavior: 'smooth' });
+      btn.disabled = false;
+      btn.textContent = 'Enviar inscrição';
+      return;
+    }
   }
 
   // Verificar se alguma modalidade ficou na lista de espera
@@ -1070,6 +1091,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('erro').style.display = 'none';
   });
   cpfEl.addEventListener('blur', function() { validarCampoCPF(this); });
+
+  // ── Máscara de telefone em TODOS os campos tel ──────────────
+  // Campo principal do participante 1
+  const telPrincipal = document.getElementById('telefone');
+  if (telPrincipal) telPrincipal.addEventListener('input', function() { mascararTelefone(this); });
+
+  // Telefones dos parceiros de duplas (Vôlei, Futevôlei, Canoagem)
+  [1, 2, 3, 4].forEach(id => {
+    const el = document.getElementById('p' + id + '-tel');
+    if (el) el.addEventListener('input', function() { mascararTelefone(this); });
+  });
+
+  // Telefones dos membros da Pesca
+  ['6', '7'].forEach(box => {
+    ['m2', 'm3', 'm4'].forEach(m => {
+      const el = document.getElementById(`p${box}-${m}-tel`);
+      if (el) el.addEventListener('input', function() { mascararTelefone(this); });
+    });
+  });
 
   // Validação em tempo real nos CPFs dos parceiros (duplas)
   [1,2,3,4].forEach(id => {
