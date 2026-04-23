@@ -23,6 +23,51 @@ async function post(tabela, dados) {
   return r.json();
 }
 
+async function deletar(tabela, id) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'deletar', tabela, id })
+  });
+  return r.json();
+}
+
+async function deletarPorCampo(tabela, campo, valor) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'deletarPorCampo', tabela, campo, valor })
+  });
+  return r.json();
+}
+
+// ── Máscara de telefone — formata para (DD) 9 XXXX-XXXX ────────
+function mascararTelefone(el) {
+  let v = el.value.replace(/\D/g, '');   // remove tudo que não é dígito
+  // Remove prefixo internacional (+55 ou 55 com mais de 11 dígitos)
+  if (v.length > 11) v = v.replace(/^(55)?(\d{10,11})$/, '$2');
+  v = v.slice(0, 11);
+  if (v.length === 0) { el.value = ''; return; }
+  if      (v.length <= 2)  v = `(${v}`;
+  else if (v.length <= 3)  v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+  else if (v.length <= 7)  v = `(${v.slice(0,2)}) ${v.slice(2,3)} ${v.slice(3)}`;
+  else if (v.length <= 11) v = `(${v.slice(0,2)}) ${v.slice(2,3)} ${v.slice(3,7)}-${v.slice(7)}`;
+  el.value = v;
+}
+
+// ── Normaliza telefone salvo no banco — sempre (DD) 9 XXXX-XXXX ─
+function normalizarTelefone(raw) {
+  if (!raw) return raw;
+  let digits = String(raw).replace(/\D/g, '');
+  // Remove DDI +55 ou 55
+  if (digits.length > 11 && digits.startsWith('55')) digits = digits.slice(2);
+  digits = digits.slice(0, 11);
+  if (digits.length < 10) return raw; // não consegue formatar — devolve original
+  // Garante 9º dígito no celular (11 dígitos)
+  if (digits.length === 10) digits = digits.slice(0, 2) + '9' + digits.slice(2);
+  return `(${digits.slice(0,2)}) ${digits.slice(2,3)} ${digits.slice(3,7)}-${digits.slice(7)}`;
+}
+
 // ── Máscara de CPF ─────────────────────────────────────────────
 function mascararCPF(el) {
   let v = el.value.replace(/\D/g, '').slice(0, 11);
