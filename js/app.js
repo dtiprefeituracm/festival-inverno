@@ -590,16 +590,96 @@ async function buscarInscricao() {
   }
 }
 
+// ================================================================
+// EDIÇÃO DE DADOS PESSOAIS DO PARTICIPANTE
+// ================================================================
+function toggleEditarDadosPessoais() {
+  const form = document.getElementById('form-dados-pessoais');
+  const btn  = document.getElementById('btn-editar-dados');
+  if (!form) return;
+  const aberto = form.style.display !== 'none';
+  form.style.display = aberto ? 'none' : 'block';
+  btn.textContent    = aberto ? '✏️ Editar meus dados' : '✖ Fechar';
+}
+
+async function salvarDadosPessoais(participanteId) {
+  const nome   = document.getElementById('edit-nome')?.value.trim();
+  const tel    = document.getElementById('edit-tel')?.value.trim();
+  const cidade = document.getElementById('edit-cidade')?.value.trim();
+  const email  = document.getElementById('edit-email')?.value.trim();
+
+  if (!nome) {
+    alert('O nome completo é obrigatório.');
+    return;
+  }
+
+  const dados = {
+    nome_completo: nome,
+    telefone:      tel    || null,
+    cidade:        cidade || null,
+    email:         email  || null,
+  };
+
+  try {
+    const r = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'atualizar', tabela: 'participantes', id: participanteId, dados })
+    });
+    const d = await r.json();
+    if (Array.isArray(d) && d.length > 0) {
+      alert('✅ Dados atualizados com sucesso!');
+      // Atualiza estado local e recarrega a consulta
+      participanteConsulta = { ...participanteConsulta, ...dados };
+      buscarInscricao();
+    } else {
+      alert('Erro ao salvar. Verifique sua conexão e tente novamente.');
+    }
+  } catch (e) {
+    alert('Erro de conexão: ' + e.message);
+  }
+}
+
 function renderizarConsulta() {
   const p   = participanteConsulta;
   const ins = inscricoesConsulta;
   const fi  = ins[0]?.numero_ficha || '—';
   const sx  = p.sexo || 'M';
 
+  // Remove edição anterior de dados pessoais se existir
+  const editPessoalAnterior = document.getElementById('edit-dados-pessoais');
+  if (editPessoalAnterior) editPessoalAnterior.remove();
+
   document.getElementById('consulta-perfil').innerHTML =
     `<div class="consulta-perfil-nome">${p.nome_completo}</div>` +
     `<div class="consulta-perfil-sub">CPF: ${p.cpf || '—'} · ${p.cidade || '—'}/${p.uf || 'RO'}</div>` +
-    `<div class="consulta-ficha-num">Ficha: ${fi}</div>`;
+    `<div class="consulta-ficha-num">Ficha: ${fi}</div>` +
+    `<button onclick="toggleEditarDadosPessoais()" id="btn-editar-dados"
+       style="margin-top:10px;padding:6px 14px;background:#eff6ff;color:#1a56a0;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">
+       ✏️ Editar meus dados
+     </button>` +
+    `<div id="form-dados-pessoais" style="display:none;margin-top:12px;">
+       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Nome completo</div>
+       <input type="text" id="edit-nome" value="${p.nome_completo || ''}"
+         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Telefone</div>
+       <input type="tel" id="edit-tel" value="${p.telefone || ''}"
+         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Cidade</div>
+       <input type="text" id="edit-cidade" value="${p.cidade || ''}" id="edit-cidade"
+         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">E-mail</div>
+       <input type="email" id="edit-email" value="${p.email || ''}"
+         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;">
+       <button onclick="salvarDadosPessoais('${p.id}')"
+         style="width:100%;padding:10px;background:#1a56a0;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;">
+         💾 Salvar dados
+       </button>
+       <button onclick="toggleEditarDadosPessoais()"
+         style="width:100%;padding:8px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:13px;cursor:pointer;">
+         Cancelar
+       </button>
+     </div>`;
 
   const ids = new Set(ins.map(i => i.modalidade_id));
   const me  = document.getElementById('consulta-mod-atual');
