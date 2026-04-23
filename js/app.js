@@ -650,36 +650,55 @@ function renderizarConsulta() {
   const editPessoalAnterior = document.getElementById('edit-dados-pessoais');
   if (editPessoalAnterior) editPessoalAnterior.remove();
 
-  document.getElementById('consulta-perfil').innerHTML =
+  // Monta o perfil usando DOM (evita problemas de HTML malformado em innerHTML)
+  const perfilEl = document.getElementById('consulta-perfil');
+  perfilEl.innerHTML =
     `<div class="consulta-perfil-nome">${p.nome_completo}</div>` +
     `<div class="consulta-perfil-sub">CPF: ${p.cpf || '—'} · ${p.cidade || '—'}/${p.uf || 'RO'}</div>` +
-    `<div class="consulta-ficha-num">Ficha: ${fi}</div>` +
-    `<button onclick="toggleEditarDadosPessoais()" id="btn-editar-dados"
-       style="margin-top:10px;padding:6px 14px;background:#eff6ff;color:#1a56a0;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">
-       ✏️ Editar meus dados
-     </button>` +
-    `<div id="form-dados-pessoais" style="display:none;margin-top:12px;">
-       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Nome completo</div>
-       <input type="text" id="edit-nome" value="${p.nome_completo || ''}"
-         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
-       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Telefone</div>
-       <input type="tel" id="edit-tel" value="${p.telefone || ''}"
-         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
-       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Cidade</div>
-       <input type="text" id="edit-cidade" value="${p.cidade || ''}" id="edit-cidade"
-         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
-       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">E-mail</div>
-       <input type="email" id="edit-email" value="${p.email || ''}"
-         style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;">
-       <button onclick="salvarDadosPessoais('${p.id}')"
-         style="width:100%;padding:10px;background:#1a56a0;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;">
-         💾 Salvar dados
-       </button>
-       <button onclick="toggleEditarDadosPessoais()"
-         style="width:100%;padding:8px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:13px;cursor:pointer;">
-         Cancelar
-       </button>
-     </div>`;
+    `<div class="consulta-ficha-num">Ficha: ${fi}</div>`;
+
+  // Botão editar dados pessoais
+  const btnEditar = document.createElement('button');
+  btnEditar.id        = 'btn-editar-dados';
+  btnEditar.textContent = '✏️ Editar meus dados';
+  btnEditar.style.cssText = 'margin-top:10px;padding:6px 14px;background:#eff6ff;color:#1a56a0;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;display:block;';
+  btnEditar.onclick = toggleEditarDadosPessoais;
+  perfilEl.appendChild(btnEditar);
+
+  // Formulário de edição (oculto)
+  const formEl = document.createElement('div');
+  formEl.id            = 'form-dados-pessoais';
+  formEl.style.display = 'none';
+  formEl.style.marginTop = '12px';
+  formEl.innerHTML = `
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Nome completo</div>
+    <input type="text" id="edit-nome" value="${(p.nome_completo||'').replace(/"/g,'&quot;')}"
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Telefone</div>
+    <input type="tel" id="edit-tel" value="${(p.telefone||'').replace(/"/g,'&quot;')}"
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Cidade</div>
+    <input type="text" id="edit-cidade" value="${(p.cidade||'').replace(/"/g,'&quot;')}"
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">E-mail</div>
+    <input type="email" id="edit-email" value="${(p.email||'').replace(/"/g,'&quot;')}"
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;">`;
+
+  // Botão salvar
+  const btnSalvar = document.createElement('button');
+  btnSalvar.textContent = '💾 Salvar dados';
+  btnSalvar.style.cssText = 'width:100%;padding:10px;background:#1a56a0;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;';
+  btnSalvar.onclick = () => salvarDadosPessoais(p.id);
+  formEl.appendChild(btnSalvar);
+
+  // Botão cancelar
+  const btnCancelar = document.createElement('button');
+  btnCancelar.textContent = 'Cancelar';
+  btnCancelar.style.cssText = 'width:100%;padding:8px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:13px;cursor:pointer;';
+  btnCancelar.onclick = toggleEditarDadosPessoais;
+  formEl.appendChild(btnCancelar);
+
+  perfilEl.appendChild(formEl);
 
   const ids = new Set(ins.map(i => i.modalidade_id));
   const me  = document.getElementById('consulta-mod-atual');
