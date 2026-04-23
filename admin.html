@@ -385,6 +385,19 @@
     <div style="padding:12px 16px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;" id="contador-label"></div>
   </div>
 
+  <!-- Backup SQL -->
+  <div class="section" style="margin-bottom:16px;border-left:3px solid #7c3aed;">
+    <div class="section-header">
+      <div>
+        <span class="section-titulo" style="color:#7c3aed;">🗄️ Backup do Banco de Dados</span>
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Gera um arquivo .sql completo com estrutura + todos os dados atuais. Execute no SQL Editor do Supabase para recriar o banco do zero.</div>
+      </div>
+      <button class="print-btn" style="background:#7c3aed;" onclick="exportarBackupSQL()" id="btn-backup">
+        ⬇️ Exportar Backup SQL
+      </button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="admin-footer">
     SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO
@@ -1439,6 +1452,234 @@ async function confirmarExclusao() {
     btn.disabled = false;
     btn.textContent = '🗑 Excluir permanentemente';
     alert('❌ ' + err.message);
+  }
+}
+
+// ================================================================
+// BACKUP COMPLETO DO BANCO — Gera .sql com schema + dados reais
+// ================================================================
+async function exportarBackupSQL() {
+  const btn = document.getElementById('btn-backup');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando backup...';
+
+  try {
+    // Busca dados frescos direto do banco
+    const participantes = await apiGet('participantes', 'select=*&order=criado_em.asc');
+    const inscricoes    = await apiGet('inscricoes',    'select=*&order=id.asc');
+    const modalidades   = await apiGet('modalidades',   'select=*&order=id.asc');
+
+    const agora   = new Date().toLocaleString('pt-BR');
+    const agoraTS = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+    // Helper: escapa strings para SQL
+    const esc = v => v === null || v === undefined
+      ? 'NULL'
+      : `'${String(v).replace(/'/g, "''")}'`;
+    const escBool = v => (v === true || v === 'true') ? 'true' : 'false';
+
+    // ── HEADER ──────────────────────────────────────────────
+    let sql = `-- ============================================================
+--  BACKUP COMPLETO DO BANCO DE DADOS
+--  Sistema de Inscrições — Festival de Inverno 2026
+--  SEMESP / Prefeitura de Costa Marques — RO
+-- ============================================================
+--  Gerado em: ${agora}
+--  Total de participantes: ${participantes.length}
+--  Total de inscrições: ${inscricoes.length}
+--  Gerado via Painel Admin por: Ewerson Luiz de Oliveira / DTI
+-- ============================================================
+--
+--  COMO USAR ESTE ARQUIVO:
+--  1. Acesse o Supabase Dashboard > SQL Editor
+--  2. Cole TODO o conteúdo deste arquivo
+--  3. Clique em RUN (ou Ctrl+Enter)
+--  O banco será recriado com TODOS os dados atuais.
+--
+-- ============================================================
+
+
+-- ============================================================
+--  LIMPEZA — Remove tabelas existentes para recriar do zero
+-- ============================================================
+DROP TABLE IF EXISTS inscricoes    CASCADE;
+DROP TABLE IF EXISTS participantes CASCADE;
+DROP TABLE IF EXISTS modalidades   CASCADE;
+
+
+-- ============================================================
+--  1. TABELA: modalidades
+-- ============================================================
+CREATE TABLE modalidades (
+    id         serial       PRIMARY KEY,
+    nome       text         NOT NULL,
+    categoria  text,
+    genero     text,
+    vagas      integer      DEFAULT 30
+);
+
+
+-- ============================================================
+--  2. TABELA: participantes
+-- ============================================================
+CREATE TABLE participantes (
+    id                  uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome_completo       text         NOT NULL,
+    cpf                 text         UNIQUE,
+    sexo                text,
+    email               text,
+    telefone            text         NOT NULL,
+    data_nascimento     date,
+    cidade              text,
+    uf                  text         DEFAULT 'RO',
+    autorizacao_imagem  boolean      DEFAULT false,
+    nome_responsavel    text,
+    criado_em           timestamptz  DEFAULT now()
+);
+
+
+-- ============================================================
+--  3. TABELA: inscricoes
+-- ============================================================
+CREATE TABLE inscricoes (
+    id                              serial       PRIMARY KEY,
+    participante_id                 uuid         NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
+    modalidade_id                   integer      NOT NULL REFERENCES modalidades(id),
+    numero_ficha                    text,
+    status                          text         DEFAULT 'pendente',
+    parceiro_nome                   text,
+    parceiro_cpf                    text,
+    parceiro_telefone               text,
+    parceiro_cidade                 text,
+    membro3_nome                    text,
+    membro3_cpf                     text,
+    membro3_telefone                text,
+    membro4_nome                    text,
+    membro4_cpf                     text,
+    membro4_telefone                text,
+    autorizacao_imagem_membro2      boolean      DEFAULT false,
+    autorizacao_imagem_membro3      boolean      DEFAULT false,
+    autorizacao_imagem_membro4      boolean      DEFAULT false,
+    nome_equipe                     text,
+    criado_em                       timestamptz  DEFAULT now()
+);
+
+
+-- ============================================================
+--  4. ÍNDICES
+-- ============================================================
+CREATE INDEX idx_participantes_cpf       ON participantes(cpf);
+CREATE INDEX idx_inscricoes_participante ON inscricoes(participante_id);
+CREATE INDEX idx_inscricoes_modalidade   ON inscricoes(modalidade_id);
+CREATE INDEX idx_inscricoes_ficha        ON inscricoes(numero_ficha);
+CREATE INDEX idx_inscricoes_status       ON inscricoes(status);
+
+
+-- ============================================================
+--  5. DADOS: modalidades (${modalidades.length} registros)
+-- ============================================================
+`;
+
+    // ── INSERT MODALIDADES ───────────────────────────────────
+    if (modalidades.length > 0) {
+      sql += `INSERT INTO modalidades (id, nome, categoria, genero, vagas) VALUES\n`;
+      sql += modalidades.map(m =>
+        `    (${m.id}, ${esc(m.nome)}, ${esc(m.categoria)}, ${esc(m.genero)}, ${m.vagas ?? 30})`
+      ).join(',\n') + ';\n';
+      sql += `SELECT setval('modalidades_id_seq', ${Math.max(...modalidades.map(m=>m.id))}, true);\n`;
+    }
+
+    // ── INSERT PARTICIPANTES ─────────────────────────────────
+    sql += `\n\n-- ============================================================
+--  6. DADOS: participantes (${participantes.length} registros)
+-- ============================================================\n`;
+
+    if (participantes.length > 0) {
+      // Insere em lotes de 50 para não estourar o SQL Editor
+      const lote = 50;
+      for (let i = 0; i < participantes.length; i += lote) {
+        const fatia = participantes.slice(i, i + lote);
+        sql += `INSERT INTO participantes\n    (id, nome_completo, cpf, sexo, email, telefone, data_nascimento, cidade, uf, autorizacao_imagem, nome_responsavel, criado_em)\nVALUES\n`;
+        sql += fatia.map(p =>
+          `    (${esc(p.id)}, ${esc(p.nome_completo)}, ${esc(p.cpf)}, ${esc(p.sexo)}, ${esc(p.email)}, ${esc(p.telefone)}, ${esc(p.data_nascimento)}, ${esc(p.cidade)}, ${esc(p.uf)}, ${escBool(p.autorizacao_imagem)}, ${esc(p.nome_responsavel)}, ${esc(p.criado_em)})`
+        ).join(',\n') + ';\n';
+      }
+    }
+
+    // ── INSERT INSCRIÇÕES ────────────────────────────────────
+    sql += `\n\n-- ============================================================
+--  7. DADOS: inscricoes (${inscricoes.length} registros)
+-- ============================================================\n`;
+
+    if (inscricoes.length > 0) {
+      const lote = 50;
+      for (let i = 0; i < inscricoes.length; i += lote) {
+        const fatia = inscricoes.slice(i, i + lote);
+        sql += `INSERT INTO inscricoes\n    (id, participante_id, modalidade_id, numero_ficha, status, parceiro_nome, parceiro_cpf, parceiro_telefone, parceiro_cidade, membro3_nome, membro3_cpf, membro3_telefone, membro4_nome, membro4_cpf, membro4_telefone, autorizacao_imagem_membro2, autorizacao_imagem_membro3, autorizacao_imagem_membro4, nome_equipe, criado_em)\nVALUES\n`;
+        sql += fatia.map(i =>
+          `    (${i.id}, ${esc(i.participante_id)}, ${i.modalidade_id}, ${esc(i.numero_ficha)}, ${esc(i.status)}, ${esc(i.parceiro_nome)}, ${esc(i.parceiro_cpf)}, ${esc(i.parceiro_telefone)}, ${esc(i.parceiro_cidade)}, ${esc(i.membro3_nome)}, ${esc(i.membro3_cpf)}, ${esc(i.membro3_telefone)}, ${esc(i.membro4_nome)}, ${esc(i.membro4_cpf)}, ${esc(i.membro4_telefone)}, ${escBool(i.autorizacao_imagem_membro2)}, ${escBool(i.autorizacao_imagem_membro3)}, ${escBool(i.autorizacao_imagem_membro4)}, ${esc(i.nome_equipe)}, ${esc(i.criado_em)})`
+        ).join(',\n') + ';\n';
+      }
+      // Reinicia a sequência do serial após os INSERTs
+      const maxId = Math.max(...inscricoes.map(i => Number(i.id)));
+      sql += `SELECT setval('inscricoes_id_seq', ${maxId}, true);\n`;
+    }
+
+    // ── RLS ──────────────────────────────────────────────────
+    sql += `\n\n-- ============================================================
+--  8. ROW LEVEL SECURITY (RLS)
+-- ============================================================
+ALTER TABLE modalidades    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE participantes  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inscricoes     ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "leitura_publica_modalidades"   ON modalidades;
+CREATE POLICY "leitura_publica_modalidades"   ON modalidades   FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "insercao_publica_participantes" ON participantes;
+CREATE POLICY "insercao_publica_participantes" ON participantes FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "leitura_publica_participantes"  ON participantes;
+CREATE POLICY "leitura_publica_participantes"  ON participantes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "atualizacao_participantes"      ON participantes;
+CREATE POLICY "atualizacao_participantes"      ON participantes FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "exclusao_participantes"         ON participantes;
+CREATE POLICY "exclusao_participantes"         ON participantes FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "insercao_publica_inscricoes"   ON inscricoes;
+CREATE POLICY "insercao_publica_inscricoes"   ON inscricoes    FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "leitura_publica_inscricoes"    ON inscricoes;
+CREATE POLICY "leitura_publica_inscricoes"    ON inscricoes    FOR SELECT USING (true);
+DROP POLICY IF EXISTS "atualizacao_inscricoes"        ON inscricoes;
+CREATE POLICY "atualizacao_inscricoes"        ON inscricoes    FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "exclusao_inscricoes"           ON inscricoes;
+CREATE POLICY "exclusao_inscricoes"           ON inscricoes    FOR DELETE USING (true);
+
+
+-- ============================================================
+--  FIM DO BACKUP — ${participantes.length} participantes · ${inscricoes.length} inscrições
+--  Gerado em ${agora}
+-- ============================================================
+`;
+
+    // ── DOWNLOAD ─────────────────────────────────────────────
+    const blob = new Blob([sql], { type: 'text/plain;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `BACKUP_FestivalInverno2026_${agoraTS}.sql`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    btn.disabled = false;
+    btn.textContent = '✅ Backup gerado!';
+    setTimeout(() => { btn.textContent = '⬇️ Exportar Backup SQL'; }, 3000);
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '⬇️ Exportar Backup SQL';
+    alert('❌ Erro ao gerar backup: ' + err.message);
   }
 }
 
