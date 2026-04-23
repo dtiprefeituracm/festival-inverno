@@ -286,6 +286,8 @@ async function enviarInscricao() {
   if (selecionados.size === 0) {
     erro.textContent = 'Selecione pelo menos um evento para se inscrever.';
     erro.style.display = 'block';
+    const evConteudo = document.getElementById('eventos-conteudo');
+    if (evConteudo) evConteudo.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
   if (!document.getElementById('cb-autorizo').checked) {
@@ -378,7 +380,7 @@ async function enviarInscricao() {
     nome_responsavel:   nResp || null,
   });
 
-  if (!resPart || resPart.length === 0 || resPart.code) {
+  if (!resPart || resPart.code || resPart.erro || (!Array.isArray(resPart) && resPart.message)) {
     const dup = resPart?.message?.includes('unique') || resPart?.code === '23505';
     if (dup) {
       erroDup.style.display = 'block';
@@ -392,7 +394,14 @@ async function enviarInscricao() {
     return;
   }
 
-  const pid = resPart[0].id;
+  const pid = resPart[0]?.id;
+  if (!pid) {
+    erro.textContent = 'Erro ao identificar participante cadastrado. Tente novamente.';
+    erro.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Enviar inscrição';
+    return;
+  }
 
   // Salvar inscrições (uma por modalidade)
   for (const id of selecionados) {
@@ -467,12 +476,23 @@ async function enviarInscricao() {
     if (insc.membro3_telefone)  insc.membro3_telefone  = normalizarTelefone(insc.membro3_telefone)  || insc.membro3_telefone;
     if (insc.membro4_telefone)  insc.membro4_telefone  = normalizarTelefone(insc.membro4_telefone)  || insc.membro4_telefone;
 
-    const resInsc = await post('inscricoes', insc);
+    let resInsc;
+    try {
+      resInsc = await post('inscricoes', insc);
+    } catch (e) {
+      resInsc = { erro: e.message };
+    }
 
-    // ── ROLLBACK: se a inscrição falhou, desfaz o participante ──
-    if (!resInsc || resInsc.length === 0 || resInsc.code || resInsc.erro) {
-      await deletarPorCampo('inscricoes', 'participante_id', pid);
-      await deletar('participantes', pid);
+    // ── ROLLBACK: só reverte se houver erro explícito (code/erro/message) ──
+    // IMPORTANTE: resInsc pode ser [] (array vazio) quando o Supabase usa
+    // Prefer:return=minimal — isso é SUCESSO, não erro. Não usar .length === 0.
+    const inscFalhou = !resInsc ||
+      (resInsc && !Array.isArray(resInsc) && (resInsc.code || resInsc.erro || resInsc.message));
+    if (inscFalhou) {
+      try {
+        await deletarPorCampo('inscricoes', 'participante_id', pid);
+        await deletar('participantes', pid);
+      } catch (_) { /* rollback best-effort */ }
       erro.textContent = 'Erro ao salvar inscrição. Verifique sua conexão e tente novamente.';
       erro.style.display = 'block';
       window.scrollTo({ top: erro.offsetTop - 80, behavior: 'smooth' });
