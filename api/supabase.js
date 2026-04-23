@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     if (acao === 'deletar') {
       const url = `${baseUrl}?id=eq.${id}`;
       const r = await fetch(url, { method: 'DELETE', headers });
-      if (r.status === 204) return res.status(200).json({ ok: true });
+      if (r.ok) return res.status(200).json({ ok: true });
       const data = await r.json();
       return res.status(r.status).json(data);
     }
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
       const { campo, valor } = req.body;
       const url = `${baseUrl}?${campo}=eq.${valor}`;
       const r = await fetch(url, { method: 'DELETE', headers });
-      if (r.status === 204) return res.status(200).json({ ok: true });
+      if (r.ok) return res.status(200).json({ ok: true });
       const data = await r.json();
       return res.status(r.status).json(data);
     }
