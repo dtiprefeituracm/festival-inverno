@@ -64,6 +64,16 @@ export default async function handler(req, res) {
       return res.status(r.status).json(data);
     }
 
+    // Deletar por campo customizado (ex: participante_id=eq.xxx para limpar inscrições)
+    if (acao === 'deletarPorCampo') {
+      const { campo, valor } = req.body;
+      const url = `${baseUrl}?${campo}=eq.${valor}`;
+      const r = await fetch(url, { method: 'DELETE', headers });
+      if (r.status === 204) return res.status(200).json({ ok: true });
+      const data = await r.json();
+      return res.status(r.status).json(data);
+    }
+
     return res.status(400).json({ erro: 'Ação não reconhecida' });
 
   } catch (err) {
