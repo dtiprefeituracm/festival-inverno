@@ -80,7 +80,8 @@
             <label class="campo">Cidade <span class="obrigatorio">*</span></label>
             <div class="cidade-wrap" id="cidade-wrap">
               <input type="text" id="cidade" placeholder="Digite o nome da cidade..." autocomplete="off"
-                oninput="filtrarCidades()" onkeydown="navegarCidades(event)" onfocus="filtrarCidades()">
+                oninput="filtrarCidades()" onkeydown="navegarCidades(event)" onfocus="filtrarCidades()"
+                onblur="validarCidadeBlur()">
               <div class="cidade-lista" id="cidade-lista"></div>
             </div>
             <input type="hidden" id="cidade-valor">
