@@ -509,92 +509,168 @@ function limparStatusFoto() {
 }
 
 // ================================================================
-// CÂMERA — função central de inicialização
-// Tenta câmera traseira → frontal → qualquer uma
-// Detecta e explica erros de permissão corretamente
 // ================================================================
-async function _abrirCamera(mensagemStatus) {
+// CÂMERA — v5: verifica permissão, solicita, instrui se bloqueada
+// ================================================================
+
+async function _checarPermissaoCamera() {
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const r = await navigator.permissions.query({ name: 'camera' });
+      return r.state; // 'granted', 'denied', 'prompt'
+    }
+  } catch(e) {}
+  return 'unknown';
+}
+
+function _mostrarErroCamera(tipoErro, retryFn) {
+  document.getElementById('qr-opcoes').style.display = 'none';
+  document.getElementById('camera-status').style.display = 'none';
+  const ant = document.getElementById('camera-erro-painel');
+  if (ant) ant.remove();
+
+  const painel = document.createElement('div');
+  painel.id = 'camera-erro-painel';
+  painel.style.cssText = 'margin:16px;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:20px;';
+
+  let html = '';
+  if (tipoErro === 'denied') {
+    html = `
+      <div style="text-align:center;font-size:40px;margin-bottom:12px;">🔒</div>
+      <div style="color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;">
+        Câmera bloqueada pelo navegador
+      </div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:14px;">
+        O navegador negou o acesso à câmera. Siga os passos abaixo para liberar:
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="color:#60a5fa;font-size:12px;font-weight:700;margin-bottom:8px;">📱 Chrome / Android:</div>
+        <div style="color:#cbd5e1;font-size:12px;line-height:2;">
+          1. Toque no <strong style="color:#fbbf24;">🔒 cadeado</strong> na barra de endereço<br>
+          2. Toque em <strong style="color:#fbbf24;">Permissões</strong> ou <strong style="color:#fbbf24;">Config. do site</strong><br>
+          3. Selecione <strong style="color:#34d399;">Câmera → Permitir</strong><br>
+          4. Volte e toque em <strong style="color:#34d399;">"🔄 Tentar novamente"</strong> abaixo
+        </div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px;">
+        <div style="color:#60a5fa;font-size:12px;font-weight:700;margin-bottom:8px;">🍎 Safari / iPhone:</div>
+        <div style="color:#cbd5e1;font-size:12px;line-height:2;">
+          1. Abra <strong style="color:#fbbf24;">Ajustes → Safari → Câmera</strong><br>
+          2. Selecione <strong style="color:#34d399;">Permitir</strong><br>
+          3. Volte e recarregue a página
+        </div>
+      </div>`;
+  } else if (tipoErro === 'notfound') {
+    html = `
+      <div style="text-align:center;font-size:40px;margin-bottom:12px;">📵</div>
+      <div style="color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;">
+        Nenhuma câmera encontrada
+      </div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:16px;">
+        Este dispositivo não possui câmera disponível. Use o botão Escanear ou a busca manual.
+      </div>`;
+  } else {
+    html = `
+      <div style="text-align:center;font-size:40px;margin-bottom:12px;">⚠️</div>
+      <div style="color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;">
+        Erro ao acessar a câmera
+      </div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:16px;">
+        Não foi possível abrir a câmera. Tente liberar a permissão e toque em "Tentar novamente".
+      </div>`;
+  }
+
+  painel.innerHTML = html + `
+    <button id="btn-retry-camera"
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#1a56a0,#1d4ed8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">
+      🔄 Tentar novamente
+    </button>
+    <button id="btn-voltar-opcoes"
+      style="width:100%;padding:12px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:12px;font-size:13px;cursor:pointer;margin-bottom:8px;">
+      ← Voltar às opções (usar 📸 Escanear)
+    </button>
+    <button id="btn-ir-busca"
+      style="width:100%;padding:12px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:12px;font-size:13px;cursor:pointer;">
+      🔍 Buscar por ficha ou CPF
+    </button>
+  `;
+
+  document.getElementById('modo-qr').appendChild(painel);
+
+  document.getElementById('btn-retry-camera').onclick = () => {
+    painel.remove();
+    if (retryFn) retryFn();
+  };
+  document.getElementById('btn-voltar-opcoes').onclick = () => {
+    painel.remove();
+    document.getElementById('qr-opcoes').style.display = 'block';
+  };
+  document.getElementById('btn-ir-busca').onclick = () => {
+    painel.remove();
+    mudarModo('busca');
+  };
+
+  scanBloqueado = false;
+}
+
+async function _abrirCamera(mensagemStatus, retryFn) {
   if (streamAtivo) return true;
 
-  mostrarStatus('⏳ Solicitando permissão de câmera...', 'lendo');
+  const errAnt = document.getElementById('camera-erro-painel');
+  if (errAnt) errAnt.remove();
   document.getElementById('qr-opcoes').style.display = 'none';
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    _erroCameraUI('📵 Câmera não suportada neste navegador. Use o botão 📸 Escanear.');
+    _mostrarErroCamera('notfound', retryFn);
     return false;
   }
 
-  const tentativas = [
-    { video: { facingMode: { ideal: 'environment' } } },
-    { video: { facingMode: 'user' } },
-    { video: true }
-  ];
+  // Checa permissão antes de pedir — se já negada, mostra instruções direto
+  const perm = await _checarPermissaoCamera();
+  if (perm === 'denied') {
+    _mostrarErroCamera('denied', retryFn);
+    return false;
+  }
+
+  // Tenta abrir câmera (se perm='prompt' o browser mostra o popup)
+  const statusEl = document.getElementById('camera-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = '⏳ Solicitando acesso à câmera...';
+  statusEl.className = 'camera-status lendo';
 
   let stream = null;
   let ultimoErro = null;
-
-  for (const constraints of tentativas) {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      break;
-    } catch (e) {
-      ultimoErro = e;
-    }
+  for (const constraints of [
+    { video: { facingMode: { ideal: 'environment' } } },
+    { video: { facingMode: 'user' } },
+    { video: true }
+  ]) {
+    try { stream = await navigator.mediaDevices.getUserMedia(constraints); break; }
+    catch (e) { ultimoErro = e; }
   }
 
   if (!stream) {
-    // Detecta tipo de erro
-    const nome = ultimoErro?.name || '';
-    if (nome === 'NotAllowedError' || nome === 'PermissionDeniedError') {
-      _erroCameraUI(
-        '🔒 Permissão de câmera bloqueada.
-
-' +
-        'Para liberar:
-' +
-        '• Chrome/Android: toque no 🔒 da barra de endereço → Permissões → Câmera → Permitir
-' +
-        '• Firefox: toque no ícone de câmera 🎥 na barra → Permitir
-
-' +
-        'Depois recarregue a página.',
-        true
-      );
-    } else if (nome === 'NotFoundError' || nome === 'DevicesNotFoundError') {
-      _erroCameraUI('📵 Nenhuma câmera encontrada neste dispositivo. Use 📸 Escanear ou 🔍 Buscar.');
-    } else {
-      _erroCameraUI('⚠️ Não foi possível abrir a câmera (' + (ultimoErro?.message || nome) + '). Use 📸 Escanear.');
-    }
+    statusEl.style.display = 'none';
+    const n = ultimoErro?.name || '';
+    if (n === 'NotAllowedError' || n === 'PermissionDeniedError')
+      _mostrarErroCamera('denied', retryFn);
+    else if (n === 'NotFoundError' || n === 'DevicesNotFoundError')
+      _mostrarErroCamera('notfound', retryFn);
+    else
+      _mostrarErroCamera('other', retryFn);
     return false;
   }
 
   streamAtivo = stream;
   const video = document.getElementById('scanner-video');
   video.srcObject = stream;
-  document.getElementById('camera-vivo').style.display  = 'block';
-  document.getElementById('camera-status').style.display = 'block';
-  mostrarStatus(mensagemStatus || '🔍 Aponte para o QR Code', 'lendo');
+  document.getElementById('camera-vivo').style.display = 'block';
+  statusEl.textContent = mensagemStatus || '🔍 Aponte para o QR Code';
+  statusEl.className = 'camera-status lendo';
   return true;
 }
 
-function _erroCameraUI(msg, mostrarConfig) {
-  // Mostra mensagem amigável e restaura botões
-  document.getElementById('qr-opcoes').style.display = 'block';
-  const statusEl = document.getElementById('camera-status');
-  statusEl.style.display = 'block';
-  statusEl.style.margin  = '8px 16px';
-  // Mensagem multi-linha
-  statusEl.innerHTML = msg.replace(/
-/g, '<br>');
-  statusEl.className = 'camera-status erro';
-  scanBloqueado = false;
-}
-
-async function iniciarCameraVivo() {
-  const ok = await _abrirCamera('🔍 Aponte para o QR Code do participante');
-  if (!ok) return;
-
-  const video = document.getElementById('scanner-video');
+function _iniciarScan(video, modoCrop) {
   video.addEventListener('loadedmetadata', () => video.play());
   video.addEventListener('canplay', () => {
     if (barcodeDetector) {
@@ -603,9 +679,15 @@ async function iniciarCameraVivo() {
       const canvas = document.getElementById('qr-canvas');
       canvas.width  = video.videoWidth  || 640;
       canvas.height = video.videoHeight || 480;
-      scanComJsQR(video, canvas);
+      modoCrop ? scanTelaJsQR(video, canvas) : scanComJsQR(video, canvas);
     }
   }, { once: true });
+}
+
+async function iniciarCameraVivo() {
+  const ok = await _abrirCamera('🔍 Aponte para o QR Code', iniciarCameraVivo);
+  if (!ok) return;
+  _iniciarScan(document.getElementById('scanner-video'), false);
 }
 
 // BarcodeDetector: muito mais rápido, usa hardware do celular
@@ -899,29 +981,22 @@ async function apiGet(tabela, query) {
 // Sem advanced constraints (causam erro no iOS)
 // ================================================================
 async function iniciarCameraTelaInscrito() {
-  // Banner instrução ao operador (não bloqueia, apenas informa)
+  // Banner instrução
+  const bAnt = document.getElementById('banner-tela');
+  if (bAnt) bAnt.remove();
   const banner = document.createElement('div');
   banner.id = 'banner-tela';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#1a56a0;color:white;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;line-height:1.6;';
   banner.innerHTML = '📱 Peça ao inscrito para <strong>maximizar o brilho da tela</strong> e segurar o celular parado';
   document.body.appendChild(banner);
-  setTimeout(() => { const b = document.getElementById('banner-tela'); if (b) b.remove(); }, 4000);
+  setTimeout(() => { const b = document.getElementById('banner-tela'); if (b) b.remove(); }, 4500);
 
-  const ok = await _abrirCamera('📱 Aponte para o QR Code na tela do celular do inscrito');
+  const ok = await _abrirCamera(
+    '📱 Aponte para o QR Code na tela do celular do inscrito',
+    iniciarCameraTelaInscrito
+  );
   if (!ok) return;
-
-  const video = document.getElementById('scanner-video');
-  video.addEventListener('loadedmetadata', () => video.play());
-  video.addEventListener('canplay', () => {
-    if (barcodeDetector) {
-      scanComBarcodeDetector(video);
-    } else {
-      const canvas = document.getElementById('qr-canvas');
-      canvas.width  = video.videoWidth  || 640;
-      canvas.height = video.videoHeight || 480;
-      scanTelaJsQR(video, canvas);
-    }
-  }, { once: true });
+  _iniciarScan(document.getElementById('scanner-video'), true);
 }
 
 // Scan otimizado para tela: tenta normal + crop central
