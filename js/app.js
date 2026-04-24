@@ -379,7 +379,7 @@ async function enviarInscricao() {
   // Verificar vagas disponíveis
   for (const id of selecionados) {
     const check = await get('inscricoes', `modalidade_id=eq.${id}&select=id`);
-    if (Array.isArray(check) && check.length >= MAX_VAGAS) {
+    if (getMaxVagas(id) > 0 && Array.isArray(check) && check.length >= getMaxVagas(id)) {
       erro.textContent = `As vagas para ${NOMES_MOD[id]} estão esgotadas. Escolha outra modalidade.`;
       // Marcar o card visualmente
       carregarVagas();
@@ -1115,13 +1115,14 @@ async function carregarVagas() {
     statusPorModalidade = {};
     Object.keys(MODALIDADES).forEach(id => {
       const qtd = contagem[id] || 0;
-      statusPorModalidade[Number(id)] = (qtd >= MAX_VAGAS) ? 'lista_espera' : 'confirmado';
+      statusPorModalidade[Number(id)] = (getMaxVagas(Number(id)) > 0 && qtd >= getMaxVagas(Number(id))) ? 'lista_espera' : 'confirmado';
     });
 
     // Atualizar cada card com o status de vagas
     Object.entries(MODALIDADES).forEach(([id, mod]) => {
       const qtd       = contagem[id] || 0;
-      const restantes = MAX_VAGAS - qtd;
+      const limiteAtual = getMaxVagas(Number(id));
+      const restantes = limiteAtual > 0 ? limiteAtual - qtd : 999;
       const card      = document.getElementById('ev' + id);
       if (!card) return;
 
@@ -1133,7 +1134,7 @@ async function carregarVagas() {
       const indicador = document.createElement('div');
       indicador.className = 'vaga-indicador';
 
-      if (qtd >= MAX_VAGAS) {
+      if (limiteAtual > 0 && qtd >= limiteAtual) {
         // ── ESGOTADO — abre lista de espera ──
         card.dataset.listaEspera = 'true';
         indicador.innerHTML = `
@@ -1151,28 +1152,36 @@ async function carregarVagas() {
           premio.classList.add('espera-badge');
         }
 
-      } else if (restantes <= 5) {
+      } else if (limiteAtual > 0 && restantes <= 5) {
         // ── ÚLTIMAS VAGAS ──
-        const pct = Math.round(qtd / MAX_VAGAS * 100);
+        const pct = Math.round(qtd / limiteAtual * 100);
         indicador.innerHTML = `
           <div class="vaga-barra-wrap">
             <div class="vaga-barra vaga-barra-quase" style="width:${pct}%"></div>
           </div>
           <div class="vaga-texto vaga-quase">
             ⚠️ Últimas ${restantes} vaga${restantes > 1 ? 's' : ''}
-            <span class="vaga-num">${qtd}/${MAX_VAGAS}</span>
+            <span class="vaga-num">${qtd}/${limiteAtual}</span>
+          </div>`;
+
+      } else if (limiteAtual === 0) {
+        // ── VAGAS ILIMITADAS (Pesca) ──
+        indicador.innerHTML = `
+          <div class="vaga-texto vaga-ok">
+            ✅ Inscrições abertas
+            <span class="vaga-num">${qtd} inscrito${qtd !== 1 ? 's' : ''}</span>
           </div>`;
 
       } else {
         // ── VAGAS DISPONÍVEIS ──
-        const pct = Math.round(qtd / MAX_VAGAS * 100);
+        const pct = Math.round(qtd / limiteAtual * 100);
         indicador.innerHTML = `
           <div class="vaga-barra-wrap">
             <div class="vaga-barra vaga-barra-ok" style="width:${pct}%"></div>
           </div>
           <div class="vaga-texto vaga-ok">
             ✅ ${restantes} vaga${restantes > 1 ? 's' : ''} disponíve${restantes > 1 ? 'is' : 'l'}
-            <span class="vaga-num">${qtd}/${MAX_VAGAS}</span>
+            <span class="vaga-num">${qtd}/${limiteAtual}</span>
           </div>`;
       }
 
