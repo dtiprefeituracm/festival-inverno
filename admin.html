@@ -47,12 +47,6 @@
   /* ── Métricas ── */
   .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 16px; }
   .metric { background: white; border-radius: 10px; padding: 14px; border: 1px solid #e2e8f0; }
-  .metric-cidades-btn:hover { background: #f8fafc; border-color: #1a56a0; }
-  .cidade-row { display:flex; justify-content:space-between; align-items:center; padding:7px 14px; font-size:13px; color:#1e293b; gap:12px; }
-  .cidade-row:hover { background:#f0f7ff; }
-  .cidade-row:active { background:#dbeafe; }
-  .cidade-nome { font-weight:500; }
-  .cidade-qtd { background:#1a56a0; color:white; border-radius:20px; padding:1px 9px; font-size:11px; font-weight:700; min-width:24px; text-align:center; }
   .metric-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
   .metric-val { font-size: 26px; font-weight: 700; color: #1a56a0; }
   .metric-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
@@ -285,15 +279,10 @@
       <div class="metric-val" style="font-size:14px;padding-top:4px;" id="m-top">—</div>
       <div class="metric-sub" id="m-top-qtd"></div>
     </div>
-    <div class="metric metric-cidades-btn" id="metric-cidades" onclick="toggleCidadesPopup()" title="Clique para ver inscritos por cidade" style="cursor:pointer;position:relative;user-select:none;">
-      <div class="metric-label">Cidades diferentes <span style="font-size:10px;color:#94a3b8;">▼</span></div>
+    <div class="metric">
+      <div class="metric-label">Cidades diferentes</div>
       <div class="metric-val" id="m-cidades">—</div>
-      <div class="metric-sub">clique para detalhar</div>
-      <!-- Popup de cidades -->
-      <div id="cidades-popup" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;min-width:220px;background:white;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.13);z-index:999;padding:8px 0;max-height:320px;overflow-y:auto;">
-        <div style="padding:6px 14px 8px;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #f1f5f9;letter-spacing:.05em;">INSCRITOS POR CIDADE</div>
-        <div id="cidades-lista" style="padding:4px 0;"></div>
-      </div>
+      <div class="metric-sub">municípios</div>
     </div>
     <div class="metric" style="border-left:3px solid #f59e0b;">
       <div class="metric-label">Lista de espera</div>
@@ -387,8 +376,8 @@
           <option value="6">Pesca Masc.</option>
           <option value="7">Pesca Fem.</option>
         </select>
-        <select id="filtro-cidade" onchange="filtrar()">
-          <option value="">Todas as cidades</option>
+        <select id="filtro-uf" onchange="filtrar()">
+          <option value="">Todos os estados</option>
         </select>
         <select id="filtro-credenciamento" onchange="filtrar()">
           <option value="">Todos</option>
@@ -533,7 +522,7 @@ const LOGO_URL = window.location.origin + '/10.png';
 // ================================================================
 // COMUNICAÇÃO SEGURA COM O SERVIDOR
 // ================================================================
-let tokenAdmin = sessionStorage.getItem('adminToken') || null;
+let tokenAdmin = null;
 
 async function apiGet(tabela, query = '') {
   const r = await fetch('/api/supabase', {
@@ -568,7 +557,6 @@ async function entrar() {
 
     if (data.ok) {
       tokenAdmin = data.token;
-      sessionStorage.setItem('adminToken', tokenAdmin);
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('painel').style.display = 'block';
       carregarDados();
@@ -586,7 +574,6 @@ async function entrar() {
 
 function sair() {
   tokenAdmin = null;
-  sessionStorage.removeItem('adminToken');
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('painel').style.display = 'none';
   document.getElementById('login-senha').value = '';
@@ -597,28 +584,13 @@ function sair() {
 // ================================================================
 let todosInscritos = [];
 
-// ================================================================
-// AUTO-LOGIN — restaura sessão após F5 se token ainda válido
-// ================================================================
-(function() {
-  const token = sessionStorage.getItem('adminToken');
-  if (token) {
-    tokenAdmin = token;
-    const lw = document.getElementById('login-wrap');
-    const p  = document.getElementById('painel');
-    if (lw) lw.style.display = 'none';
-    if (p)  { p.style.display = 'block'; carregarDados(); }
-  }
-})();
-
 async function carregarDados() {
   try {
     const participantes = await apiGet('participantes', 'order=criado_em.desc');
     const inscricoes    = await apiGet('inscricoes', 'select=*');
 
-    // Valida resposta — se retornou erro do Supabase, para aqui
     if (!Array.isArray(participantes) || !Array.isArray(inscricoes)) {
-      throw new Error('Resposta inesperada da API: ' + JSON.stringify(participantes));
+      throw new Error('Resposta inesperada da API');
     }
 
     todosInscritos = participantes.map(p => ({
@@ -629,21 +601,17 @@ async function carregarDados() {
     // Cada seção tem seu próprio try/catch — erro em uma não trava as outras
     try { atualizarMetricas(todosInscritos, inscricoes); } catch(e) { console.error('atualizarMetricas:', e); }
     try { atualizarVagas(inscricoes); }                  catch(e) { console.error('atualizarVagas:', e); }
-    try { preencherCidades(todosInscritos); }                catch(e) { console.error('preencherCidades:', e); }
+    try { preencherUFs(todosInscritos); }                catch(e) { console.error('preencherUFs:', e); }
     try { renderTabela(todosInscritos); }                catch(e) { console.error('renderTabela:', e); document.getElementById('tabela-body').innerHTML = '<tr><td colspan="10" class="vazio">Erro ao renderizar tabela.</td></tr>'; }
-    try { renderEspera(todosInscritos); }                catch(e) { console.error('renderEspera:', e); document.getElementById('espera-grid').innerHTML = '<div class="vazio">Erro ao carregar lista de espera.</div>'; }
-    try { renderRelatorio(todosInscritos, inscricoes); } catch(e) { console.error('renderRelatorio:', e); document.getElementById('relatorio-grid').innerHTML = '<div class="vazio">Erro ao carregar relatório.</div>'; }
+    try { renderEspera(todosInscritos); }                catch(e) { console.error('renderEspera:', e); const el = document.getElementById('espera-grid'); if (el) el.innerHTML = '<div class="vazio">Erro ao carregar lista de espera.</div>'; }
+    try { renderRelatorio(todosInscritos, inscricoes); } catch(e) { console.error('renderRelatorio:', e); const el = document.getElementById('relatorio-grid'); if (el) el.innerHTML = '<div class="vazio">Erro ao carregar relatório.</div>'; }
     try { renderSemInscricao(todosInscritos, inscricoes); } catch(e) { console.error('renderSemInscricao:', e); }
-    try { renderCredenciamento(todosInscritos); }        catch(e) { console.error('renderCredenciamento:', e); document.getElementById('credenciamento-resumo').innerHTML = '<div class="vazio" style="padding:12px;">Erro ao carregar credenciamento.</div>'; }
+    try { renderCredenciamento(todosInscritos); }        catch(e) { console.error('renderCredenciamento:', e); const el = document.getElementById('credenciamento-resumo'); if (el) el.innerHTML = '<div class="vazio" style="padding:12px;">Erro ao carregar credenciamento.</div>'; }
 
   } catch (e) {
     console.error('carregarDados ERRO:', e);
-    // Limpa todos os "Carregando..." para não ficar travado
     const ids = ['vagas-grid','espera-grid','relatorio-grid','sem-inscricao-grid','credenciamento-resumo'];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = '<div class="vazio" style="padding:12px;color:#dc2626;">Erro ao carregar. Recarregue a página.</div>';
-    });
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '<div class="vazio" style="padding:12px;color:#dc2626;">Erro ao carregar. Recarregue a página.</div>'; });
     document.getElementById('tabela-body').innerHTML =
       '<tr><td colspan="10" class="vazio">Erro ao carregar dados. Recarregue a página.</td></tr>';
   }
@@ -660,39 +628,8 @@ function atualizarMetricas(participantes, inscricoes) {
   ).length;
   document.getElementById('m-duplas').textContent = duplas;
 
-  // Contagem por cidade — normaliza capitalização para agrupar duplicatas
-  // (ex: "COSTA MARQUES" e "Costa marques" viram "Costa Marques")
-  function normCidade(c) {
-    return (c || '').trim().toLowerCase()
-      .split(/[\s-]/)
-      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-      .join(' ')
-      .replace(/ ([A-Z]) /g, (_, l) => ' ' + l + ' '); // preserva siglas 1 letra
-  }
-  const contagemCidades = {};   // chave = nome normalizado
-  const nomeCidadeCanon = {};   // chave norm → nome exibição
-  participantes.forEach(p => {
-    const raw  = (p.cidade || '').trim();
-    if (!raw) return;
-    const norm = normCidade(raw);
-    contagemCidades[norm] = (contagemCidades[norm] || 0) + 1;
-    // Prefere o nome que já está em Title Case (menos maiúsculas consecutivas)
-    if (!nomeCidadeCanon[norm] || raw === norm) nomeCidadeCanon[norm] = norm;
-  });
-  const cidades = Object.keys(contagemCidades);
-  document.getElementById('m-cidades').textContent = cidades.length;
-  // Preenche a lista do popup, ordenada por quantidade desc
-  const lista = document.getElementById('cidades-lista');
-  if (lista) {
-    const ordenadas = cidades.sort((a, b) => contagemCidades[b] - contagemCidades[a]);
-    lista.innerHTML = ordenadas.map(c => {
-      const nome = nomeCidadeCanon[c] || c;
-      return `<div class="cidade-row" onclick="event.stopPropagation();document.getElementById('filtro-cidade').value='${nome.replace(/'/g,"\'")}';filtrar();fecharCidadesPopup();">
-        <span class="cidade-nome">${nome}</span>
-        <span class="cidade-qtd">${contagemCidades[c]}</span>
-      </div>`;
-    }).join('');
-  }
+  const cidades = new Set(participantes.map(p => (p.cidade || '') + (p.uf || '')));
+  document.getElementById('m-cidades').textContent = cidades.size;
 
   // Lista de espera
   const totalEspera = inscricoes.filter(i => i.status === 'lista_espera').length;
@@ -707,7 +644,6 @@ function atualizarMetricas(participantes, inscricoes) {
   if (mCred) mCred.textContent = totalCred;
   const mCredPct = document.getElementById('m-credenciados-pct');
   if (mCredPct) mCredPct.textContent = `${pctCred}% dos inscritos`;
-  const contagem = {};
   inscricoes.forEach(i => {
     contagem[i.modalidade_id] = (contagem[i.modalidade_id] || 0) + 1;
   });
@@ -832,54 +768,14 @@ function fecharModalModBtn() {
 // ================================================================
 // FILTRO DE UFs
 // ================================================================
-// ================================================================
-// POPUP CIDADES
-// ================================================================
-function toggleCidadesPopup() {
-  const popup = document.getElementById('cidades-popup');
-  if (!popup) return;
-  const aberto = popup.style.display !== 'none';
-  popup.style.display = aberto ? 'none' : 'block';
-  if (!aberto) {
-    // Fechar ao clicar fora
-    setTimeout(() => document.addEventListener('click', fecharCidadesPopupFora, { once: true }), 50);
-  }
-}
-function fecharCidadesPopup() {
-  const popup = document.getElementById('cidades-popup');
-  if (popup) popup.style.display = 'none';
-}
-function fecharCidadesPopupFora(e) {
-  const card = document.getElementById('metric-cidades');
-  if (card && !card.contains(e.target)) fecharCidadesPopup();
-}
-
-function normCidadeAdmin(c) {
-  return (c || '').trim().toLowerCase()
-    .split(/[\s-]/)
-    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(' ');
-}
-
-function preencherCidades(participantes) {
-  // Normaliza e agrupa cidades com grafia diferente (maiúsculas, etc.)
-  const mapa = {}; // norm → nome canônico
-  participantes.forEach(p => {
-    const raw = (p.cidade || '').trim();
-    if (!raw) return;
-    const norm = normCidadeAdmin(raw);
-    if (!mapa[norm]) mapa[norm] = norm;
-  });
-  const cidades = Object.values(mapa).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-
-  const sel = document.getElementById('filtro-cidade');
-  const valorAtual = normCidadeAdmin(sel.value);
-  sel.innerHTML = '<option value="">Todas as cidades</option>';
-  cidades.forEach(c => {
+function preencherUFs(participantes) {
+  const ufs = [...new Set(participantes.map(p => p.uf).filter(Boolean))].sort();
+  const sel = document.getElementById('filtro-uf');
+  sel.innerHTML = '<option value="">Todos os estados</option>';
+  ufs.forEach(uf => {
     const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    if (normCidadeAdmin(c) === valorAtual) opt.selected = true;
+    opt.value = uf;
+    opt.textContent = uf;
     sel.appendChild(opt);
   });
 }
@@ -890,7 +786,7 @@ function preencherCidades(participantes) {
 function filtrar() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
-  const cidade = document.getElementById('filtro-cidade').value;
+  const uf     = document.getElementById('filtro-uf').value;
   const cred   = document.getElementById('filtro-credenciamento').value;
 
   const filtrado = todosInscritos.filter(p => {
@@ -899,12 +795,12 @@ function filtrar() {
       (p.cpf || '').includes(busca);
     const eventoBate = !evento ||
       p.inscricoes.some(i => i.modalidade_id == evento);
-    const cidadeBate = !cidade || normCidadeAdmin(p.cidade) === normCidadeAdmin(cidade);
+    const ufBate = !uf || p.uf === uf;
     const jaPresente = p.inscricoes.some(i => i.presenca === true);
     const credBate = !cred ||
       (cred === 'sim' && jaPresente) ||
       (cred === 'nao' && !jaPresente);
-    return textoBate && eventoBate && cidadeBate && credBate;
+    return textoBate && eventoBate && ufBate && credBate;
   });
 
   renderTabela(filtrado);
@@ -1182,13 +1078,13 @@ function imprimirFicha() {
 function imprimirLista() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
-  const cidade = document.getElementById('filtro-cidade').value;
+  const uf     = document.getElementById('filtro-uf').value;
 
   const lista = todosInscritos.filter(p => {
     const textoBate = !busca || p.nome_completo.toLowerCase().includes(busca) || (p.cpf || '').includes(busca);
     const eventoBate = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const cidadeBate = !cidade || normCidadeAdmin(p.cidade) === normCidadeAdmin(cidade);
-    return textoBate && eventoBate && cidadeBate;
+    const ufBate = !uf || p.uf === uf;
+    return textoBate && eventoBate && ufBate;
   });
 
   const cabecalho = `
@@ -1635,13 +1531,12 @@ function renderCredenciamento(participantes) {
   if (qtd === 0) {
     div.innerHTML = '<div style="padding:12px 0 16px;font-size:13px;color:#94a3b8;text-align:center;">'
       + 'Nenhum credenciamento registrado ainda.<br>'
-      + '<span style="font-size:11px;">Use o <strong>📷 Credenciamento</strong> no topo para registrar a entrada dos participantes.</span>'
+      + '<span style="font-size:11px;">Use o <strong>\uD83D\uDCF7 Credenciamento</strong> no topo para registrar a entrada dos participantes.</span>'
       + '</div>';
     return;
   }
 
-  const barColor = pct >= 80 ? '#16a34a' : pct >= 40 ? '#f59e0b' : '#1a56a0';
-
+  var barColor = pct >= 80 ? '#16a34a' : pct >= 40 ? '#f59e0b' : '#1a56a0';
   var linhas = '';
   credenciados.forEach(function(p) {
     var insc    = p.inscricoes.find(function(i) { return i.presenca === true; });
@@ -1655,32 +1550,31 @@ function renderCredenciamento(participantes) {
       + '<td style="padding:7px 12px;font-weight:700;color:#16a34a;">' + ficha + '</td>'
       + '<td style="padding:7px 12px;font-weight:600;">' + p.nome_completo + '</td>'
       + '<td style="padding:7px 12px;color:#475569;">' + modNome + '</td>'
-      + '<td style="padding:7px 12px;color:#16a34a;font-weight:600;">✅ ' + horario + '</td>'
+      + '<td style="padding:7px 12px;color:#16a34a;font-weight:600;">\u2705 ' + horario + '</td>'
       + '</tr>';
   });
 
   div.innerHTML = ''
     + '<div style="flex:1;min-width:200px;margin-bottom:12px;">'
-    + '  <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px;">'
-    + '    <span>Progresso do credenciamento</span>'
-    + '    <span style="font-weight:700;color:' + barColor + ';">' + qtd + ' / ' + total + ' (' + pct + '%)</span>'
-    + '  </div>'
-    + '  <div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;">'
-    + '    <div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:5px;transition:width 0.5s;"></div>'
-    + '  </div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:4px;">'
+    + '<span>Progresso do credenciamento</span>'
+    + '<span style="font-weight:700;color:' + barColor + ';">' + qtd + ' / ' + total + ' (' + pct + '%)</span>'
     + '</div>'
+    + '<div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;">'
+    + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:5px;transition:width 0.5s;"></div>'
+    + '</div></div>'
     + '<div style="overflow-x:auto;">'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<thead><tr style="background:#f0fdf4;">'
     + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Ficha</th>'
     + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Participante</th>'
     + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Modalidade</th>'
-    + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Horário</th>'
+    + '<th style="padding:8px 12px;text-align:left;color:#166534;font-size:10px;text-transform:uppercase;border-bottom:1px solid #dcfce7;">Hor\u00e1rio</th>'
     + '</tr></thead>'
     + '<tbody>' + linhas + '</tbody>'
     + '</table></div>'
     + '<div style="padding:10px 0 6px;font-size:11px;color:#94a3b8;">'
-    + (total - qtd) + ' participante' + ((total - qtd) !== 1 ? 's' : '') + ' ainda não credenciado' + ((total - qtd) !== 1 ? 's' : '')
+    + (total - qtd) + ' participante' + ((total - qtd) !== 1 ? 's' : '') + ' ainda n\u00e3o credenciado' + ((total - qtd) !== 1 ? 's' : '')
     + '</div>';
 }
 
