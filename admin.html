@@ -47,6 +47,12 @@
   /* ── Métricas ── */
   .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 16px; }
   .metric { background: white; border-radius: 10px; padding: 14px; border: 1px solid #e2e8f0; }
+  .metric-cidades-btn:hover { background: #f8fafc; border-color: #1a56a0; }
+  .cidade-row { display:flex; justify-content:space-between; align-items:center; padding:7px 14px; font-size:13px; color:#1e293b; gap:12px; }
+  .cidade-row:hover { background:#f0f7ff; }
+  .cidade-row:active { background:#dbeafe; }
+  .cidade-nome { font-weight:500; }
+  .cidade-qtd { background:#1a56a0; color:white; border-radius:20px; padding:1px 9px; font-size:11px; font-weight:700; min-width:24px; text-align:center; }
   .metric-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
   .metric-val { font-size: 26px; font-weight: 700; color: #1a56a0; }
   .metric-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
@@ -279,10 +285,15 @@
       <div class="metric-val" style="font-size:14px;padding-top:4px;" id="m-top">—</div>
       <div class="metric-sub" id="m-top-qtd"></div>
     </div>
-    <div class="metric">
-      <div class="metric-label">Cidades diferentes</div>
+    <div class="metric metric-cidades-btn" id="metric-cidades" onclick="toggleCidadesPopup()" title="Clique para ver inscritos por cidade" style="cursor:pointer;position:relative;user-select:none;">
+      <div class="metric-label">Cidades diferentes <span style="font-size:10px;color:#94a3b8;">▼</span></div>
       <div class="metric-val" id="m-cidades">—</div>
-      <div class="metric-sub">municípios</div>
+      <div class="metric-sub">clique para detalhar</div>
+      <!-- Popup de cidades -->
+      <div id="cidades-popup" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;min-width:220px;background:white;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.13);z-index:999;padding:8px 0;max-height:320px;overflow-y:auto;">
+        <div style="padding:6px 14px 8px;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #f1f5f9;letter-spacing:.05em;">INSCRITOS POR CIDADE</div>
+        <div id="cidades-lista" style="padding:4px 0;"></div>
+      </div>
     </div>
     <div class="metric" style="border-left:3px solid #f59e0b;">
       <div class="metric-label">Lista de espera</div>
@@ -376,8 +387,8 @@
           <option value="6">Pesca Masc.</option>
           <option value="7">Pesca Fem.</option>
         </select>
-        <select id="filtro-uf" onchange="filtrar()">
-          <option value="">Todos os estados</option>
+        <select id="filtro-cidade" onchange="filtrar()">
+          <option value="">Todas as cidades</option>
         </select>
         <select id="filtro-credenciamento" onchange="filtrar()">
           <option value="">Todos</option>
@@ -602,7 +613,7 @@ async function carregarDados() {
     // Cada seção tem seu próprio try/catch — erro em uma não trava as outras
     try { atualizarMetricas(todosInscritos, inscricoes); } catch(e) { console.error('atualizarMetricas:', e); }
     try { atualizarVagas(inscricoes); }                  catch(e) { console.error('atualizarVagas:', e); }
-    try { preencherUFs(todosInscritos); }                catch(e) { console.error('preencherUFs:', e); }
+    try { preencherCidades(todosInscritos); }                catch(e) { console.error('preencherCidades:', e); }
     try { renderTabela(todosInscritos); }                catch(e) { console.error('renderTabela:', e); document.getElementById('tabela-body').innerHTML = '<tr><td colspan="10" class="vazio">Erro ao renderizar tabela.</td></tr>'; }
     try { renderEspera(todosInscritos); }                catch(e) { console.error('renderEspera:', e); document.getElementById('espera-grid').innerHTML = '<div class="vazio">Erro ao carregar lista de espera.</div>'; }
     try { renderRelatorio(todosInscritos, inscricoes); } catch(e) { console.error('renderRelatorio:', e); document.getElementById('relatorio-grid').innerHTML = '<div class="vazio">Erro ao carregar relatório.</div>'; }
@@ -633,8 +644,24 @@ function atualizarMetricas(participantes, inscricoes) {
   ).length;
   document.getElementById('m-duplas').textContent = duplas;
 
-  const cidades = new Set(participantes.map(p => (p.cidade || '') + (p.uf || '')));
-  document.getElementById('m-cidades').textContent = cidades.size;
+  // Contagem por cidade — alimenta o popup
+  const contagemCidades = {};
+  participantes.forEach(p => {
+    const c = (p.cidade || '').trim();
+    if (c) contagemCidades[c] = (contagemCidades[c] || 0) + 1;
+  });
+  const cidades = Object.keys(contagemCidades);
+  document.getElementById('m-cidades').textContent = cidades.length;
+  // Preenche a lista do popup, ordenada por quantidade desc
+  const lista = document.getElementById('cidades-lista');
+  if (lista) {
+    const ordenadas = cidades.sort((a, b) => contagemCidades[b] - contagemCidades[a]);
+    lista.innerHTML = ordenadas.map(c => `
+      <div class="cidade-row" onclick="event.stopPropagation();document.getElementById('filtro-cidade').value='${c.replace(/'/g,"\'")}';filtrar();fecharCidadesPopup();">
+        <span class="cidade-nome">${c}</span>
+        <span class="cidade-qtd">${contagemCidades[c]}</span>
+      </div>`).join('');
+  }
 
   // Lista de espera
   const totalEspera = inscricoes.filter(i => i.status === 'lista_espera').length;
@@ -774,14 +801,42 @@ function fecharModalModBtn() {
 // ================================================================
 // FILTRO DE UFs
 // ================================================================
-function preencherUFs(participantes) {
-  const ufs = [...new Set(participantes.map(p => p.uf).filter(Boolean))].sort();
-  const sel = document.getElementById('filtro-uf');
-  sel.innerHTML = '<option value="">Todos os estados</option>';
-  ufs.forEach(uf => {
+// ================================================================
+// POPUP CIDADES
+// ================================================================
+function toggleCidadesPopup() {
+  const popup = document.getElementById('cidades-popup');
+  if (!popup) return;
+  const aberto = popup.style.display !== 'none';
+  popup.style.display = aberto ? 'none' : 'block';
+  if (!aberto) {
+    // Fechar ao clicar fora
+    setTimeout(() => document.addEventListener('click', fecharCidadesPopupFora, { once: true }), 50);
+  }
+}
+function fecharCidadesPopup() {
+  const popup = document.getElementById('cidades-popup');
+  if (popup) popup.style.display = 'none';
+}
+function fecharCidadesPopupFora(e) {
+  const card = document.getElementById('metric-cidades');
+  if (card && !card.contains(e.target)) fecharCidadesPopup();
+}
+
+function preencherCidades(participantes) {
+  // Apenas cidades que têm inscritos — dinâmico, sem lista fixa
+  const cidades = [...new Set(
+    participantes.map(p => p.cidade).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  const sel = document.getElementById('filtro-cidade');
+  const valorAtual = sel.value; // preserva seleção ao recarregar
+  sel.innerHTML = '<option value="">Todas as cidades</option>';
+  cidades.forEach(c => {
     const opt = document.createElement('option');
-    opt.value = uf;
-    opt.textContent = uf;
+    opt.value = c;
+    opt.textContent = c;
+    if (c === valorAtual) opt.selected = true;
     sel.appendChild(opt);
   });
 }
@@ -792,7 +847,7 @@ function preencherUFs(participantes) {
 function filtrar() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
-  const uf     = document.getElementById('filtro-uf').value;
+  const cidade = document.getElementById('filtro-cidade').value;
   const cred   = document.getElementById('filtro-credenciamento').value;
 
   const filtrado = todosInscritos.filter(p => {
@@ -801,12 +856,12 @@ function filtrar() {
       (p.cpf || '').includes(busca);
     const eventoBate = !evento ||
       p.inscricoes.some(i => i.modalidade_id == evento);
-    const ufBate = !uf || p.uf === uf;
+    const cidadeBate = !cidade || (p.cidade || '').toLowerCase() === cidade.toLowerCase();
     const jaPresente = p.inscricoes.some(i => i.presenca === true);
     const credBate = !cred ||
       (cred === 'sim' && jaPresente) ||
       (cred === 'nao' && !jaPresente);
-    return textoBate && eventoBate && ufBate && credBate;
+    return textoBate && eventoBate && cidadeBate && credBate;
   });
 
   renderTabela(filtrado);
@@ -1084,13 +1139,13 @@ function imprimirFicha() {
 function imprimirLista() {
   const busca  = document.getElementById('busca').value.toLowerCase();
   const evento = document.getElementById('filtro-evento').value;
-  const uf     = document.getElementById('filtro-uf').value;
+  const cidade = document.getElementById('filtro-cidade').value;
 
   const lista = todosInscritos.filter(p => {
     const textoBate = !busca || p.nome_completo.toLowerCase().includes(busca) || (p.cpf || '').includes(busca);
     const eventoBate = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const ufBate = !uf || p.uf === uf;
-    return textoBate && eventoBate && ufBate;
+    const cidadeBate = !cidade || (p.cidade || '').toLowerCase() === cidade.toLowerCase();
+    return textoBate && eventoBate && cidadeBate;
   });
 
   const cabecalho = `
