@@ -224,28 +224,18 @@
         <span class="icon">📸</span>
         <div style="text-align:left;">
           <div>Escanear QR Code</div>
-          <div style="font-size:12px;font-weight:400;opacity:0.8;margin-top:2px;">Aponta câmera → tira foto → lê automaticamente</div>
+          <div style="font-size:12px;font-weight:400;opacity:0.8;margin-top:2px;">Abre a câmera — funciona em todos os celulares</div>
         </div>
       </button>
 
-      <!-- BOTÃO 2: Câmera ao vivo -->
+      <!-- BOTÃO 2: Câmera ao vivo (BarcodeDetector nativo ou jsQR) -->
       <button class="scan-btn-secundario" onclick="iniciarCameraVivo()" id="btn-camera-vivo">
         🎥 Câmera contínua (leitura automática)
       </button>
 
-      <!-- DICA: QR na tela do celular -->
-      <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px 14px;margin-top:4px;">
-        <div style="font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:6px;">💡 Lendo QR Code da tela do celular do inscrito?</div>
-        <div style="font-size:12px;color:#64748b;line-height:1.6;">
-          • Use <strong style="color:#60a5fa;">Câmera contínua</strong> — funciona melhor com telas<br>
-          • Peça ao inscrito para aumentar o brilho da tela ao máximo<br>
-          • Mantenha 15–25 cm de distância da tela<br>
-          • Se falhar: use <strong style="color:#60a5fa;">🔍 Buscar</strong> e digite a ficha FI-XXXX
-        </div>
-      </div>
-
-      <div class="scan-dica" style="margin-top:10px;">
-        Sem câmera? Use <strong>🔍 Buscar</strong> e digite o número da ficha
+      <div class="scan-dica">
+        Sem câmera disponível? Use a aba <strong>🔍 Buscar</strong><br>
+        para digitar o número da ficha ou CPF
       </div>
     </div>
   </div>
