@@ -22,8 +22,9 @@ const EQUIPES_IDS = new Set([6, 7]);
 const VISIVEL_M = new Set([1, 3, 4, 5, 6]);
 const VISIVEL_F = new Set([2, 4, 5, 7]);
 
-// Máximo de vagas por modalidade
-const MAX_VAGAS = 20;
+// Máximo de vagas por modalidade (0 = ilimitado)
+const MAX_VAGAS_POR_MOD = { 1:20, 2:20, 3:20, 4:20, 5:20, 6:0, 7:0 };
+function getMaxVagas(modId) { return MAX_VAGAS_POR_MOD[modId] ?? 0; }
 
 // Dados completos das modalidades
 const MODALIDADES = {
