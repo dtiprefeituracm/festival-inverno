@@ -561,6 +561,7 @@ async function enviarInscricao() {
     // Pelo menos uma confirmada (mostra tela normal, com aviso se houver espera)
     document.getElementById('sucesso').style.display = 'block';
     document.getElementById('numero-ficha').textContent = ficha;
+    gerarQRCodeFicha(ficha, nome, Array.from(selecionados).map(id => NOMES_MOD[id]).join(', '));
     if (algumEspera) {
       // Adiciona aviso de que parte foi para espera
       const avisoDiv = document.getElementById('aviso-espera-parcial') || (() => {
@@ -594,6 +595,98 @@ function irParaConsultaComCPF() {
     buscarInscricao();
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ================================================================
+// QR CODE DA FICHA — gerado na tela de sucesso
+// ================================================================
+let _fichaQRDados = {};  // Guarda dados para o salvarFichaComoImagem
+
+function gerarQRCodeFicha(ficha, nome, modalidades) {
+  _fichaQRDados = { ficha, nome, modalidades };
+  const container = document.getElementById('qrcode-ficha');
+  if (!container) return;
+  container.innerHTML = '';
+
+  // O conteúdo do QR Code é apenas o número da ficha (ex: FI-4521)
+  // O checkin.html lê esse texto e busca no banco
+  try {
+    new QRCode(container, {
+      text: ficha,
+      width: 180,
+      height: 180,
+      colorDark: '#0f172a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="font-size:12px;color:#dc2626;">Erro ao gerar QR Code. Anote o número da ficha.</div>';
+  }
+}
+
+async function salvarFichaComoImagem() {
+  const { ficha, nome, modalidades } = _fichaQRDados;
+
+  // Cria card da ficha em memória para capturar
+  const card = document.createElement('div');
+  card.style.cssText = [
+    'position:fixed', 'left:-9999px', 'top:0',
+    'width:360px', 'background:white', 'border-radius:20px',
+    'padding:24px 20px', 'font-family:system-ui,sans-serif',
+    'box-shadow:0 4px 30px rgba(0,0,0,0.2)', 'text-align:center'
+  ].join(';');
+
+  // Header
+  card.innerHTML = [
+    '<div style="background:#1a56a0;color:white;border-radius:12px;padding:14px 12px;margin-bottom:16px;">',
+      '<div style="font-size:11px;opacity:0.8;margin-bottom:2px;">FESTIVAL DE INVERNO 2026</div>',
+      '<div style="font-weight:800;font-size:15px;">SEMESP — Costa Marques/RO</div>',
+      '<div style="font-size:11px;opacity:0.7;margin-top:2px;">01 · 02 · 03 de Maio de 2026</div>',
+    '</div>',
+    '<div id="qr-card-inner" style="background:white;padding:8px;display:inline-block;border:2px solid #e2e8f0;border-radius:10px;margin-bottom:12px;"></div>',
+    '<div style="font-size:28px;font-weight:800;color:#1a56a0;letter-spacing:0.05em;margin-bottom:4px;">' + ficha + '</div>',
+    '<div style="font-size:13px;color:#475569;margin-bottom:8px;font-weight:600;">' + (nome || '') + '</div>',
+    '<div style="font-size:11px;color:#64748b;background:#f8fafc;border-radius:8px;padding:8px 12px;margin-bottom:14px;">',
+      '🏅 ' + (modalidades || '') +
+    '</div>',
+    '<div style="font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:10px;line-height:1.6;">',
+      '🥫 Traga 1kg de alimento não perecível<br>Apresente este QR Code no credenciamento',
+    '</div>'
+  ].join('');
+
+  document.body.appendChild(card);
+
+  // Gera QR dentro do card
+  try {
+    new QRCode(card.querySelector('#qr-card-inner'), {
+      text: ficha,
+      width: 160, height: 160,
+      colorDark: '#0f172a', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {}
+
+  // Aguarda QR renderizar
+  await new Promise(r => setTimeout(r, 300));
+
+  try {
+    const canvas = await html2canvas(card, {
+      scale: 3,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false
+    });
+    document.body.removeChild(card);
+
+    // Baixa a imagem
+    const link = document.createElement('a');
+    link.download = 'ficha-' + ficha + '-FestivalInverno2026.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    document.body.removeChild(card);
+    alert('Não foi possível salvar a imagem automaticamente. Faça um print da tela para guardar sua ficha.');
+  }
 }
 
 function limparResultadoConsulta() {
