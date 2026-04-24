@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ══════════════════════════════════════════════════════════════
-// QR CODE + FICHA PARA DOWNLOAD  (v3 — funciona iOS e Android)
+// QR CODE + FICHA PARA DOWNLOAD  (v4 — QR gerado direto no canvas)
 // ══════════════════════════════════════════════════════════════
 
 let _fichaAtual = '', _fichaAtualNome = '', _fichaAtualMods = '', _fichaEspera = false;
@@ -1246,6 +1246,47 @@ function gerarQRCodeSucesso(ficha, nome, mods, isEspera) {
   });
 }
 
+// Gera QR Code num div temporário e retorna como dataURL — sem taint de canvas
+function _gerarQRDataURL(texto, tamanho, callback) {
+  if (typeof QRCode === 'undefined') { callback(null); return; }
+
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+  document.body.appendChild(div);
+
+  try {
+    new QRCode(div, {
+      text:         texto,
+      width:        tamanho,
+      height:       tamanho,
+      colorDark:    '#0f172a',
+      colorLight:   '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {
+    document.body.removeChild(div);
+    callback(null);
+    return;
+  }
+
+  // QRCode.js pode demorar um tick para renderizar
+  setTimeout(() => {
+    const qrCanvas = div.querySelector('canvas');
+    const qrImg    = div.querySelector('img');
+    let dataUrl    = null;
+
+    if (qrCanvas) {
+      try { dataUrl = qrCanvas.toDataURL('image/png'); } catch(e) {}
+    }
+    if (!dataUrl && qrImg && qrImg.src) {
+      dataUrl = qrImg.src; // já é data URL quando gerado pelo QRCode.js
+    }
+
+    document.body.removeChild(div);
+    callback(dataUrl);
+  }, 120);
+}
+
 // Polyfill roundRect para Safari/Firefox antigos
 function rrect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -1262,168 +1303,167 @@ function rrect(ctx, x, y, w, h, r) {
 }
 
 function _desenharFicha(corTopo, statusLabel, callback) {
-  const containerId = _fichaEspera ? 'qrcode-espera' : 'qrcode-confirmado';
-  const qrEl = document.querySelector('#' + containerId + ' img') ||
-               document.querySelector('#' + containerId + ' canvas');
+  // 1º: gera QR fresco em div oculto — evita problema de canvas tainted
+  _gerarQRDataURL(_fichaAtual, 210, (qrDataUrl) => {
+    const W = 540, H = 880;
+    const cv  = document.createElement('canvas');
+    cv.width  = W * 2;
+    cv.height = H * 2;
+    const ctx = cv.getContext('2d');
+    ctx.scale(2, 2);
 
-  const W = 540, H = 880;
-  const cv = document.createElement('canvas');
-  cv.width = W * 2; cv.height = H * 2;
-  const ctx = cv.getContext('2d');
-  ctx.scale(2, 2);
+    // ── Fundo ──
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(0, 0, W, H);
 
-  // Fundo geral
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(0, 0, W, H);
+    // ── Topo colorido ──
+    ctx.fillStyle = corTopo;
+    ctx.fillRect(0, 0, W, 140);
 
-  // Topo colorido
-  ctx.fillStyle = corTopo;
-  ctx.fillRect(0, 0, W, 140);
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 21px Arial';
+    ctx.fillText('🏆 FESTIVAL DE INVERNO 2026', W / 2, 38);
+    ctx.font = '12px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText('SEMESP — Prefeitura de Costa Marques / RO', W / 2, 60);
+    ctx.fillText('01, 02 e 03 de Maio de 2026 · Praça dos Navegantes', W / 2, 80);
 
-  // Textos topo
-  ctx.fillStyle = 'white';
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 21px Arial';
-  ctx.fillText('🏆 FESTIVAL DE INVERNO 2026', W / 2, 38);
-  ctx.font = '12px Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fillText('SEMESP — Prefeitura de Costa Marques / RO', W / 2, 60);
-  ctx.fillText('01, 02 e 03 de Maio de 2026 · Praça dos Navegantes', W / 2, 80);
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  rrect(ctx, (W - 210) / 2, 96, 210, 30, 15);
-  ctx.fill();
-  ctx.fillStyle = 'white';
-  ctx.font = 'bold 13px Arial';
-  ctx.fillText(statusLabel, W / 2, 116);
+    // Badge status
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    rrect(ctx, (W - 220) / 2, 96, 220, 32, 16);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 13px Arial';
+    ctx.fillText(statusLabel, W / 2, 117);
 
-  // Card branco
-  ctx.fillStyle = 'white';
-  ctx.shadowColor = 'rgba(0,0,0,0.10)';
-  ctx.shadowBlur = 18;
-  rrect(ctx, 20, 155, W - 40, H - 170, 16);
-  ctx.fill();
-  ctx.shadowBlur = 0;
+    // ── Card branco ──
+    ctx.fillStyle = 'white';
+    ctx.shadowColor = 'rgba(0,0,0,0.10)';
+    ctx.shadowBlur  = 18;
+    rrect(ctx, 20, 155, W - 40, H - 170, 16);
+    ctx.fill();
+    ctx.shadowBlur = 0;
 
-  // Nome participante
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 19px Arial';
-  let nome = _fichaAtualNome;
-  while (ctx.measureText(nome).width > W - 80 && nome.length > 10)
-    nome = nome.slice(0, -4) + '...';
-  ctx.fillText(nome, W / 2, 195);
-
-  // Linha divisória
-  ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(44, 210); ctx.lineTo(W - 44, 210); ctx.stroke();
-
-  // Label ficha
-  ctx.fillStyle = '#64748b'; ctx.font = '12px Arial';
-  ctx.fillText('NÚMERO DE INSCRIÇÃO', W / 2, 234);
-  // Número grande
-  ctx.fillStyle = '#1a56a0'; ctx.font = 'bold 48px Arial';
-  ctx.fillText(_fichaAtual, W / 2, 286);
-
-  // QR Code
-  const qrSize = 210, qrX = (W - qrSize) / 2, qrY = 303;
-  ctx.fillStyle = '#f8fafc';
-  rrect(ctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 12);
-  ctx.fill();
-  ctx.strokeStyle = '#e2e8f0';
-  rrect(ctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 12);
-  ctx.stroke();
-
-  const continuar = () => {
-    // Instrução QR
-    ctx.fillStyle = '#475569'; ctx.font = '12px Arial';
-    ctx.fillText('Apresente este QR Code no credenciamento', W / 2, qrY + qrSize + 24);
+    // Nome
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 19px Arial';
+    let nome = _fichaAtualNome.toUpperCase();
+    while (ctx.measureText(nome).width > W - 80 && nome.length > 10)
+      nome = nome.slice(0, -4) + '...';
+    ctx.fillText(nome, W / 2, 196);
 
     // Linha
     ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(44, qrY + qrSize + 38); ctx.lineTo(W - 44, qrY + qrSize + 38); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(44, 210); ctx.lineTo(W - 44, 210); ctx.stroke();
 
-    // Modalidades
-    ctx.fillStyle = '#94a3b8'; ctx.font = '10px Arial';
-    ctx.fillText('MODALIDADES INSCRITAS', W / 2, qrY + qrSize + 56);
-    ctx.fillStyle = '#0f172a'; ctx.font = '13px Arial';
-    const linhas = _fichaAtualMods.split(',');
-    linhas.forEach((l, i) => ctx.fillText(l.trim(), W / 2, qrY + qrSize + 74 + i * 20));
+    // Número ficha
+    ctx.fillStyle = '#64748b'; ctx.font = '12px Arial';
+    ctx.fillText('NÚMERO DE INSCRIÇÃO', W / 2, 234);
+    ctx.fillStyle = '#1a56a0'; ctx.font = 'bold 48px Arial';
+    ctx.fillText(_fichaAtual, W / 2, 286);
 
-    // Aviso alimento
-    const avY = qrY + qrSize + 100 + linhas.length * 20;
-    ctx.fillStyle = '#fef3c7';
-    rrect(ctx, 36, avY, W - 72, 46, 10); ctx.fill();
-    ctx.fillStyle = '#92400e'; ctx.font = 'bold 12px Arial';
-    ctx.fillText('🥫 Traga 1 kg de alimento não perecível', W / 2, avY + 17);
-    ctx.fillStyle = '#78350f'; ctx.font = '11px Arial';
-    ctx.fillText('Obrigatório na entrega da ficha no credenciamento', W / 2, avY + 33);
+    // ── Área QR ──
+    const qrSize = 210, qrX = (W - qrSize) / 2, qrY = 302;
 
-    // Rodapé
-    ctx.fillStyle = '#94a3b8'; ctx.font = '10px Arial';
-    ctx.fillText('SEMESP — Prefeitura de Costa Marques / RO  ·  festival-inverno.vercel.app', W / 2, H - 14);
+    // Fundo do QR
+    ctx.fillStyle = '#f8fafc';
+    rrect(ctx, qrX - 12, qrY - 12, qrSize + 24, qrSize + 24, 12);
+    ctx.fill();
+    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+    rrect(ctx, qrX - 12, qrY - 12, qrSize + 24, qrSize + 24, 12);
+    ctx.stroke();
 
-    callback(cv.toDataURL('image/png'));
-  };
+    const continuar = () => {
+      // Instrução
+      ctx.fillStyle = '#475569'; ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Apresente este QR Code no credenciamento', W / 2, qrY + qrSize + 24);
 
-  if (qrEl) {
-    if (qrEl.tagName === 'IMG') {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => { ctx.drawImage(img, qrX, qrY, qrSize, qrSize); continuar(); };
-      img.onerror = () => continuar();
-      img.src = qrEl.src;
+      // Linha
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(44, qrY + qrSize + 38);
+      ctx.lineTo(W - 44, qrY + qrSize + 38);
+      ctx.stroke();
+
+      // Modalidades
+      ctx.fillStyle = '#94a3b8'; ctx.font = '10px Arial';
+      ctx.fillText('MODALIDADES INSCRITAS', W / 2, qrY + qrSize + 56);
+      ctx.fillStyle = '#0f172a'; ctx.font = '13px Arial';
+      const linhas = _fichaAtualMods.split(',');
+      linhas.forEach((l, i) => ctx.fillText(l.trim(), W / 2, qrY + qrSize + 74 + i * 20));
+
+      // Aviso alimento
+      const avY = qrY + qrSize + 100 + linhas.length * 20;
+      ctx.fillStyle = '#fef3c7';
+      rrect(ctx, 36, avY, W - 72, 46, 10);
+      ctx.fill();
+      ctx.fillStyle = '#92400e'; ctx.font = 'bold 12px Arial';
+      ctx.fillText('🥫 Traga 1 kg de alimento não perecível', W / 2, avY + 17);
+      ctx.fillStyle = '#78350f'; ctx.font = '11px Arial';
+      ctx.fillText('Obrigatório na entrega da ficha no credenciamento', W / 2, avY + 33);
+
+      // Rodapé
+      ctx.fillStyle = '#94a3b8'; ctx.font = '10px Arial';
+      ctx.fillText('SEMESP — Prefeitura de Costa Marques / RO  ·  festival-inverno.vercel.app', W / 2, H - 14);
+
+      callback(cv.toDataURL('image/png'));
+    };
+
+    // Desenha QR no canvas
+    if (qrDataUrl) {
+      const qrImg = new Image();
+      qrImg.onload  = () => { ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize); continuar(); };
+      qrImg.onerror = () => {
+        // QR falhou: escreve texto de fallback
+        ctx.fillStyle = '#94a3b8'; ctx.font = '13px Arial';
+        ctx.fillText('(QR Code: ' + _fichaAtual + ')', W / 2, qrY + qrSize / 2);
+        continuar();
+      };
+      qrImg.src = qrDataUrl;
     } else {
-      ctx.drawImage(qrEl, qrX, qrY, qrSize, qrSize);
+      ctx.fillStyle = '#94a3b8'; ctx.font = '13px Arial';
+      ctx.fillText('(QR Code: ' + _fichaAtual + ')', W / 2, qrY + qrSize / 2);
       continuar();
     }
-  } else {
-    continuar();
-  }
+  });
 }
 
-// Exibe a ficha em modal — funciona em iOS, Android e Desktop
+// Modal que funciona no iOS e Android
 function _mostrarModalFicha(dataUrl, nomeArquivo) {
-  // Remove modal anterior se existir
   const antigo = document.getElementById('modal-ficha');
   if (antigo) antigo.remove();
 
+  const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+
   const modal = document.createElement('div');
   modal.id = 'modal-ficha';
-  modal.style.cssText = `
-    position:fixed;inset:0;z-index:9999;
-    background:rgba(0,0,0,0.85);
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:flex-start;
-    padding:16px;overflow-y:auto;
-  `;
-
-  const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch;';
 
   modal.innerHTML = `
     <div style="width:100%;max-width:400px;margin:0 auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="color:white;font-weight:700;font-size:16px;">📄 Sua ficha de inscrição</div>
         <button onclick="document.getElementById('modal-ficha').remove()"
-          style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;">✕</button>
+          style="background:rgba(255,255,255,0.15);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0;">✕</button>
       </div>
 
-      <img src="${dataUrl}" style="width:100%;border-radius:12px;display:block;" id="img-ficha-preview">
+      <img src="${dataUrl}" style="width:100%;border-radius:12px;display:block;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
 
       ${isIOS
-        ? `<div style="margin-top:12px;background:#1e293b;border-radius:12px;padding:14px;color:#94a3b8;font-size:13px;text-align:center;line-height:1.6;">
+        ? `<div style="margin-top:12px;background:#1e293b;border-radius:12px;padding:14px 16px;color:#94a3b8;font-size:13px;text-align:center;line-height:1.7;">
              📱 <strong style="color:white;">iPhone / iPad:</strong><br>
-             Pressione e segure a imagem acima<br>e escolha <strong style="color:#60a5fa;">"Adicionar à Fotos"</strong>
+             Pressione e segure a imagem acima<br>e toque em <strong style="color:#60a5fa;">"Adicionar à Fotos"</strong>
            </div>`
         : `<a href="${dataUrl}" download="${nomeArquivo}"
-             style="display:block;margin-top:12px;width:100%;padding:15px;
-             background:linear-gradient(135deg,#1a56a0,#1d4ed8);
-             color:white;border:none;border-radius:12px;font-size:15px;
-             font-weight:700;text-align:center;text-decoration:none;box-sizing:border-box;">
+             style="display:block;margin-top:12px;width:100%;padding:15px;background:linear-gradient(135deg,#1a56a0,#1d4ed8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;text-align:center;text-decoration:none;box-sizing:border-box;">
              ⬇️ Baixar imagem no dispositivo
            </a>`
       }
+
       <button onclick="document.getElementById('modal-ficha').remove()"
-        style="margin-top:10px;width:100%;padding:13px;background:transparent;
-        color:#64748b;border:1px solid #334155;border-radius:12px;font-size:14px;cursor:pointer;">
+        style="margin-top:10px;width:100%;padding:13px;background:transparent;color:#64748b;border:1px solid #334155;border-radius:12px;font-size:14px;cursor:pointer;">
         Fechar
       </button>
     </div>
@@ -1435,13 +1475,13 @@ function _mostrarModalFicha(dataUrl, nomeArquivo) {
 function baixarFichaConfirmado() {
   _fichaEspera = false;
   _desenharFicha('#1a56a0', '✅ INSCRIÇÃO CONFIRMADA', (dataUrl) => {
-    _mostrarModalFicha(dataUrl, 'ficha-' + _fichaAtual.replace('-','') + '.png');
+    _mostrarModalFicha(dataUrl, 'ficha-' + _fichaAtual.replace('-', '') + '.png');
   });
 }
 
 function baixarFichaEspera() {
   _fichaEspera = true;
   _desenharFicha('#d97706', '⏳ LISTA DE ESPERA', (dataUrl) => {
-    _mostrarModalFicha(dataUrl, 'ficha-espera-' + _fichaAtual.replace('-','') + '.png');
+    _mostrarModalFicha(dataUrl, 'ficha-espera-' + _fichaAtual.replace('-', '') + '.png');
   });
 }
