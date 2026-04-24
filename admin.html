@@ -1317,7 +1317,6 @@ function imprimirVagas() {
     const total = limMod > 0 ? limMod : "∞";
     const qtd   = todasInscricoes.filter(i => i.modalidade_id == id).length;
     const livre  = limMod > 0 ? limMod - qtd : "∞";
-    const pct    = Math.round(qtd / total * 100);
     const pct    = limMod > 0 ? Math.round(qtd / limMod * 100) : 0;
     const corLivre = limMod > 0 && livre === 0 ? '#dc2626' : '#166534';
     return `<tr>
