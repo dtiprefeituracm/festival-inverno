@@ -828,8 +828,13 @@ function renderizarConsulta() {
       const rs = iF
         ? '<span class="parceiro-restricao restricao-f">♀ feminino</span>'
         : '<span class="parceiro-restricao restricao-m">♂ masculino</span>';
+      const campoEquipe = (id === 4)
+        ? `<label class="campo">Nome da dupla / equipe <span class="obrigatorio">*</span></label>
+           <input type="text" id="add-p${id}-equipe" placeholder="Ex: Dupla do Guaporé" maxlength="60">`
+        : '';
       ph = `<div class="parceiro-box ${iF ? 'feminino' : ''}" id="add-parceiro-${id}" style="display:none;">
         <div class="parceiro-titulo">Dados do(a) ${lb} ${rs}</div>
+        ${campoEquipe}
         <label class="campo">Nome <span class="obrigatorio">*</span></label>
         <input type="text" id="add-p${id}-nome" placeholder="Nome do(a) ${lb}">
         <label class="campo">CPF <span class="obrigatorio">*</span></label>
@@ -895,7 +900,11 @@ function renderizarConsulta() {
             <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Nome da equipe</label>
             <input type="text" id="edit-equipe-${i.id}" value="${i.nome_equipe || ''}" maxlength="60"
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
-          ` : ''}
+          ` : (i.modalidade_id === 4 ? `
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Nome da dupla / equipe</label>
+            <input type="text" id="edit-equipe-${i.id}" value="${i.equipe_nome || ''}" maxlength="60"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+          ` : '')}
           <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">${isPesca ? 'Membro 2' : 'Parceiro(a)'}</label>
           <input type="text" id="edit-p2-nome-${i.id}" value="${i.parceiro_nome || ''}" placeholder="Nome completo"
             style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
@@ -943,12 +952,16 @@ function renderizarConsulta() {
 }
 
 async function salvarEdicaoMembros(inscId, modId) {
-  const isPesca = EQUIPES_IDS.has(Number(modId));
+  const isPesca   = EQUIPES_IDS.has(Number(modId));
+  const isCanoagem = Number(modId) === 4;
   const dados = {
     parceiro_nome:     document.getElementById('edit-p2-nome-' + inscId)?.value.trim() || null,
     parceiro_cpf:      document.getElementById('edit-p2-cpf-'  + inscId)?.value.trim() || null,
     parceiro_telefone: document.getElementById('edit-p2-tel-'  + inscId)?.value.trim() || null,
   };
+  if (isCanoagem) {
+    dados.equipe_nome = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
+  }
   if (isPesca) {
     dados.nome_equipe  = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
     dados.membro3_nome = document.getElementById('edit-p3-nome-'+ inscId)?.value.trim() || null;
@@ -1029,6 +1042,8 @@ async function submeterAdicao() {
       insc.parceiro_nome     = document.getElementById('add-p' + id + '-nome').value.trim();
       insc.parceiro_cpf      = document.getElementById('add-p' + id + '-cpf').value.trim();
       insc.parceiro_telefone = document.getElementById('add-p' + id + '-tel').value.trim();
+      const addEquipeEl = document.getElementById('add-p' + id + '-equipe');
+      if (addEquipeEl) insc.equipe_nome = addEquipeEl.value.trim();
     }
     await post('inscricoes', insc);
   }
