@@ -533,7 +533,7 @@ const LOGO_URL = window.location.origin + '/10.png';
 // ================================================================
 // COMUNICAÇÃO SEGURA COM O SERVIDOR
 // ================================================================
-let tokenAdmin = null;
+let tokenAdmin = sessionStorage.getItem('adminToken') || null;
 
 async function apiGet(tabela, query = '') {
   const r = await fetch('/api/supabase', {
@@ -568,6 +568,7 @@ async function entrar() {
 
     if (data.ok) {
       tokenAdmin = data.token;
+      sessionStorage.setItem('adminToken', tokenAdmin);
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('painel').style.display = 'block';
       carregarDados();
@@ -585,6 +586,7 @@ async function entrar() {
 
 function sair() {
   tokenAdmin = null;
+  sessionStorage.removeItem('adminToken');
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('painel').style.display = 'none';
   document.getElementById('login-senha').value = '';
@@ -594,6 +596,20 @@ function sair() {
 // CARREGAR DADOS
 // ================================================================
 let todosInscritos = [];
+
+// ================================================================
+// AUTO-LOGIN — restaura sessão após F5 se token ainda válido
+// ================================================================
+(function() {
+  const token = sessionStorage.getItem('adminToken');
+  if (token) {
+    tokenAdmin = token;
+    const lw = document.getElementById('login-wrap');
+    const p  = document.getElementById('painel');
+    if (lw) lw.style.display = 'none';
+    if (p)  { p.style.display = 'block'; carregarDados(); }
+  }
+})();
 
 async function carregarDados() {
   try {
