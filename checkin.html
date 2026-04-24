@@ -233,17 +233,16 @@
         🎥 Câmera contínua (leitura automática)
       </button>
 
-      <!-- BOTÃO 3: Modo tela do celular — dica de brilho + foco próximo -->
+      <!-- BOTÃO 3: Ler da tela do celular do inscrito -->
       <button class="scan-btn-secundario" onclick="iniciarCameraTelaInscrito()" id="btn-camera-tela" style="border-color:#60a5fa;color:#60a5fa;">
         📱 Ler QR da tela do celular do inscrito
       </button>
 
       <div class="scan-dica">
-        <strong>📱 Lendo QR da tela do celular?</strong><br>
-        Aumente o brilho da tela do inscrito ao máximo,<br>
-        mantenha estável e aponte a câmera diretamente.<br><br>
-        Sem câmera? Use a aba <strong>🔍 Buscar</strong><br>
-        para digitar o número da ficha ou CPF.
+        💡 <strong>Dica:</strong> Para ler o QR da <strong>tela do celular do inscrito</strong>,<br>
+        peça para ele <strong>aumentar o brilho ao máximo</strong> e use<br>
+        o botão 📱 abaixo.<br><br>
+        Sem câmera? Use a aba <strong>🔍 Buscar</strong>.
       </div>
     </div>
   </div>
@@ -336,9 +335,8 @@ async function entrar() {
     });
     const d = await r.json();
     if (d.ok) {
-      document.getElementById('login-wrap').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      carregarContador();
+      localStorage.setItem('checkin_auth', '1'); // persiste ao F5
+      mostrarApp();
     } else {
       erro.style.display = 'block';
     }
@@ -348,12 +346,24 @@ async function entrar() {
   }
 }
 
+function mostrarApp() {
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  carregarContador();
+}
+
 function sair() {
+  localStorage.removeItem('checkin_auth');
   pararCamera();
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   document.getElementById('resultado').style.display = 'none';
 }
+
+// Restaura sessão ao recarregar (F5)
+document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('checkin_auth') === '1') mostrarApp();
+});
 
 // ================================================================
 // CONTADOR AO VIVO
@@ -836,49 +846,43 @@ async function apiGet(tabela, query) {
 }
 
 // ================================================================
-// MODO TELA DO CELULAR — câmera com foco próximo e brilho alto
-// Para ler QR exibido na tela do celular do inscrito
+// MODO TELA DO CELULAR — câmera otimizada para ler QR em telas
+// Sem advanced constraints (causam erro no iOS)
 // ================================================================
 async function iniciarCameraTelaInscrito() {
-  // Mostra dica visual de brilho
-  const dica = document.createElement('div');
-  dica.style.cssText = `
-    position:fixed;top:0;left:0;right:0;z-index:500;
-    background:#1a56a0;color:white;padding:14px 16px;
-    font-size:14px;font-weight:600;text-align:center;line-height:1.5;
-  `;
-  dica.innerHTML = '📱 Peça ao inscrito para <strong>aumentar o brilho da tela ao máximo</strong> e segurar o celular estável';
-  document.body.appendChild(dica);
-  setTimeout(() => dica.remove(), 4000);
+  if (streamAtivo) return; // câmera já ativa
 
-  if (streamAtivo) return;
+  // Banner instrução ao operador
+  const banner = document.createElement('div');
+  banner.id = 'banner-tela';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#1a56a0;color:white;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;line-height:1.6;';
+  banner.innerHTML = '📱 Peça ao inscrito para <strong>maximizar o brilho</strong> da tela e segurar o celular parado';
+  document.body.appendChild(banner);
+  setTimeout(() => { const b = document.getElementById('banner-tela'); if(b) b.remove(); }, 4000);
+
   mostrarStatus('⏳ Iniciando câmera...', 'lendo');
   document.getElementById('qr-opcoes').style.display = 'none';
 
   if (!navigator.mediaDevices?.getUserMedia) {
-    mostrarStatus('📵 Câmera indisponível. Use o botão Foto acima.', 'erro');
+    mostrarStatus('📵 Câmera não disponível neste dispositivo.', 'erro');
     document.getElementById('qr-opcoes').style.display = 'block';
     return;
   }
 
+  // Constraints simples — sem "advanced" que causa erro no iOS/Firefox
   let stream = null;
-  // Tenta configurações otimizadas para tela de celular
-  const configs = [
-    { video: { facingMode: 'environment', width: { ideal: 1280 }, advanced: [{ focusDistance: 0.1 }] } },
-    { video: { facingMode: 'environment', width: { ideal: 1280 }, advanced: [{ focusMode: 'macro' }] } },
-    { video: { facingMode: 'environment', width: { ideal: 1280 } } },
+  for (const c of [
+    { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
     { video: { facingMode: 'environment' } },
     { video: true }
-  ];
-
-  for (const c of configs) {
+  ]) {
     try { stream = await navigator.mediaDevices.getUserMedia(c); break; }
-    catch(e) {}
+    catch(e) { continue; }
   }
 
   if (!stream) {
-    mostrarStatus('📵 Permissão de câmera negada.', 'erro');
-    document.getElementById('qr-opcoes').style.display = 'block';
+    mostrarStatus('📵 Permissão de câmera negada. Use o botão 📸 Escanear acima.', 'erro');
+    setTimeout(() => { document.getElementById('qr-opcoes').style.display = 'block'; }, 3500);
     return;
   }
 
@@ -887,7 +891,7 @@ async function iniciarCameraTelaInscrito() {
   video.srcObject = stream;
   document.getElementById('camera-vivo').style.display = 'block';
   document.getElementById('camera-status').style.display = 'block';
-  mostrarStatus('📱 Aponte para o QR Code na tela do celular', 'lendo');
+  mostrarStatus('📱 Aponte para o QR Code na tela do celular do inscrito', 'lendo');
 
   video.addEventListener('loadedmetadata', () => video.play());
   video.addEventListener('canplay', () => {
@@ -897,39 +901,33 @@ async function iniciarCameraTelaInscrito() {
       const canvas = document.getElementById('qr-canvas');
       canvas.width  = video.videoWidth  || 640;
       canvas.height = video.videoHeight || 480;
-      scanComJsQRTela(video, canvas);
+      scanTelaJsQR(video, canvas);
     }
   }, { once: true });
 }
 
-// jsQR otimizado para tela: tenta normal e invertido com multiple escalas
-function scanComJsQRTela(video, canvas) {
+// Scan otimizado para tela: tenta normal + crop central
+function scanTelaJsQR(video, canvas) {
   if (!streamAtivo || scanBloqueado) return;
   if (video.readyState >= 2) {
     const ctx = canvas.getContext('2d');
-    // Tenta nas dimensões originais
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
-    if (code?.data) {
-      scanBloqueado = true;
-      processarQR(code.data);
-      return;
-    }
-    // Tenta com zoom central (central crop 60% da imagem)
-    const cw = Math.round(canvas.width * 0.7);
-    const ch = Math.round(canvas.height * 0.7);
-    const cx = Math.round((canvas.width  - cw) / 2);
+
+    // Tentativa 1: frame completo, ambas inversões
+    const img1  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code1 = jsQR(img1.data, img1.width, img1.height, { inversionAttempts: 'attemptBoth' });
+    if (code1?.data) { scanBloqueado = true; processarQR(code1.data); return; }
+
+    // Tentativa 2: crop 65% central (QR costuma estar no meio da tela)
+    const cw = Math.round(canvas.width * 0.65);
+    const ch = Math.round(canvas.height * 0.65);
+    const cx = Math.round((canvas.width - cw) / 2);
     const cy = Math.round((canvas.height - ch) / 2);
-    const imgCrop = ctx.getImageData(cx, cy, cw, ch);
-    const code2   = jsQR(imgCrop.data, cw, ch, { inversionAttempts: 'attemptBoth' });
-    if (code2?.data) {
-      scanBloqueado = true;
-      processarQR(code2.data);
-      return;
-    }
+    const img2  = ctx.getImageData(cx, cy, cw, ch);
+    const code2 = jsQR(img2.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+    if (code2?.data) { scanBloqueado = true; processarQR(code2.data); return; }
   }
-  animFrame = requestAnimationFrame(() => scanComJsQRTela(video, canvas));
+  animFrame = requestAnimationFrame(() => scanTelaJsQR(video, canvas));
 }
 
 </script>
