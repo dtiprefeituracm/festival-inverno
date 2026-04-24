@@ -546,10 +546,12 @@ function _mostrarErroCamera(tipoErro, retryFn) {
       <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;">
         <div style="color:#60a5fa;font-size:12px;font-weight:700;margin-bottom:8px;">📱 Chrome / Android:</div>
         <div style="color:#cbd5e1;font-size:12px;line-height:2;">
-          1. Toque no <strong style="color:#fbbf24;">🔒 cadeado</strong> na barra de endereço<br>
-          2. Toque em <strong style="color:#fbbf24;">Permissões</strong> ou <strong style="color:#fbbf24;">Config. do site</strong><br>
-          3. Selecione <strong style="color:#34d399;">Câmera → Permitir</strong><br>
-          4. Volte e toque em <strong style="color:#34d399;">"🔄 Tentar novamente"</strong> abaixo
+          1. Toque nos <strong style="color:#fbbf24;">⋮ 3 pontinhos</strong> do Chrome (canto superior)<br>
+          2. Vá em <strong style="color:#fbbf24;">Configurações → Configurações do site → Câmera</strong><br>
+          3. Encontre <strong style="color:#fbbf24;">festival-inverno.vercel.app</strong> e mude para <strong style="color:#34d399;">Permitir</strong><br>
+          4. Volte e toque em <strong style="color:#34d399;">"🔄 Tentar novamente"</strong> abaixo<br><br>
+          <strong style="color:#fbbf24;">Atalho:</strong> Cole na barra de endereço:<br>
+          <span style="color:#60a5fa;font-family:monospace;">chrome://settings/content/camera</span>
         </div>
       </div>
       <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px;">
@@ -625,14 +627,8 @@ async function _abrirCamera(mensagemStatus, retryFn) {
     return false;
   }
 
-  // Checa permissão antes de pedir — se já negada, mostra instruções direto
-  const perm = await _checarPermissaoCamera();
-  if (perm === 'denied') {
-    _mostrarErroCamera('denied', retryFn);
-    return false;
-  }
-
-  // Tenta abrir câmera (se perm='prompt' o browser mostra o popup)
+  // NÃO verifica permissão antes — vai direto pedir ao browser
+  // (permissions.query não é confiável em todos os Android)
   const statusEl = document.getElementById('camera-status');
   statusEl.style.display = 'block';
   statusEl.textContent = '⏳ Solicitando acesso à câmera...';
@@ -640,13 +636,19 @@ async function _abrirCamera(mensagemStatus, retryFn) {
 
   let stream = null;
   let ultimoErro = null;
+
+  // Tenta do mais simples ao mais específico
   for (const constraints of [
+    { video: true },
     { video: { facingMode: { ideal: 'environment' } } },
-    { video: { facingMode: 'user' } },
-    { video: true }
+    { video: { facingMode: 'user' } }
   ]) {
-    try { stream = await navigator.mediaDevices.getUserMedia(constraints); break; }
-    catch (e) { ultimoErro = e; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      break;
+    } catch (e) {
+      ultimoErro = e;
+    }
   }
 
   if (!stream) {
