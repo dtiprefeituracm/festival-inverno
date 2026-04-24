@@ -731,7 +731,7 @@ function atualizarVagas(inscricoes) {
 
   Object.entries(MODALIDADES).forEach(([id, mod]) => {
     const qtd = inscricoes.filter(i => i.modalidade_id == id).length;
-    const lim = getMaxVagas(mod); const pct = lim > 0 ? Math.round(qtd / lim * 100) : 0;
+    const lim = getMaxVagas(id); const pct = lim > 0 ? Math.round(qtd / lim * 100) : 0;
     const cor = pct >= 100 ? 'cheio' : pct >= 80 ? 'quase' : '';
 
     const card = document.createElement('div');
@@ -749,7 +749,7 @@ function atualizarVagas(inscricoes) {
         <div class="vaga-fill ${cor}" style="width:${Math.min(pct, 100)}%"></div>
       </div>
       <div class="vaga-info">
-        <span>${qtd}${getMaxVagas(mod) > 0 ? " / " + getMaxVagas(mod) : " / ∞"}</span>
+        <span>${qtd}${getMaxVagas(id) > 0 ? " / " + getMaxVagas(id) : " / ∞"}</span>
         <span>${pct}%</span>
       </div>
       <div class="vaga-hint">👁 Clique para ver inscritos</div>
@@ -1313,11 +1313,13 @@ function imprimirVagas() {
   const todasInscricoes = todosInscritos.flatMap(p => p.inscricoes);
 
   const linhas = Object.entries(MODALIDADES).map(([id, mod]) => {
-    const total = getMaxVagas(mod) > 0 ? getMaxVagas(mod) : "∞";
+    const limMod = getMaxVagas(id);
+    const total = limMod > 0 ? limMod : "∞";
     const qtd   = todasInscricoes.filter(i => i.modalidade_id == id).length;
-    const livre  = total - qtd;
+    const livre  = limMod > 0 ? limMod - qtd : "∞";
     const pct    = Math.round(qtd / total * 100);
-    const corLivre = livre === 0 ? '#dc2626' : '#166534';
+    const pct    = limMod > 0 ? Math.round(qtd / limMod * 100) : 0;
+    const corLivre = limMod > 0 && livre === 0 ? '#dc2626' : '#166534';
     return `<tr>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${mod.nome}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${mod.sub}</td>
