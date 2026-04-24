@@ -876,7 +876,7 @@ function renderizarConsulta() {
       const m = MODALIDADES[i.modalidade_id];
       const isPesca = EQUIPES_IDS.has(i.modalidade_id);
       const label = isPesca ? `🎣 ${m.nome} ${m.sub}` : `🤝 ${m.nome} ${m.sub}`;
-      const temDados = i.parceiro_nome || i.nome_equipe;
+      const temDados = i.parceiro_nome || i.equipe_nome || i.nome_equipe;
 
       const bloco = document.createElement('div');
       bloco.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;';
@@ -884,7 +884,7 @@ function renderizarConsulta() {
         <div style="font-size:12px;font-weight:700;color:#1a56a0;margin-bottom:6px;">${label}</div>
         ${temDados
           ? `<div style="font-size:12px;color:#475569;margin-bottom:8px;">
-               ${i.nome_equipe ? `<div>🎣 <strong>${i.nome_equipe}</strong></div>` : ''}
+               ${(i.equipe_nome || i.nome_equipe) ? `<div>🎣 <strong>${i.equipe_nome || i.nome_equipe}</strong></div>` : ''}
                ${i.parceiro_nome ? `<div>👤 ${i.parceiro_nome}</div>` : ''}
                ${i.membro3_nome  ? `<div>👤 ${i.membro3_nome}</div>` : ''}
                ${i.membro4_nome  ? `<div>👤 ${i.membro4_nome}</div>` : ''}
@@ -898,14 +898,15 @@ function renderizarConsulta() {
         <div id="${formId}" style="display:none;">
           ${isPesca ? `
             <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Nome da equipe</label>
-            <input type="text" id="edit-equipe-${i.id}" value="${i.nome_equipe || ''}" maxlength="60"
+            <input type="text" id="edit-equipe-${i.id}" value="${i.nome_equipe || i.equipe_nome || ''}" maxlength="60"
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
           ` : (i.modalidade_id === 4 ? `
             <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Nome da dupla / equipe</label>
             <input type="text" id="edit-equipe-${i.id}" value="${i.equipe_nome || ''}" maxlength="60"
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
           ` : '')}
-          <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">${isPesca ? 'Membro 2' : 'Parceiro(a)'}</label>
+          ${isPesca ? '<div style="font-size:11px;color:#60a5fa;background:#0f172a;border-radius:8px;padding:8px 10px;margin-bottom:8px;line-height:1.6;">🚤 Equipe: <strong>1 piloto</strong> + até <strong>3 pescadores</strong> (mín. 2 pessoas, máx. 4)</div>' : ''}
+          <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">${isPesca ? '🚤 Piloto (obrigatório)' : 'Parceiro(a)'}</label>
           <input type="text" id="edit-p2-nome-${i.id}" value="${i.parceiro_nome || ''}" placeholder="Nome completo"
             style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
           <input type="text" id="edit-p2-cpf-${i.id}" value="${i.parceiro_cpf || ''}" placeholder="CPF"
@@ -913,16 +914,20 @@ function renderizarConsulta() {
           <input type="tel" id="edit-p2-tel-${i.id}" value="${i.parceiro_telefone || ''}" placeholder="Telefone"
             style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
           ${isPesca ? `
-            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Membro 3 (opcional)</label>
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">🎣 Pescador 2 (opcional)</label>
             <input type="text" id="edit-p3-nome-${i.id}" value="${i.membro3_nome || ''}" placeholder="Nome completo"
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
             <input type="text" id="edit-p3-cpf-${i.id}" value="${i.membro3_cpf || ''}" placeholder="CPF"
-              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;" maxlength="14">
-            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Membro 4 (opcional)</label>
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;" maxlength="14">
+            <input type="tel" id="edit-p3-tel-${i.id}" value="${i.membro3_telefone || ''}" placeholder="Telefone"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">🎣 Pescador 3 (opcional)</label>
             <input type="text" id="edit-p4-nome-${i.id}" value="${i.membro4_nome || ''}" placeholder="Nome completo"
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;">
             <input type="text" id="edit-p4-cpf-${i.id}" value="${i.membro4_cpf || ''}" placeholder="CPF"
-              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;" maxlength="14">
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:4px;" maxlength="14">
+            <input type="tel" id="edit-p4-tel-${i.id}" value="${i.membro4_telefone || ''}" placeholder="Telefone"
+              style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
           ` : ''}
           <button onclick="salvarEdicaoMembros('${i.id}',${i.modalidade_id})"
             style="width:100%;padding:10px;background:#1a56a0;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
@@ -954,6 +959,17 @@ function renderizarConsulta() {
 async function salvarEdicaoMembros(inscId, modId) {
   const isPesca   = EQUIPES_IDS.has(Number(modId));
   const isCanoagem = Number(modId) === 4;
+
+  // Validação: Piloto obrigatório para Pesca
+  if (isPesca) {
+    const pilotoNome = document.getElementById('edit-p2-nome-' + inscId)?.value.trim();
+    if (!pilotoNome) {
+      alert('⚠️ O Piloto é obrigatório para Pesca embarcada. Informe ao menos o nome do piloto.');
+      document.getElementById('edit-p2-nome-' + inscId)?.focus();
+      return;
+    }
+  }
+
   const dados = {
     parceiro_nome:     document.getElementById('edit-p2-nome-' + inscId)?.value.trim() || null,
     parceiro_cpf:      document.getElementById('edit-p2-cpf-'  + inscId)?.value.trim() || null,
@@ -963,11 +979,13 @@ async function salvarEdicaoMembros(inscId, modId) {
     dados.equipe_nome = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
   }
   if (isPesca) {
-    dados.nome_equipe  = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
-    dados.membro3_nome = document.getElementById('edit-p3-nome-'+ inscId)?.value.trim() || null;
-    dados.membro3_cpf  = document.getElementById('edit-p3-cpf-' + inscId)?.value.trim() || null;
-    dados.membro4_nome = document.getElementById('edit-p4-nome-'+ inscId)?.value.trim() || null;
-    dados.membro4_cpf  = document.getElementById('edit-p4-cpf-' + inscId)?.value.trim() || null;
+    dados.nome_equipe       = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
+    dados.membro3_nome      = document.getElementById('edit-p3-nome-'+ inscId)?.value.trim() || null;
+    dados.membro3_cpf       = document.getElementById('edit-p3-cpf-' + inscId)?.value.trim() || null;
+    dados.membro3_telefone  = document.getElementById('edit-p3-tel-' + inscId)?.value.trim() || null;
+    dados.membro4_nome      = document.getElementById('edit-p4-nome-'+ inscId)?.value.trim() || null;
+    dados.membro4_cpf       = document.getElementById('edit-p4-cpf-' + inscId)?.value.trim() || null;
+    dados.membro4_telefone  = document.getElementById('edit-p4-tel-' + inscId)?.value.trim() || null;
   }
   try {
     const r = await fetch('/api/supabase', {
