@@ -649,6 +649,7 @@ function atualizarMetricas(participantes, inscricoes) {
   if (mCred) mCred.textContent = totalCred;
   const mCredPct = document.getElementById('m-credenciados-pct');
   if (mCredPct) mCredPct.textContent = `${pctCred}% dos inscritos`;
+  const contagem = {};
   inscricoes.forEach(i => {
     contagem[i.modalidade_id] = (contagem[i.modalidade_id] || 0) + 1;
   });
