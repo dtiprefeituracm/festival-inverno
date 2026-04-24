@@ -509,43 +509,92 @@ function limparStatusFoto() {
 }
 
 // ================================================================
-// CÂMERA AO VIVO — BarcodeDetector nativo ou jsQR frame a frame
+// CÂMERA — função central de inicialização
+// Tenta câmera traseira → frontal → qualquer uma
+// Detecta e explica erros de permissão corretamente
 // ================================================================
-async function iniciarCameraVivo() {
-  if (streamAtivo) return;
-  mostrarStatus('⏳ Iniciando câmera...', 'lendo');
+async function _abrirCamera(mensagemStatus) {
+  if (streamAtivo) return true;
+
+  mostrarStatus('⏳ Solicitando permissão de câmera...', 'lendo');
   document.getElementById('qr-opcoes').style.display = 'none';
 
-  if (!navigator.mediaDevices?.getUserMedia) {
-    mostrarStatus('📵 Câmera indisponível. Use o botão Foto acima.', 'erro');
-    document.getElementById('qr-opcoes').style.display = 'block';
-    return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    _erroCameraUI('📵 Câmera não suportada neste navegador. Use o botão 📸 Escanear.');
+    return false;
   }
 
-  let stream = null;
-  for (const c of [
-    { video: { facingMode: 'environment', width: { ideal: 1280 } } },
-    { video: { facingMode: 'environment' } },
+  const tentativas = [
+    { video: { facingMode: { ideal: 'environment' } } },
+    { video: { facingMode: 'user' } },
     { video: true }
-  ]) {
-    try { stream = await navigator.mediaDevices.getUserMedia(c); break; }
-    catch(e) {}
+  ];
+
+  let stream = null;
+  let ultimoErro = null;
+
+  for (const constraints of tentativas) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      break;
+    } catch (e) {
+      ultimoErro = e;
+    }
   }
 
   if (!stream) {
-    mostrarStatus('📵 Permissão de câmera negada. Use o botão Foto acima.', 'erro');
-    document.getElementById('qr-opcoes').style.display = 'block';
-    return;
+    // Detecta tipo de erro
+    const nome = ultimoErro?.name || '';
+    if (nome === 'NotAllowedError' || nome === 'PermissionDeniedError') {
+      _erroCameraUI(
+        '🔒 Permissão de câmera bloqueada.
+
+' +
+        'Para liberar:
+' +
+        '• Chrome/Android: toque no 🔒 da barra de endereço → Permissões → Câmera → Permitir
+' +
+        '• Firefox: toque no ícone de câmera 🎥 na barra → Permitir
+
+' +
+        'Depois recarregue a página.',
+        true
+      );
+    } else if (nome === 'NotFoundError' || nome === 'DevicesNotFoundError') {
+      _erroCameraUI('📵 Nenhuma câmera encontrada neste dispositivo. Use 📸 Escanear ou 🔍 Buscar.');
+    } else {
+      _erroCameraUI('⚠️ Não foi possível abrir a câmera (' + (ultimoErro?.message || nome) + '). Use 📸 Escanear.');
+    }
+    return false;
   }
 
   streamAtivo = stream;
   const video = document.getElementById('scanner-video');
   video.srcObject = stream;
-
-  document.getElementById('camera-vivo').style.display = 'block';
+  document.getElementById('camera-vivo').style.display  = 'block';
   document.getElementById('camera-status').style.display = 'block';
-  mostrarStatus('🔍 Aponte para o QR Code', 'lendo');
+  mostrarStatus(mensagemStatus || '🔍 Aponte para o QR Code', 'lendo');
+  return true;
+}
 
+function _erroCameraUI(msg, mostrarConfig) {
+  // Mostra mensagem amigável e restaura botões
+  document.getElementById('qr-opcoes').style.display = 'block';
+  const statusEl = document.getElementById('camera-status');
+  statusEl.style.display = 'block';
+  statusEl.style.margin  = '8px 16px';
+  // Mensagem multi-linha
+  statusEl.innerHTML = msg.replace(/
+/g, '<br>');
+  statusEl.className = 'camera-status erro';
+  scanBloqueado = false;
+}
+
+async function iniciarCameraVivo() {
+  const ok = await _abrirCamera('🔍 Aponte para o QR Code do participante');
+  if (!ok) return;
+
+  const video = document.getElementById('scanner-video');
   video.addEventListener('loadedmetadata', () => video.play());
   video.addEventListener('canplay', () => {
     if (barcodeDetector) {
@@ -850,49 +899,18 @@ async function apiGet(tabela, query) {
 // Sem advanced constraints (causam erro no iOS)
 // ================================================================
 async function iniciarCameraTelaInscrito() {
-  if (streamAtivo) return; // câmera já ativa
-
-  // Banner instrução ao operador
+  // Banner instrução ao operador (não bloqueia, apenas informa)
   const banner = document.createElement('div');
   banner.id = 'banner-tela';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#1a56a0;color:white;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;line-height:1.6;';
-  banner.innerHTML = '📱 Peça ao inscrito para <strong>maximizar o brilho</strong> da tela e segurar o celular parado';
+  banner.innerHTML = '📱 Peça ao inscrito para <strong>maximizar o brilho da tela</strong> e segurar o celular parado';
   document.body.appendChild(banner);
-  setTimeout(() => { const b = document.getElementById('banner-tela'); if(b) b.remove(); }, 4000);
+  setTimeout(() => { const b = document.getElementById('banner-tela'); if (b) b.remove(); }, 4000);
 
-  mostrarStatus('⏳ Iniciando câmera...', 'lendo');
-  document.getElementById('qr-opcoes').style.display = 'none';
+  const ok = await _abrirCamera('📱 Aponte para o QR Code na tela do celular do inscrito');
+  if (!ok) return;
 
-  if (!navigator.mediaDevices?.getUserMedia) {
-    mostrarStatus('📵 Câmera não disponível neste dispositivo.', 'erro');
-    document.getElementById('qr-opcoes').style.display = 'block';
-    return;
-  }
-
-  // Constraints simples — sem "advanced" que causa erro no iOS/Firefox
-  let stream = null;
-  for (const c of [
-    { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
-    { video: { facingMode: 'environment' } },
-    { video: true }
-  ]) {
-    try { stream = await navigator.mediaDevices.getUserMedia(c); break; }
-    catch(e) { continue; }
-  }
-
-  if (!stream) {
-    mostrarStatus('📵 Permissão de câmera negada. Use o botão 📸 Escanear acima.', 'erro');
-    setTimeout(() => { document.getElementById('qr-opcoes').style.display = 'block'; }, 3500);
-    return;
-  }
-
-  streamAtivo = stream;
   const video = document.getElementById('scanner-video');
-  video.srcObject = stream;
-  document.getElementById('camera-vivo').style.display = 'block';
-  document.getElementById('camera-status').style.display = 'block';
-  mostrarStatus('📱 Aponte para o QR Code na tela do celular do inscrito', 'lendo');
-
   video.addEventListener('loadedmetadata', () => video.play());
   video.addEventListener('canplay', () => {
     if (barcodeDetector) {
