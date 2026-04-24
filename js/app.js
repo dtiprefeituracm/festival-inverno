@@ -192,6 +192,30 @@ function selecionarCidade(c) {
   document.getElementById('cidade-lista').innerHTML = '';
 }
 
+// Validar cidade ao sair do campo — impede digitar manualmente fora da lista
+function validarCidadeBlur() {
+  const input  = document.getElementById('cidade');
+  const hidden = document.getElementById('cidade-valor');
+  const typed  = input.value.trim();
+  if (!typed) { hidden.value = ''; return; }
+
+  // Busca exata normalizada na lista oficial
+  const norm   = normalizar(typed);
+  const achada = MUNICIPIOS_RO.find(c => normalizar(c) === norm);
+
+  if (achada) {
+    // Corrige capitalização para o padrão oficial da lista
+    input.value  = achada;
+    hidden.value = achada;
+  } else {
+    // Não está na lista — limpa e avisa
+    input.value  = '';
+    hidden.value = '';
+    input.placeholder = '⚠️ Cidade não encontrada — selecione da lista';
+    setTimeout(() => { input.placeholder = 'Digite o nome da cidade...'; }, 3000);
+  }
+}
+
 function navegarCidades(e) {
   const lista = document.getElementById('cidade-lista');
   const itens = lista.querySelectorAll('.cidade-item');
@@ -251,8 +275,8 @@ async function enviarInscricao() {
   const cpf    = document.getElementById('cpf').value.trim();
   const sexo   = document.getElementById('sexo').value;
   const tel    = document.getElementById('telefone').value.trim();
-  const cidade = document.getElementById('cidade-valor').value.trim() ||
-                 document.getElementById('cidade').value.trim();
+  // Sempre usar o valor validado (hidden) — nunca texto digitado livremente
+  const cidade = document.getElementById('cidade-valor').value.trim();
   const email  = document.getElementById('email').value.trim();
   const nasc   = document.getElementById('nascimento').value;
   const erro   = document.getElementById('erro');
