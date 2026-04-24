@@ -430,8 +430,30 @@ async function enviarInscricao() {
         return;
       }
       insc.nome_equipe = nomeEquipe;
-      // Validar CPFs dos membros preenchidos
-      for (const m of ['m2', 'm3', 'm4']) {
+      // Membro 2 (Piloto) é OBRIGATÓRIO para pesca embarcada
+      const pilotoNome = document.getElementById(`p${id}-m2-nome`)?.value.trim();
+      const pilotoCpf  = document.getElementById(`p${id}-m2-cpf`)?.value.trim();
+      if (!pilotoNome) {
+        erro.textContent = `Pesca embarcada exige ao menos 2 pessoas. Informe o nome do Piloto (Membro 2).`;
+        erro.style.display = 'block';
+        document.getElementById(`p${id}-m2-nome`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        btn.disabled = false;
+        btn.textContent = 'Enviar inscrição';
+        return;
+      }
+      if (pilotoCpf && !validarCPF(pilotoCpf)) {
+        erro.textContent = `CPF do Piloto (Membro 2) da Pesca é inválido.`;
+        erro.style.display = 'block';
+        const pilotoEl = document.getElementById(`p${id}-m2-cpf`);
+        marcarCPFerro(pilotoEl);
+        pilotoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        btn.disabled = false;
+        btn.textContent = 'Enviar inscrição';
+        return;
+      }
+
+      // Validar CPFs dos membros opcionais
+      for (const m of ['m3', 'm4']) {
         const mNome = document.getElementById(`p${id}-${m}-nome`)?.value.trim();
         const mCpf  = document.getElementById(`p${id}-${m}-cpf`)?.value.trim();
         if (mNome && mCpf && !validarCPF(mCpf)) {
