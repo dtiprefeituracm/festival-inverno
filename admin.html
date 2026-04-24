@@ -527,7 +527,10 @@ const MODALIDADES = {
   6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca', dupla: false, equipe: true  },
   7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca', dupla: false, equipe: true  },
 };
-const MAX_VAGAS = 20;
+// Máximo de vagas por modalidade (0 = ilimitado)
+const MAX_VAGAS_POR_MOD = { 1:20, 2:20, 3:20, 4:20, 5:20, 6:0, 7:0 };
+function getMaxVagas(modId) { return MAX_VAGAS_POR_MOD[Number(modId)] ?? 0; }
+const MAX_VAGAS = 20; // mantido para compatibilidade de totais gerais
 const LOGO_URL = window.location.origin + '/10.png';
 
 // ================================================================
@@ -728,7 +731,7 @@ function atualizarVagas(inscricoes) {
 
   Object.entries(MODALIDADES).forEach(([id, mod]) => {
     const qtd = inscricoes.filter(i => i.modalidade_id == id).length;
-    const pct = Math.round(qtd / MAX_VAGAS * 100);
+    const lim = getMaxVagas(mod); const pct = lim > 0 ? Math.round(qtd / lim * 100) : 0;
     const cor = pct >= 100 ? 'cheio' : pct >= 80 ? 'quase' : '';
 
     const card = document.createElement('div');
@@ -746,7 +749,7 @@ function atualizarVagas(inscricoes) {
         <div class="vaga-fill ${cor}" style="width:${Math.min(pct, 100)}%"></div>
       </div>
       <div class="vaga-info">
-        <span>${qtd} / ${MAX_VAGAS}</span>
+        <span>${qtd}${getMaxVagas(mod) > 0 ? " / " + getMaxVagas(mod) : " / ∞"}</span>
         <span>${pct}%</span>
       </div>
       <div class="vaga-hint">👁 Clique para ver inscritos</div>
@@ -1310,7 +1313,7 @@ function imprimirVagas() {
   const todasInscricoes = todosInscritos.flatMap(p => p.inscricoes);
 
   const linhas = Object.entries(MODALIDADES).map(([id, mod]) => {
-    const total = MAX_VAGAS;
+    const total = getMaxVagas(mod) > 0 ? getMaxVagas(mod) : "∞";
     const qtd   = todasInscricoes.filter(i => i.modalidade_id == id).length;
     const livre  = total - qtd;
     const pct    = Math.round(qtd / total * 100);
@@ -2089,8 +2092,8 @@ function renderRelatorio(participantes, inscricoes) {
       <td style="text-align:center"><span class="badge-confirmado">${d.confirmados}</span></td>
       <td style="text-align:center"><span class="badge-espera">${d.espera}</span></td>
       <td style="text-align:center"><span class="badge-total">${total}</span></td>
-      <td style="text-align:center">${MAX_VAGAS}</td>
-      <td style="text-align:center">${Math.max(0, MAX_VAGAS - d.confirmados)}</td>
+      <td style="text-align:center">${getMaxVagas(d.modalidade_id) > 0 ? getMaxVagas(d.modalidade_id) : "Ilimitado"}</td>
+      <td style="text-align:center">${getMaxVagas(d.modalidade_id) > 0 ? Math.max(0, getMaxVagas(d.modalidade_id) - d.confirmados) : "∞"}</td>
     </tr>`;
   }).join('');
 
@@ -2113,7 +2116,7 @@ function renderRelatorio(participantes, inscricoes) {
         <td style="text-align:center">${totalConf}</td>
         <td style="text-align:center">${totalEsp}</td>
         <td style="text-align:center">${totalConf + totalEsp}</td>
-        <td style="text-align:center">${Object.keys(MODALIDADES).length * MAX_VAGAS}</td>
+        <td style="text-align:center">${Object.values(MAX_VAGAS_POR_MOD).filter(v=>v>0).reduce((a,b)=>a+b,0)} + ∞</td>
         <td style="text-align:center">—</td>
       </tr>
     </tbody>
@@ -2196,14 +2199,14 @@ function imprimirQuantitativo() {
     const conf = todasInscricoes.filter(i => i.modalidade_id == id && i.status !== 'lista_espera').length;
     const esp  = todasInscricoes.filter(i => i.modalidade_id == id && i.status === 'lista_espera').length;
     totalConf += conf; totalEsp += esp;
-    const disp = Math.max(0, MAX_VAGAS - conf);
+    const lim2 = getMaxVagas(modalidade_id); const disp = lim2 > 0 ? Math.max(0, lim2 - conf) : Infinity;
     return `<tr style="background:${id%2===0?'#fff':'#f8fafc'}">
       <td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:600;">${mod.nome}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;">${mod.sub}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#166534;">${conf}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#92400e;">${esp}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1a56a0;">${conf+esp}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${MAX_VAGAS}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;">${getMaxVagas(modalidade_id) > 0 ? getMaxVagas(modalidade_id) : "Ilimitado"}</td>
       <td style="padding:8px 12px;border:1px solid #e2e8f0;text-align:center;color:${disp===0?'#dc2626':'#166534'};font-weight:700;">${disp}</td>
     </tr>`;
   }).join('');
@@ -2225,7 +2228,7 @@ function imprimirQuantitativo() {
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalConf}</td>
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalEsp}</td>
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalConf+totalEsp}</td>
-        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${Object.keys(MODALIDADES).length * MAX_VAGAS}</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${Object.values(MAX_VAGAS_POR_MOD).filter(v=>v>0).reduce((a,b)=>a+b,0)} + Pesca ∞</td>
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">—</td>
       </tfoot>
     </table>
