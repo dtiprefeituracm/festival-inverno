@@ -644,11 +644,24 @@ function atualizarMetricas(participantes, inscricoes) {
   ).length;
   document.getElementById('m-duplas').textContent = duplas;
 
-  // Contagem por cidade — alimenta o popup
-  const contagemCidades = {};
+  // Contagem por cidade — normaliza capitalização para agrupar duplicatas
+  // (ex: "COSTA MARQUES" e "Costa marques" viram "Costa Marques")
+  function normCidade(c) {
+    return (c || '').trim().toLowerCase()
+      .split(/[\s-]/)
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ')
+      .replace(/ ([A-Z]) /g, (_, l) => ' ' + l + ' '); // preserva siglas 1 letra
+  }
+  const contagemCidades = {};   // chave = nome normalizado
+  const nomeCidadeCanon = {};   // chave norm → nome exibição
   participantes.forEach(p => {
-    const c = (p.cidade || '').trim();
-    if (c) contagemCidades[c] = (contagemCidades[c] || 0) + 1;
+    const raw  = (p.cidade || '').trim();
+    if (!raw) return;
+    const norm = normCidade(raw);
+    contagemCidades[norm] = (contagemCidades[norm] || 0) + 1;
+    // Prefere o nome que já está em Title Case (menos maiúsculas consecutivas)
+    if (!nomeCidadeCanon[norm] || raw === norm) nomeCidadeCanon[norm] = norm;
   });
   const cidades = Object.keys(contagemCidades);
   document.getElementById('m-cidades').textContent = cidades.length;
@@ -656,11 +669,13 @@ function atualizarMetricas(participantes, inscricoes) {
   const lista = document.getElementById('cidades-lista');
   if (lista) {
     const ordenadas = cidades.sort((a, b) => contagemCidades[b] - contagemCidades[a]);
-    lista.innerHTML = ordenadas.map(c => `
-      <div class="cidade-row" onclick="event.stopPropagation();document.getElementById('filtro-cidade').value='${c.replace(/'/g,"\'")}';filtrar();fecharCidadesPopup();">
-        <span class="cidade-nome">${c}</span>
+    lista.innerHTML = ordenadas.map(c => {
+      const nome = nomeCidadeCanon[c] || c;
+      return `<div class="cidade-row" onclick="event.stopPropagation();document.getElementById('filtro-cidade').value='${nome.replace(/'/g,"\'")}';filtrar();fecharCidadesPopup();">
+        <span class="cidade-nome">${nome}</span>
         <span class="cidade-qtd">${contagemCidades[c]}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // Lista de espera
@@ -823,20 +838,32 @@ function fecharCidadesPopupFora(e) {
   if (card && !card.contains(e.target)) fecharCidadesPopup();
 }
 
+function normCidadeAdmin(c) {
+  return (c || '').trim().toLowerCase()
+    .split(/[\s-]/)
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ');
+}
+
 function preencherCidades(participantes) {
-  // Apenas cidades que têm inscritos — dinâmico, sem lista fixa
-  const cidades = [...new Set(
-    participantes.map(p => p.cidade).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  // Normaliza e agrupa cidades com grafia diferente (maiúsculas, etc.)
+  const mapa = {}; // norm → nome canônico
+  participantes.forEach(p => {
+    const raw = (p.cidade || '').trim();
+    if (!raw) return;
+    const norm = normCidadeAdmin(raw);
+    if (!mapa[norm]) mapa[norm] = norm;
+  });
+  const cidades = Object.values(mapa).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
   const sel = document.getElementById('filtro-cidade');
-  const valorAtual = sel.value; // preserva seleção ao recarregar
+  const valorAtual = normCidadeAdmin(sel.value);
   sel.innerHTML = '<option value="">Todas as cidades</option>';
   cidades.forEach(c => {
     const opt = document.createElement('option');
     opt.value = c;
     opt.textContent = c;
-    if (c === valorAtual) opt.selected = true;
+    if (normCidadeAdmin(c) === valorAtual) opt.selected = true;
     sel.appendChild(opt);
   });
 }
@@ -856,7 +883,7 @@ function filtrar() {
       (p.cpf || '').includes(busca);
     const eventoBate = !evento ||
       p.inscricoes.some(i => i.modalidade_id == evento);
-    const cidadeBate = !cidade || (p.cidade || '').toLowerCase() === cidade.toLowerCase();
+    const cidadeBate = !cidade || normCidadeAdmin(p.cidade) === normCidadeAdmin(cidade);
     const jaPresente = p.inscricoes.some(i => i.presenca === true);
     const credBate = !cred ||
       (cred === 'sim' && jaPresente) ||
@@ -1144,7 +1171,7 @@ function imprimirLista() {
   const lista = todosInscritos.filter(p => {
     const textoBate = !busca || p.nome_completo.toLowerCase().includes(busca) || (p.cpf || '').includes(busca);
     const eventoBate = !evento || p.inscricoes.some(i => i.modalidade_id == evento);
-    const cidadeBate = !cidade || (p.cidade || '').toLowerCase() === cidade.toLowerCase();
+    const cidadeBate = !cidade || normCidadeAdmin(p.cidade) === normCidadeAdmin(cidade);
     return textoBate && eventoBate && cidadeBate;
   });
 
