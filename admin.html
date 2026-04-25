@@ -2093,8 +2093,8 @@ function renderRelatorio(participantes, inscricoes) {
       <td style="text-align:center"><span class="badge-confirmado">${d.confirmados}</span></td>
       <td style="text-align:center"><span class="badge-espera">${d.espera}</span></td>
       <td style="text-align:center"><span class="badge-total">${total}</span></td>
-      <td style="text-align:center">${getMaxVagas(d.modalidade_id) > 0 ? getMaxVagas(d.modalidade_id) : "Ilimitado"}</td>
-      <td style="text-align:center">${getMaxVagas(d.modalidade_id) > 0 ? Math.max(0, getMaxVagas(d.modalidade_id) - d.confirmados) : "∞"}</td>
+      <td style="text-align:center">${getMaxVagas(id) > 0 ? getMaxVagas(id) : "Ilimitado"}</td>
+      <td style="text-align:center">${getMaxVagas(id) > 0 ? Math.max(0, getMaxVagas(id) - d.confirmados) : "∞"}</td>
     </tr>`;
   }).join('');
 
