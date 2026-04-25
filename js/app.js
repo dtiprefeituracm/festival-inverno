@@ -441,7 +441,7 @@ async function enviarInscricao() {
       insc.parceiro_telefone = document.getElementById('p' + id + '-tel').value.trim();
       // Canoagem tem campo nome da dupla (p4-equipe)
       const equipeEl = document.getElementById('p' + id + '-equipe');
-      if (equipeEl) insc.equipe_nome = equipeEl.value.trim();
+      if (equipeEl) insc.nome_equipe = equipeEl.value.trim();
     }
 
     // Equipes (Pesca): até 3 membros adicionais
@@ -902,7 +902,7 @@ function renderizarConsulta() {
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
           ` : (i.modalidade_id === 4 ? `
             <label style="font-size:11px;color:#64748b;display:block;margin-bottom:2px;">Nome da dupla / equipe</label>
-            <input type="text" id="edit-equipe-${i.id}" value="${i.equipe_nome || ''}" maxlength="60"
+            <input type="text" id="edit-equipe-${i.id}" value="${i.nome_equipe || ''}" maxlength="60"
               style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
           ` : '')}
           ${isPesca ? '<div style="font-size:11px;color:#60a5fa;background:#0f172a;border-radius:8px;padding:8px 10px;margin-bottom:8px;line-height:1.6;">🚤 Equipe: <strong>1 piloto</strong> + até <strong>3 pescadores</strong> (mín. 2 pessoas, máx. 4)</div>' : ''}
@@ -976,7 +976,7 @@ async function salvarEdicaoMembros(inscId, modId) {
     parceiro_telefone: document.getElementById('edit-p2-tel-'  + inscId)?.value.trim() || null,
   };
   if (isCanoagem) {
-    dados.equipe_nome = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
+    dados.nome_equipe = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
   }
   if (isPesca) {
     dados.nome_equipe       = document.getElementById('edit-equipe-' + inscId)?.value.trim() || null;
@@ -1061,7 +1061,7 @@ async function submeterAdicao() {
       insc.parceiro_cpf      = document.getElementById('add-p' + id + '-cpf').value.trim();
       insc.parceiro_telefone = document.getElementById('add-p' + id + '-tel').value.trim();
       const addEquipeEl = document.getElementById('add-p' + id + '-equipe');
-      if (addEquipeEl) insc.equipe_nome = addEquipeEl.value.trim();
+      if (addEquipeEl) insc.nome_equipe = addEquipeEl.value.trim();
     }
     await post('inscricoes', insc);
   }
