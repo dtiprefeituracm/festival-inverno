@@ -528,7 +528,7 @@ const MODALIDADES = {
   7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca', dupla: false, equipe: true  },
 };
 // Máximo de vagas por modalidade (0 = ilimitado)
-const MAX_VAGAS_POR_MOD = { 1:20, 2:20, 3:20, 4:20, 5:20, 6:0, 7:0 };
+const MAX_VAGAS_POR_MOD = { 1:20, 2:20, 3:20, 4:0, 5:20, 6:0, 7:0 };
 function getMaxVagas(modId) { return MAX_VAGAS_POR_MOD[Number(modId)] ?? 0; }
 const MAX_VAGAS = 20; // mantido para compatibilidade de totais gerais
 const LOGO_URL = window.location.origin + '/10.png';
@@ -2229,7 +2229,7 @@ function imprimirQuantitativo() {
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalConf}</td>
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalEsp}</td>
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${totalConf+totalEsp}</td>
-        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${Object.values(MAX_VAGAS_POR_MOD).filter(v=>v>0).reduce((a,b)=>a+b,0)} + Pesca ∞</td>
+        <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">${Object.values(MAX_VAGAS_POR_MOD).filter(v=>v>0).reduce((a,b)=>a+b,0)} + Canoagem e Pesca ∞</td>
         <td style="padding:9px 12px;border:1px solid #e2e8f0;text-align:center;">—</td>
       </tfoot>
     </table>
