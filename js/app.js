@@ -376,17 +376,18 @@ async function enviarInscricao() {
     for (const id of selecionados) statusPorModalidade[id] = 'confirmado';
   }
 
-  // Verificar vagas disponíveis
+  // Verificar vagas disponíveis e atualizar status (confirmado ou lista_espera)
+  // ATENÇÃO: conta apenas confirmados para não incluir quem já está na fila de espera
   for (const id of selecionados) {
-    const check = await get('inscricoes', `modalidade_id=eq.${id}&select=id`);
+    const check = await get('inscricoes', `modalidade_id=eq.${id}&status=eq.confirmado&select=id`);
     if (getMaxVagas(id) > 0 && Array.isArray(check) && check.length >= getMaxVagas(id)) {
-      erro.textContent = `As vagas para ${NOMES_MOD[id]} estão esgotadas. Escolha outra modalidade.`;
-      // Marcar o card visualmente
-      carregarVagas();
-      erro.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Enviar inscrição';
-      return;
+      // Vagas esgotadas: inscreve na lista de espera (não bloqueia o envio)
+      statusPorModalidade[id] = 'lista_espera';
+    } else {
+      // Garante confirmado se havia status incorreto no fallback
+      if (statusPorModalidade[id] !== 'lista_espera') {
+        statusPorModalidade[id] = 'confirmado';
+      }
     }
   }
 
