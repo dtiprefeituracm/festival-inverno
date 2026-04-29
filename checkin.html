@@ -523,7 +523,7 @@ async function _checarPermissaoCamera() {
   return 'unknown';
 }
 
-function _mostrarErroCamera(tipoErro, retryFn) {
+function _mostrarErroCamera(tipoErro, retryFn, errInfo) {
   document.getElementById('qr-opcoes').style.display = 'none';
   document.getElementById('camera-status').style.display = 'none';
   const ant = document.getElementById('camera-erro-painel');
@@ -533,33 +533,53 @@ function _mostrarErroCamera(tipoErro, retryFn) {
   painel.id = 'camera-erro-painel';
   painel.style.cssText = 'margin:16px;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:20px;';
 
+  // Domínio atual (para não hard-codar festival-inverno.vercel.app)
+  const dominio = (typeof location !== 'undefined' && location.hostname) ? location.hostname : 'este site';
+
   let html = '';
-  if (tipoErro === 'denied') {
+  if (tipoErro === 'insecure') {
+    html = `
+      <div style="text-align:center;font-size:40px;margin-bottom:12px;">🔓</div>
+      <div style="color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;">
+        Conexão não segura (HTTP)
+      </div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:14px;">
+        A câmera só funciona em sites com <strong>HTTPS</strong>. Acesse o site digitando
+        <strong style="color:#fbbf24;">https://</strong> no início do endereço, ou use o botão
+        <strong style="color:#34d399;">📸 Escanear QR Code</strong> (que abre a câmera do sistema e funciona sem HTTPS).
+      </div>`;
+  } else if (tipoErro === 'denied') {
     html = `
       <div style="text-align:center;font-size:40px;margin-bottom:12px;">🔒</div>
       <div style="color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;">
-        Câmera bloqueada pelo navegador
+        Permissão da câmera negada para <span style="color:#fbbf24;">${dominio}</span>
       </div>
       <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:14px;">
-        O navegador negou o acesso à câmera. Siga os passos abaixo para liberar:
+        A permissão precisa ser liberada <strong>especificamente para este site</strong>
+        (mesmo que o app do navegador já tenha acesso à câmera no Android).
       </div>
       <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;">
-        <div style="color:#60a5fa;font-size:12px;font-weight:700;margin-bottom:8px;">📱 Chrome / Android:</div>
+        <div style="color:#34d399;font-size:12px;font-weight:700;margin-bottom:8px;">✅ MÉTODO MAIS RÁPIDO (Chrome/Android):</div>
         <div style="color:#cbd5e1;font-size:12px;line-height:2;">
-          1. Toque nos <strong style="color:#fbbf24;">⋮ 3 pontinhos</strong> do Chrome (canto superior)<br>
-          2. Vá em <strong style="color:#fbbf24;">Configurações → Configurações do site → Câmera</strong><br>
-          3. Encontre <strong style="color:#fbbf24;">festival-inverno.vercel.app</strong> e mude para <strong style="color:#34d399;">Permitir</strong><br>
-          4. Volte e toque em <strong style="color:#34d399;">"🔄 Tentar novamente"</strong> abaixo<br><br>
-          <strong style="color:#fbbf24;">Atalho:</strong> Cole na barra de endereço:<br>
-          <span style="color:#60a5fa;font-family:monospace;">chrome://settings/content/camera</span>
+          1. Toque no <strong style="color:#fbbf24;">🔒 cadeado</strong> ou <strong style="color:#fbbf24;">ⓘ ícone</strong> ao lado do endereço acima<br>
+          2. Toque em <strong style="color:#fbbf24;">"Permissões"</strong> ou <strong style="color:#fbbf24;">"Configurações do site"</strong><br>
+          3. Em <strong style="color:#fbbf24;">Câmera</strong>, mude para <strong style="color:#34d399;">Permitir</strong><br>
+          4. <strong style="color:#fbbf24;">RECARREGUE A PÁGINA</strong> (toque no botão abaixo)
         </div>
       </div>
-      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px;">
-        <div style="color:#60a5fa;font-size:12px;font-weight:700;margin-bottom:8px;">🍎 Safari / iPhone:</div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="color:#60a5fa;font-size:12px;font-weight:700;margin-bottom:8px;">🍎 iPhone (Safari):</div>
         <div style="color:#cbd5e1;font-size:12px;line-height:2;">
-          1. Abra <strong style="color:#fbbf24;">Ajustes → Safari → Câmera</strong><br>
-          2. Selecione <strong style="color:#34d399;">Permitir</strong><br>
-          3. Volte e recarregue a página
+          1. Toque em <strong style="color:#fbbf24;">"AA"</strong> à esquerda do endereço<br>
+          2. Toque em <strong style="color:#fbbf24;">"Configurações do site"</strong><br>
+          3. Em <strong style="color:#fbbf24;">Câmera</strong>, escolha <strong style="color:#34d399;">Permitir</strong><br>
+          4. <strong style="color:#fbbf24;">RECARREGUE A PÁGINA</strong>
+        </div>
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:14px;border:1px dashed #475569;">
+        <div style="color:#a78bfa;font-size:12px;font-weight:700;margin-bottom:6px;">💡 Solução rápida que sempre funciona:</div>
+        <div style="color:#cbd5e1;font-size:12px;line-height:1.7;">
+          Use o botão <strong style="color:#34d399;">📸 Escanear QR Code</strong> da tela anterior — ele abre a câmera do sistema e <strong>não precisa de permissão de site</strong>.
         </div>
       </div>`;
   } else if (tipoErro === 'notfound') {
@@ -569,7 +589,17 @@ function _mostrarErroCamera(tipoErro, retryFn) {
         Nenhuma câmera encontrada
       </div>
       <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:16px;">
-        Este dispositivo não possui câmera disponível. Use o botão Escanear ou a busca manual.
+        Este dispositivo não possui câmera disponível, ou nenhuma câmera foi detectada pelo navegador.
+        Use o botão <strong style="color:#34d399;">📸 Escanear QR Code</strong> ou a busca manual.
+      </div>`;
+  } else if (tipoErro === 'busy') {
+    html = `
+      <div style="text-align:center;font-size:40px;margin-bottom:12px;">📷</div>
+      <div style="color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;">
+        Câmera em uso por outro app
+      </div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:16px;">
+        A câmera está sendo usada por outro aplicativo (WhatsApp, Zoom, etc.). Feche o outro app e tente novamente.
       </div>`;
   } else {
     html = `
@@ -578,26 +608,53 @@ function _mostrarErroCamera(tipoErro, retryFn) {
         Erro ao acessar a câmera
       </div>
       <div style="color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:16px;">
-        Não foi possível abrir a câmera. Tente liberar a permissão e toque em "Tentar novamente".
+        Não foi possível abrir a câmera. Use o botão <strong style="color:#34d399;">📸 Escanear QR Code</strong> ou a busca manual abaixo.
       </div>`;
   }
 
-  painel.innerHTML = html + `
-    <button id="btn-retry-camera"
-      style="width:100%;padding:14px;background:linear-gradient(135deg,#1a56a0,#1d4ed8);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">
-      🔄 Tentar novamente
+  // Botões — sempre incluem Recarregar (essencial após mudar permissão), Voltar, Buscar
+  let botoes = '';
+  if (tipoErro !== 'notfound') {
+    botoes += `<button id="btn-reload-page"
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">
+      🔄 Recarregar página (após liberar permissão)
+    </button>`;
+  }
+  botoes += `<button id="btn-retry-camera"
+      style="width:100%;padding:12px;background:#1a56a0;color:white;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px;">
+      🎥 Tentar abrir câmera novamente
     </button>
     <button id="btn-voltar-opcoes"
       style="width:100%;padding:12px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:12px;font-size:13px;cursor:pointer;margin-bottom:8px;">
-      ← Voltar às opções (usar 📸 Escanear)
+      ← Voltar (usar 📸 Escanear ou outras opções)
     </button>
     <button id="btn-ir-busca"
       style="width:100%;padding:12px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:12px;font-size:13px;cursor:pointer;">
       🔍 Buscar por ficha ou CPF
-    </button>
-  `;
+    </button>`;
+
+  // Detalhes técnicos (colapsado) — útil para o técnico diagnosticar
+  let detalhes = '';
+  if (errInfo && errInfo.name) {
+    detalhes = `
+      <details style="margin-top:12px;font-size:11px;color:#64748b;">
+        <summary style="cursor:pointer;padding:4px 0;">🔧 Detalhes técnicos</summary>
+        <div style="background:#0f172a;border-radius:8px;padding:8px;margin-top:6px;font-family:monospace;word-break:break-all;">
+          <div><strong>${errInfo.name}</strong></div>
+          ${errInfo.message ? `<div style="color:#94a3b8;margin-top:4px;">${errInfo.message}</div>` : ''}
+          ${errInfo.permState ? `<div style="color:#94a3b8;margin-top:4px;">permissions.query: ${errInfo.permState}</div>` : ''}
+          <div style="color:#94a3b8;margin-top:4px;">secureContext: ${window.isSecureContext ? 'sim' : 'NÃO'}</div>
+          <div style="color:#94a3b8;margin-top:2px;">protocolo: ${location.protocol}</div>
+        </div>
+      </details>`;
+  }
+
+  painel.innerHTML = html + botoes + detalhes;
 
   document.getElementById('modo-qr').appendChild(painel);
+
+  const btnReload = document.getElementById('btn-reload-page');
+  if (btnReload) btnReload.onclick = () => location.reload();
 
   document.getElementById('btn-retry-camera').onclick = () => {
     painel.remove();
@@ -622,13 +679,30 @@ async function _abrirCamera(mensagemStatus, retryFn) {
   if (errAnt) errAnt.remove();
   document.getElementById('qr-opcoes').style.display = 'none';
 
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    _mostrarErroCamera('notfound', retryFn);
+  // 1. Verificar contexto seguro (HTTPS) — getUserMedia exige isso
+  if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    _mostrarErroCamera('insecure', retryFn, { name: 'SecurityError', message: 'Página servida via HTTP — HTTPS é obrigatório para getUserMedia.' });
     return false;
   }
 
-  // NÃO verifica permissão antes — vai direto pedir ao browser
-  // (permissions.query não é confiável em todos os Android)
+  // 2. Verificar suporte à API
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    _mostrarErroCamera('notfound', retryFn, { name: 'NotSupportedError', message: 'navigator.mediaDevices.getUserMedia indisponível neste navegador.' });
+    return false;
+  }
+
+  // 3. Pré-checagem de permissão: se já está 'denied' (sticky), não adianta chamar getUserMedia
+  //    — o navegador rejeitaria silenciosamente. Mostramos a UI de desbloqueio direto.
+  const permState = await _checarPermissaoCamera();
+  if (permState === 'denied') {
+    _mostrarErroCamera('denied', retryFn, {
+      name: 'NotAllowedError',
+      message: 'Permissão pré-bloqueada para este site (permissions.query=denied).',
+      permState
+    });
+    return false;
+  }
+
   const statusEl = document.getElementById('camera-status');
   statusEl.style.display = 'block';
   statusEl.textContent = '⏳ Solicitando acesso à câmera...';
@@ -637,10 +711,12 @@ async function _abrirCamera(mensagemStatus, retryFn) {
   let stream = null;
   let ultimoErro = null;
 
-  // Tenta do mais simples ao mais específico
+  // 4. Tenta do mais específico (traseira) ao mais simples
+  //    A ordem foi invertida: a câmera traseira é a desejada para QR — pedir ela primeiro
+  //    aumenta a chance do prompt já vir orientado corretamente em iOS.
   for (const constraints of [
-    { video: true },
     { video: { facingMode: { ideal: 'environment' } } },
+    { video: true },
     { video: { facingMode: 'user' } }
   ]) {
     try {
@@ -654,12 +730,22 @@ async function _abrirCamera(mensagemStatus, retryFn) {
   if (!stream) {
     statusEl.style.display = 'none';
     const n = ultimoErro?.name || '';
-    if (n === 'NotAllowedError' || n === 'PermissionDeniedError')
-      _mostrarErroCamera('denied', retryFn);
-    else if (n === 'NotFoundError' || n === 'DevicesNotFoundError')
-      _mostrarErroCamera('notfound', retryFn);
-    else
-      _mostrarErroCamera('other', retryFn);
+    const errInfo = { name: n, message: ultimoErro?.message || '' };
+
+    // Re-checa permissão APÓS falha — distingue "negou agora" de "está bloqueado fixo"
+    try { errInfo.permState = await _checarPermissaoCamera(); } catch(_) {}
+
+    if (n === 'NotAllowedError' || n === 'PermissionDeniedError' || errInfo.permState === 'denied') {
+      _mostrarErroCamera('denied', retryFn, errInfo);
+    } else if (n === 'NotFoundError' || n === 'DevicesNotFoundError' || n === 'OverconstrainedError') {
+      _mostrarErroCamera('notfound', retryFn, errInfo);
+    } else if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') {
+      _mostrarErroCamera('busy', retryFn, errInfo);
+    } else if (n === 'SecurityError') {
+      _mostrarErroCamera('insecure', retryFn, errInfo);
+    } else {
+      _mostrarErroCamera('other', retryFn, errInfo);
+    }
     return false;
   }
 
