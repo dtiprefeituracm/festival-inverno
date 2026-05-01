@@ -104,6 +104,15 @@ export default async function handler(req, res) {
       return res.status(r.status).json({ erro: 'Falha no upload', detalhe: errData });
     }
 
+    // Busca com query string livre (para logs)
+    if (acao === 'buscarQuery') {
+      const { tabela: tbl, query: q } = req.body;
+      const url2 = q ? `${SUPABASE_URL}/rest/v1/${tbl}?${q}` : `${SUPABASE_URL}/rest/v1/${tbl}?select=*`;
+      const r2 = await fetch(url2, { headers });
+      const d2 = await r2.json();
+      return res.status(200).json(d2);
+    }
+
     return res.status(400).json({ erro: 'Ação não reconhecida' });
 
   } catch (err) {
