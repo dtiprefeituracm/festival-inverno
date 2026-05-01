@@ -191,11 +191,15 @@
       <h1>Credenciamento</h1>
       <p>Festival de Inverno 2026 — SEMESP</p>
     </div>
-    <label>Senha de acesso</label>
+    <label>Usuário</label>
+    <input type="text" id="login-user" placeholder="admin ou seu login"
+           onkeydown="if(event.key==='Enter') document.getElementById('login-senha').focus()"
+           autocomplete="username">
+    <label>Senha</label>
     <input type="password" id="login-senha" placeholder="••••••••"
            onkeydown="if(event.key==='Enter') entrar()" autocomplete="current-password">
     <button class="login-btn" onclick="entrar()">Entrar</button>
-    <div class="login-erro" id="login-erro">Senha incorreta.</div>
+    <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
   </div>
 </div>
 
@@ -422,20 +426,30 @@ if ('BarcodeDetector' in window) {
 // LOGIN
 // ================================================================
 async function entrar() {
-  const senha = document.getElementById('login-senha').value;
-  const erro  = document.getElementById('login-erro');
+  const userEl = document.getElementById('login-user');
+  const usuario = userEl ? userEl.value.trim() : 'admin';
+  const senha   = document.getElementById('login-senha').value;
+  const erro    = document.getElementById('login-erro');
   erro.style.display = 'none';
+  if (!usuario || !senha) {
+    erro.textContent = 'Preencha usuário e senha.';
+    erro.style.display = 'block';
+    return;
+  }
   try {
     const r = await fetch('/api/admin-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: 'admin', senha })
+      body: JSON.stringify({ usuario, senha })
     });
     const d = await r.json();
     if (d.ok) {
-      localStorage.setItem('checkin_auth', '1'); // persiste ao F5
+      localStorage.setItem('checkin_auth', '1');
+      localStorage.setItem('checkin_user', usuario);
+      localStorage.setItem('checkin_nome', d.nome || usuario);
       mostrarApp();
     } else {
+      erro.textContent = 'Usuário ou senha incorretos.';
       erro.style.display = 'block';
     }
   } catch(e) {
