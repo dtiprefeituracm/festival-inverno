@@ -1798,7 +1798,7 @@ function renderCredenciamento(participantes) {
       + '<td style="padding:7px 12px;font-weight:600;">' + p.nome_completo + '</td>'
       + '<td style="padding:7px 12px;color:#475569;">' + modNome + '</td>'
       + '<td style="padding:7px 12px;color:#16a34a;font-weight:600;">✅ ' + horario + '</td>'
-      + '<td style="padding:7px 12px;"><button onclick="descredenciar('' + p.id + '','' + inscId2 + '','' + p.nome_completo.replace(/'/g,"\'") + '')" style="padding:3px 8px;background:#fff5f5;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;">↩ Descredenciar</button></td>'
+      + '<td style="padding:7px 12px;"><button onclick="descredenciar(\'' + p.id + '\',\'' + inscId2 + '\',\'' + p.nome_completo.replace(/'/g, "\\\'") + '\')" style="padding:3px 8px;background:#fff5f5;color:#dc2626;border:1px solid #fecaca;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;">↩ Descredenciar</button></td>'
       + '</tr>';
   });
 
