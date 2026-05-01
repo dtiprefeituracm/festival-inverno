@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<!--
+  Portal da Transparência — Festival de Inverno 2026
+  Prefeitura Municipal de Costa Marques / RO — SEMESP
+  © 2026 Ewerson Luiz de Oliveira — Gestor em TI
+  LGPD: Dados exibidos conforme Lei nº 13.709/2018
+  Dados pessoais (CPF, telefone, e-mail) são omitidos.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal da Transparência — Festival de Inverno 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f0f4f8; color: #1e293b; }
+
+  /* ── Header ── */
+  .header { background: linear-gradient(135deg, #1a3a6b 0%, #1a56a0 100%); color: white; padding: 0; }
+  .header-top { display: flex; align-items: center; gap: 16px; padding: 20px 24px 16px; }
+  .header-logos { display: flex; align-items: center; gap: 12px; }
+  .header-logos img { height: 60px; width: auto; object-fit: contain; background: white; border-radius: 8px; padding: 4px; }
+  .header-divider { width: 1px; height: 50px; background: rgba(255,255,255,0.3); }
+  .header-text h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-text p { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+  .header-nav { background: rgba(0,0,0,0.2); padding: 0 24px; display: flex; gap: 2px; flex-wrap: wrap; }
+  .nav-btn { padding: 10px 16px; color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  .nav-btn:hover { color: white; }
+  .nav-btn.ativo { color: white; border-bottom-color: #60a5fa; }
+  .lgpd-badge { margin-left: auto; padding: 6px 12px; background: rgba(255,255,255,0.15); border-radius: 20px; font-size: 10px; color: rgba(255,255,255,0.85); align-self: center; white-space: nowrap; }
+
+  /* ── Abas ── */
+  .aba { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
+  .aba.ativa { display: block; }
+
+  /* ── Cards ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; }
+  .card-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .card-val { font-size: 28px; font-weight: 800; color: #1a56a0; }
+  .card-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+  /* ── Seção ── */
+  .secao { background: white; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; overflow: hidden; }
+  .secao-header { padding: 14px 18px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .secao-titulo { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .secao-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .secao-body { padding: 16px 18px; }
+
+  /* ── Tabela ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 9px 12px; background: #f8fafc; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .badge-ouro { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+  .badge-prata { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .badge-bronze { background: #fef3c7; color: #92400e; border: 1px solid #fdba74; filter: sepia(0.3); }
+  .badge-areia { background: #fef3c7; color: #92400e; }
+  .badge-agua { background: #dbeafe; color: #1e40af; }
+  .badge-pesca { background: #ecfdf5; color: #065f46; }
+  .badge-ok { background: #dcfce7; color: #166534; }
+
+  /* ── Barra de progresso ── */
+  .bar-wrap { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; background: #1a56a0; border-radius: 4px; }
+
+  /* ── Busca ── */
+  .busca-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .busca-wrap input, .busca-wrap select {
+    padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+    font-size: 13px; outline: none; color: #1e293b;
+  }
+  .busca-wrap input { flex: 1; min-width: 220px; }
+  .busca-wrap input:focus, .busca-wrap select:focus { border-color: #1a56a0; }
+
+  /* ── Ganhador ── */
+  .ganhador-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 12px; display: flex; gap: 14px; align-items: flex-start; cursor: pointer; transition: all 0.15s; }
+  .ganhador-card:hover { border-color: #1a56a0; background: #f8faff; box-shadow: 0 2px 8px rgba(26,86,160,0.1); }
+  .ganhador-medal { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .medal-1 { background: #fef3c7; }
+  .medal-2 { background: #f1f5f9; }
+  .medal-3 { background: #fed7aa; }
+  .ganhador-info { flex: 1; }
+  .ganhador-nome { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .ganhador-mod { font-size: 12px; color: #1a56a0; font-weight: 600; margin-top: 2px; }
+  .ganhador-detalhe { font-size: 11px; color: #64748b; margin-top: 3px; }
+  .ganhador-foto { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; flex-shrink: 0; }
+  .sem-foto { width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; background: #f8fafc; }
+
+  /* ── Modal de ganhador ── */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .modal-bg.aberto { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-titulo { font-size: 16px; font-weight: 700; color: #1e293b; }
+  .modal-fechar { background: none; border: none; font-size: 22px; cursor: pointer; color: #64748b; }
+  .modal-section { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 8px; }
+  .modal-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .modal-row:last-child { border-bottom: none; }
+  .modal-label { color: #64748b; }
+  .modal-val { color: #1e293b; font-weight: 600; text-align: right; max-width: 60%; }
+  .modal-foto-grande { width: 100%; max-height: 280px; object-fit: cover; border-radius: 10px; margin: 12px 0; border: 2px solid #e2e8f0; }
+
+  /* ── Timeline evento ── */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+  .tl-item { position: relative; margin-bottom: 16px; }
+  .tl-dot { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #1a56a0; border: 2px solid white; box-shadow: 0 0 0 2px #bfdbfe; }
+  .tl-titulo { font-size: 13px; font-weight: 700; color: #1e293b; }
+  .tl-data { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+  .tl-body { font-size: 12px; color: #475569; line-height: 1.6; }
+
+  /* ── Galeria ── */
+  .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .galeria-item { border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; }
+  .galeria-item img { width: 100%; height: 130px; object-fit: cover; display: block; transition: transform 0.2s; }
+  .galeria-item:hover img { transform: scale(1.04); }
+  .galeria-legenda { padding: 6px 8px; font-size: 11px; color: #475569; background: #f8fafc; }
+
+  /* ── LGPD notice ── */
+  .lgpd-aviso { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 14px; font-size: 12px; color: #1e40af; margin-bottom: 16px; }
+  .lgpd-aviso strong { display: block; margin-bottom: 3px; }
+
+  /* ── Vazio / Loading ── */
+  .vazio { text-align: center; padding: 32px; color: #94a3b8; font-size: 13px; }
+  .loading { text-align: center; padding: 40px; color: #94a3b8; font-size: 13px; }
+
+  /* ── Botões ── */
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-primary { background: #1a56a0; color: white; }
+  .btn-primary:hover { background: #154794; }
+  .btn-outline { background: white; color: #1a56a0; border: 1px solid #1a56a0; }
+  .btn-outline:hover { background: #eff6ff; }
+
+  /* ── Status ── */
+  .status-publicado { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; }
+  .dot-verde { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; }
+  .dot-cinza { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; }
+
+  /* ── Footer ── */
+  .footer { text-align: center; padding: 24px 16px 32px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 8px; }
+
+  @media (max-width: 600px) {
+    .cards { grid-template-columns: 1fr 1fr; }
+    .header-logos img { height: 44px; }
+    .header-text h1 { font-size: 16px; }
+  }
+
+  @media print {
+    .header-nav, .busca-wrap, .btn, .modal-fechar { display: none !important; }
+    .aba { padding: 0; }
+    @page { margin: 1.5cm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  HEADER                                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-logos">
+      <img src="10.png" alt="SEMESP">
+      <div class="header-divider"></div>
+      <img src="gestao.png" alt="Prefeitura" onerror="this.style.display='none'">
+    </div>
+    <div class="header-text">
+      <h1>Portal da Transparência</h1>
+      <p>Festival de Inverno 2026 — SEMESP · Costa Marques / RO</p>
+    </div>
+    <div class="lgpd-badge">🔒 LGPD compliant</div>
+  </div>
+  <div class="header-nav">
+    <button class="nav-btn ativo" onclick="mostrarAba('visao-geral')">📊 Visão Geral</button>
+    <button class="nav-btn" onclick="mostrarAba('participantes')">👥 Participantes</button>
+    <button class="nav-btn" onclick="mostrarAba('ganhadores')">🏆 Ganhadores</button>
+    <button class="nav-btn" onclick="mostrarAba('historico')">📖 Histórico</button>
+    <button class="nav-btn" onclick="mostrarAba('galeria')">📸 Galeria</button>
+    <button class="nav-btn" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: VISÃO GERAL                        -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba ativa" id="aba-visao-geral">
+  <!-- Aviso LGPD -->
+  <div class="lgpd-aviso" style="margin-top:16px;">
+    <strong>🔒 Proteção de Dados — Lei nº 13.709/2018 (LGPD)</strong>
+    Este portal exibe apenas dados públicos para fins de transparência. CPF, telefone, e-mail e outras informações pessoais sensíveis são omitidos conforme a LGPD.
+  </div>
+
+  <!-- Métricas gerais -->
+  <div class="cards" id="cards-metricas">
+    <div class="card">
+      <div class="card-label">Total de inscritos</div>
+      <div class="card-val" id="m-total">—</div>
+      <div class="card-sub">participantes</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Cidades participantes</div>
+      <div class="card-val" id="m-cidades">—</div>
+      <div class="card-sub">municípios</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Modalidades</div>
+      <div class="card-val">7</div>
+      <div class="card-sub">esportes</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Credenciados</div>
+      <div class="card-val" id="m-credenciados">—</div>
+      <div class="card-sub">presença confirmada</div>
+    </div>
+  </div>
+
+  <!-- Participação por modalidade -->
+  <div class="secao">
+    <div class="secao-header">
+      <div>
+        <div class="secao-titulo">📊 Participação por Modalidade</div>
+        <div class="secao-sub">Número de inscritos por evento</div>
+      </div>
+    </div>
+    <div class="secao-body">
+      <div id="tabela-modalidades" class="table-wrap">
+        <div class="loading">Carregando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Participação por cidade -->
+  <div class="secao">
+    <div class="secao-header">
+      <div>
+        <div class="secao-titulo">🗺️ Participantes por Cidade</div>
+        <div class="secao-sub">Representação geográfica do festival</div>
+      </div>
+    </div>
+    <div class="secao-body" id="tabela-cidades">
+      <div class="loading">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: PARTICIPANTES                      -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-participantes">
+  <div class="lgpd-aviso" style="margin-top:16px;">
+    <strong>🔒 Dados exibidos conforme LGPD</strong>
+    Nome completo, cidade/UF, modalidade inscrita e status de credenciamento são considerados dados públicos para fins de transparência em eventos públicos. CPF, telefone, e-mail e data de nascimento são omitidos.
+  </div>
+  <div class="busca-wrap">
+    <input type="text" id="busca-part" placeholder="🔍 Buscar por nome..." oninput="filtrarParticipantes()">
+    <select id="filtro-mod" onchange="filtrarParticipantes()">
+      <option value="">Todas as modalidades</option>
+      <option value="1">Vôlei de Areia — Masculino</option>
+      <option value="2">Vôlei de Areia — Feminino</option>
+      <option value="3">Futevôlei</option>
+      <option value="4">Canoagem</option>
+      <option value="5">Caiaque</option>
+      <option value="6">Pesca — Masculino</option>
+      <option value="7">Pesca — Feminino</option>
+    </select>
+    <select id="filtro-cred" onchange="filtrarParticipantes()">
+      <option value="">Todos</option>
+      <option value="sim">✅ Credenciados</option>
+      <option value="nao">⭕ Não credenciados</option>
+    </select>
+  </div>
+  <div class="secao">
+    <div class="secao-header">
+      <div>
+        <div class="secao-titulo">👥 Lista de Participantes</div>
+        <div class="secao-sub" id="contador-part">Carregando...</div>
+      </div>
+      <button class="btn btn-outline" onclick="exportarCSVPublico()">⬇️ Exportar CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Participante</th>
+            <th>Cidade/UF</th>
+            <th>Modalidade</th>
+            <th>Credenciado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-part">
+          <tr><td colspan="5" class="loading">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: GANHADORES                         -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-ganhadores">
+  <div style="margin-top:16px;" id="ganhadores-aviso-pendente" style="display:none;">
+    <div class="lgpd-aviso" style="background:#fffbeb;border-color:#fcd34d;color:#92400e;">
+      <strong>⏳ Resultado não publicado ainda</strong>
+      Os ganhadores serão anunciados após o encerramento oficial do Festival de Inverno 2026.
+    </div>
+  </div>
+  <div id="ganhadores-container">
+    <div class="loading">Carregando ganhadores...</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: HISTÓRICO                          -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-historico">
+  <div style="margin-top:16px;" class="secao">
+    <div class="secao-header">
+      <div class="secao-titulo">📖 Histórico do Evento</div>
+      <div class="secao-sub">Festival de Inverno 2026 — Costa Marques/RO</div>
+    </div>
+    <div class="secao-body">
+      <div class="timeline" id="timeline-historico">
+        <!-- Preenchido via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Sobre o evento -->
+  <div class="secao">
+    <div class="secao-header">
+      <div class="secao-titulo">ℹ️ Sobre o Festival</div>
+    </div>
+    <div class="secao-body" style="line-height:1.8;font-size:13px;color:#475569;">
+      <p>O Festival de Inverno de Costa Marques é uma realização da <strong>Secretaria Municipal de Esporte, Lazer, Turismo e Meio Ambiente (SEMESP)</strong> em parceria com a Prefeitura Municipal de Costa Marques/RO.</p>
+      <p style="margin-top:10px;">O evento celebra a cultura esportiva da região amazônica, aproveitando o período de inverno para reunir atletas e comunidade em modalidades aquáticas, de areia e pesca, valorizando os recursos naturais únicos da região fronteiriça com a Bolívia.</p>
+      <p style="margin-top:10px;"><strong>Realização:</strong> SEMESP — Prefeitura Municipal de Costa Marques / RO</p>
+      <p style="margin-top:4px;"><strong>Apoio:</strong> SEMESP, Secretaria de Cultura e parceiros locais</p>
+      <p style="margin-top:4px;"><strong>Datas:</strong> 01, 02 e 03 de maio de 2026</p>
+      <p style="margin-top:4px;"><strong>Local:</strong> Costa Marques — Rondônia, Brasil</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: GALERIA                            -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-galeria">
+  <div style="margin-top:16px;" class="secao">
+    <div class="secao-header">
+      <div class="secao-titulo">📸 Galeria do Evento</div>
+      <div class="secao-sub">Fotos dos momentos do Festival de Inverno 2026</div>
+    </div>
+    <div class="secao-body">
+      <div id="galeria-container" class="galeria">
+        <div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  MODAL — Ficha do ganhador               -->
+<!-- ══════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-ganhador-bg" onclick="fecharModalGanhador(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-titulo" id="mg-titulo">Ganhador</span>
+      <button class="modal-fechar" onclick="fecharModalGanhadorBtn()">×</button>
+    </div>
+    <div id="mg-medal" style="text-align:center;font-size:48px;margin:8px 0;"></div>
+    <img id="mg-foto" class="modal-foto-grande" style="display:none;" src="" alt="Foto com troféu">
+    <div class="modal-section">Dados do participante</div>
+    <div id="mg-dados"></div>
+    <div class="modal-section" id="mg-inscricao-titulo" style="display:none;">Inscrição</div>
+    <div id="mg-inscricao"></div>
+    <div class="modal-section" id="mg-credenciamento-titulo" style="display:none;">Credenciamento</div>
+    <div id="mg-credenciamento"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  FOOTER                                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="footer">
+  Portal da Transparência — Festival de Inverno 2026<br>
+  SEMESP — Prefeitura Municipal de Costa Marques / RO<br>
+  <strong style="color:#1a56a0;">Desenvolvido por Ewerson Luiz de Oliveira — Gestor em Tecnologia da Informação</strong><br>
+  © 2026 Prefeitura Municipal de Costa Marques / RO · Todos os direitos reservados<br>
+  <span style="color:#94a3b8;">Dados exibidos conforme Lei nº 13.709/2018 (LGPD)</span>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  JAVASCRIPT                              -->
+<!-- ══════════════════════════════════════════ -->
+<script>
+// ================================================================
+// CONFIGURAÇÃO
+// ================================================================
+const MODALIDADES = {
+  1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia' },
+  2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia' },
+  3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia' },
+  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua'  },
+  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua'  },
+  6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca' },
+  7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca' },
+};
+
+// ================================================================
+// GANHADORES — Edite aqui após o evento
+// ================================================================
+// Para registrar ganhadores, preencha o array abaixo.
+// foto_url: URL da foto com o troféu (Supabase Storage ou link externo)
+// participante_id: ID do participante no banco (opcional, para buscar ficha)
+//
+// Exemplo:
+// { posicao: 1, modalidade_id: 1, nome: 'João Silva', cidade: 'Costa Marques/RO',
+//   parceiro: 'Pedro Santos', foto_url: 'https://...', participante_id: 'uuid' }
+//
+const GANHADORES = [
+  // Preencher após o evento — deixe vazio para exibir "Aguardando resultado"
+];
+
+// ================================================================
+// HISTÓRICO — Edite aqui
+// ================================================================
+const HISTORICO = [
+  {
+    data: 'Março 2026',
+    titulo: 'Lançamento das inscrições',
+    body: 'Abertura do sistema online de inscrições com 7 modalidades esportivas. Participantes de todo o estado de Rondônia foram convidados a participar.'
+  },
+  {
+    data: 'Março — Abril 2026',
+    titulo: 'Período de inscrições',
+    body: 'Recebimento de inscrições via formulário online. Participantes inscritos em modalidades individuais e coletivas, com destaque para a pesca e o vôlei de areia.'
+  },
+  {
+    data: '01 de maio de 2026',
+    titulo: 'Abertura e credenciamento',
+    body: 'Abertura oficial do Festival de Inverno 2026 com cerimônia de credenciamento. Participantes entregaram 1kg de alimento não-perecível como ingresso solidário.'
+  },
+  {
+    data: '01–03 de maio de 2026',
+    titulo: 'Realização das competições',
+    body: 'Disputa das modalidades: Vôlei de Areia (Masculino e Feminino), Futevôlei, Canoagem, Caiaque, e Pesca (Masculino e Feminino). Atletas de diversas cidades participaram.'
+  },
+  {
+    data: '03 de maio de 2026',
+    titulo: 'Encerramento e premiação',
+    body: 'Cerimônia de premiação com entrega de troféus aos campeões de cada modalidade. Encerramento com celebração da cultura esportiva de Costa Marques.'
+  },
+];
+
+// ================================================================
+// DADOS DO BANCO
+// ================================================================
+let todosParticipantes = [];
+let todasInscricoes    = [];
+let dadosFiltrados     = [];
+
+async function apiGet(tabela, query = '') {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'buscar', tabela, query })
+  });
+  if (!r.ok) throw new Error('Erro HTTP ' + r.status);
+  return r.json();
+}
+
+async function carregarDados() {
+  try {
+    const [participantes, inscricoes] = await Promise.all([
+      apiGet('participantes', 'select=id,nome_completo,cidade,uf,autorizacao_imagem,criado_em'),
+      apiGet('inscricoes', 'select=*')
+    ]);
+
+    if (!Array.isArray(participantes) || !Array.isArray(inscricoes)) throw new Error('Dados inválidos');
+
+    todosParticipantes = participantes;
+    todasInscricoes    = inscricoes;
+    dadosFiltrados     = participantes;
+
+    renderVisaoGeral();
+    renderParticipantes(participantes);
+    renderGanhadores();
+    renderHistorico();
+  } catch (e) {
+    console.error('Erro ao carregar:', e);
+    document.getElementById('tbody-part').innerHTML =
+      '<tr><td colspan="5" class="vazio">Erro ao carregar dados. Verifique a conexão.</td></tr>';
+  }
+}
+
+// ================================================================
+// VISÃO GERAL
+// ================================================================
+function renderVisaoGeral() {
+  const p = todosParticipantes;
+  const i = todasInscricoes;
+
+  document.getElementById('m-total').textContent = p.length;
+
+  const cidades = new Set(p.map(x => (x.cidade || '').trim().toLowerCase()).filter(Boolean));
+  document.getElementById('m-cidades').textContent = cidades.size;
+
+  const credenciados = new Set(i.filter(x => x.presenca).map(x => x.participante_id)).size;
+  document.getElementById('m-credenciados').textContent = credenciados;
+
+  // Tabela por modalidade
+  const porMod = {};
+  Object.entries(MODALIDADES).forEach(([id, m]) => { porMod[id] = { mod: m, total: 0 }; });
+  i.forEach(x => { if (porMod[x.modalidade_id]) porMod[x.modalidade_id].total++; });
+  const totalGeral = i.length;
+  const maxMod     = Math.max(...Object.values(porMod).map(v => v.total), 1);
+
+  const linhas = Object.entries(porMod).map(([id, d]) => {
+    const pct = Math.round(d.total / maxMod * 100);
+    const tipoCss = d.mod.tipo === 'agua' ? 'agua' : d.mod.tipo === 'pesca' ? 'pesca' : 'areia';
+    return `<tr>
+      <td><span class="badge badge-${tipoCss}">${d.mod.nome}</span></td>
+      <td>${d.mod.sub}</td>
+      <td style="font-weight:700;color:#1a56a0;text-align:center;">${d.total}</td>
+      <td style="width:200px;">
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${d.mod.tipo === 'agua' ? '#1a56a0' : d.mod.tipo === 'pesca' ? '#065f46' : '#f59e0b'};"></div></div>
+      </td>
+      <td style="text-align:center;font-size:12px;color:#64748b;">${totalGeral > 0 ? Math.round(d.total / totalGeral * 100) : 0}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tabela-modalidades').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Modalidade</th><th>Categoria</th>
+        <th style="text-align:center">Inscritos</th>
+        <th>Participação</th>
+        <th style="text-align:center">%</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>`;
+
+  // Por cidade
+  const contCidades = {};
+  todosParticipantes.forEach(x => {
+    const c = ((x.cidade || '').trim() + '/' + (x.uf || 'RO')).toUpperCase();
+    if (!c || c === '/RO') return;
+    contCidades[c] = (contCidades[c] || 0) + 1;
+  });
+  const listaCidades = Object.entries(contCidades).sort((a, b) => b[1] - a[1]);
+  const maxC = listaCidades[0]?.[1] || 1;
+
+  document.getElementById('tabela-cidades').innerHTML = listaCidades.length === 0
+    ? '<div class="vazio">Nenhum dado disponível.</div>'
+    : `<table>
+        <thead><tr><th>Cidade/UF</th><th style="text-align:center">Participantes</th><th>Representação</th></tr></thead>
+        <tbody>
+          ${listaCidades.map(([cidade, qtd]) => `<tr>
+            <td style="font-weight:600;">${cidade}</td>
+            <td style="text-align:center;font-weight:700;color:#1a56a0;">${qtd}</td>
+            <td style="width:180px;"><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(qtd/maxC*100)}%;"></div></div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+}
+
+// ================================================================
+// PARTICIPANTES
+// ================================================================
+function renderParticipantes(lista) {
+  const tbody = document.getElementById('tbody-part');
+  const count = document.getElementById('contador-part');
+  count.textContent = `${lista.length} participante${lista.length !== 1 ? 's' : ''} encontrado${lista.length !== 1 ? 's' : ''}`;
+
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="vazio">Nenhum participante encontrado.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map((p, idx) => {
+    const insc = todasInscricoes.filter(i => i.participante_id === p.id);
+    const credenciado = insc.some(i => i.presenca);
+    const mods = insc.map(i => {
+      const m = MODALIDADES[i.modalidade_id];
+      return m ? `<span class="badge badge-${m.tipo === 'agua' ? 'agua' : m.tipo === 'pesca' ? 'pesca' : 'areia'}" style="margin:1px;">${m.nome} ${m.sub}</span>` : '';
+    }).join(' ');
+
+    return `<tr>
+      <td style="color:#94a3b8;font-size:11px;">${idx + 1}</td>
+      <td style="font-weight:600;">${p.nome_completo}</td>
+      <td>${p.cidade || '—'} / ${p.uf || 'RO'}</td>
+      <td>${mods || '<span style="color:#94a3b8;font-size:11px;">—</span>'}</td>
+      <td style="text-align:center;">${credenciado ? '<span class="badge badge-ok">✅ Sim</span>' : '<span style="color:#94a3b8;font-size:11px;">Não</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarParticipantes() {
+  const busca = document.getElementById('busca-part').value.toLowerCase().trim();
+  const mod   = document.getElementById('filtro-mod').value;
+  const cred  = document.getElementById('filtro-cred').value;
+
+  const filtrado = todosParticipantes.filter(p => {
+    const insc = todasInscricoes.filter(i => i.participante_id === p.id);
+    const nomeBate = !busca || p.nome_completo.toLowerCase().includes(busca);
+    const modBate  = !mod   || insc.some(i => i.modalidade_id == mod);
+    const credBate = !cred  || (cred === 'sim' ? insc.some(i => i.presenca) : !insc.some(i => i.presenca));
+    return nomeBate && modBate && credBate;
+  });
+
+  renderParticipantes(filtrado);
+}
+
+function exportarCSVPublico() {
+  const busca = document.getElementById('busca-part').value.toLowerCase();
+  const mod   = document.getElementById('filtro-mod').value;
+  const filtrado = todosParticipantes.filter(p => {
+    const insc = todasInscricoes.filter(i => i.participante_id === p.id);
+    return (!busca || p.nome_completo.toLowerCase().includes(busca)) &&
+           (!mod   || insc.some(i => i.modalidade_id == mod));
+  });
+
+  const linhas = ['#,Nome,Cidade/UF,Modalidades,Credenciado'];
+  filtrado.forEach((p, idx) => {
+    const insc = todasInscricoes.filter(i => i.participante_id === p.id);
+    const credenciado = insc.some(i => i.presenca) ? 'Sim' : 'Não';
+    const mods = insc.map(i => {
+      const m = MODALIDADES[i.modalidade_id];
+      return m ? `${m.nome} ${m.sub}` : '';
+    }).filter(Boolean).join(' | ');
+    linhas.push(`${idx+1},"${p.nome_completo}","${p.cidade || ''}/${p.uf || 'RO'}","${mods}","${credenciado}"`);
+  });
+
+  const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Participantes_FestivalInverno2026_Publico.csv`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+}
+
+// ================================================================
+// GANHADORES
+// ================================================================
+let ganhadorAtual = null;
+
+function renderGanhadores() {
+  const container = document.getElementById('ganhadores-container');
+  const aviso = document.getElementById('ganhadores-aviso-pendente');
+
+  if (GANHADORES.length === 0) {
+    if (aviso) aviso.style.display = 'block';
+    container.innerHTML = `
+      <div class="secao" style="margin-top:0;">
+        <div class="secao-header"><div class="secao-titulo">🏆 Ganhadores por Modalidade</div></div>
+        <div class="vazio" style="padding:48px;">
+          ⏳ Os ganhadores serão anunciados após o encerramento do evento.<br>
+          <span style="font-size:12px;color:#94a3b8;margin-top:6px;display:block;">
+            Festival de Inverno 2026 · 01–03 de maio de 2026 · Costa Marques/RO
+          </span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (aviso) aviso.style.display = 'none';
+
+  // Agrupa por modalidade
+  const porMod = {};
+  GANHADORES.forEach(g => {
+    if (!porMod[g.modalidade_id]) porMod[g.modalidade_id] = [];
+    porMod[g.modalidade_id].push(g);
+  });
+
+  let html = '';
+  Object.entries(porMod).forEach(([modId, lista]) => {
+    const mod = MODALIDADES[modId];
+    if (!mod) return;
+    lista.sort((a, b) => a.posicao - b.posicao);
+
+    html += `<div class="secao" style="margin-top:${html ? '16px' : '16px'};">
+      <div class="secao-header">
+        <div>
+          <div class="secao-titulo">🏆 ${mod.nome} — ${mod.sub}</div>
+          <div class="secao-sub">Clique no ganhador para ver a ficha completa</div>
+        </div>
+      </div>
+      <div class="secao-body">`;
+
+    lista.forEach(g => {
+      const medalEmoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
+      const medalCls   = g.posicao === 1 ? 'medal-1' : g.posicao === 2 ? 'medal-2' : 'medal-3';
+      const fotoHtml   = g.foto_url
+        ? `<img src="${g.foto_url}" class="ganhador-foto" alt="Foto com troféu">`
+        : `<div class="sem-foto">📷</div>`;
+
+      html += `<div class="ganhador-card" onclick="abrirGanhador(${JSON.stringify(g).replace(/"/g,'&quot;')})">
+        <div class="ganhador-medal ${medalCls}">${medalEmoji}</div>
+        <div class="ganhador-info">
+          <div class="ganhador-nome">${g.nome}</div>
+          ${g.parceiro ? `<div class="ganhador-detalhe">Parceiro(a): ${g.parceiro}</div>` : ''}
+          ${g.equipe ? `<div class="ganhador-detalhe">🎣 Equipe: ${g.equipe}</div>` : ''}
+          <div class="ganhador-detalhe">${g.cidade || '—'}</div>
+          <div class="ganhador-mod">${g.posicao === 1 ? '🥇 1º lugar' : g.posicao === 2 ? '🥈 2º lugar' : '🥉 3º lugar'}</div>
+        </div>
+        ${fotoHtml}
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function abrirGanhador(g) {
+  ganhadorAtual = g;
+  const medalEmoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
+  const mod = MODALIDADES[g.modalidade_id];
+
+  document.getElementById('mg-titulo').textContent = `${mod?.nome || ''} — ${mod?.sub || ''} · ${g.posicao === 1 ? '1º lugar' : g.posicao === 2 ? '2º lugar' : '3º lugar'}`;
+  document.getElementById('mg-medal').textContent = medalEmoji;
+
+  const foto = document.getElementById('mg-foto');
+  if (g.foto_url) {
+    foto.src = g.foto_url;
+    foto.style.display = 'block';
+  } else {
+    foto.style.display = 'none';
+  }
+
+  document.getElementById('mg-dados').innerHTML = `
+    <div class="modal-row"><span class="modal-label">Nome</span><span class="modal-val">${g.nome}</span></div>
+    ${g.parceiro ? `<div class="modal-row"><span class="modal-label">Parceiro(a)</span><span class="modal-val">${g.parceiro}</span></div>` : ''}
+    ${g.equipe   ? `<div class="modal-row"><span class="modal-label">Equipe</span><span class="modal-val">${g.equipe}</span></div>` : ''}
+    <div class="modal-row"><span class="modal-label">Cidade/UF</span><span class="modal-val">${g.cidade || '—'}</span></div>
+    <div class="modal-row"><span class="modal-label">Colocação</span><span class="modal-val">${medalEmoji} ${g.posicao}º lugar</span></div>
+    <div class="modal-row"><span class="modal-label">Modalidade</span><span class="modal-val">${mod?.nome || '—'} — ${mod?.sub || ''}</span></div>`;
+
+  // Tenta buscar ficha de inscrição se tiver participante_id
+  const inscTitulo = document.getElementById('mg-inscricao-titulo');
+  const inscDiv    = document.getElementById('mg-inscricao');
+  if (g.participante_id) {
+    const insc = todasInscricoes.find(i => i.participante_id === g.participante_id && i.modalidade_id == g.modalidade_id);
+    if (insc) {
+      inscTitulo.style.display = 'block';
+      inscDiv.innerHTML = `
+        <div class="modal-row"><span class="modal-label">Número da ficha</span><span class="modal-val" style="color:#1a56a0;font-weight:800;">${insc.numero_ficha || '—'}</span></div>
+        <div class="modal-row"><span class="modal-label">Status inscrição</span><span class="modal-val">${insc.status || '—'}</span></div>`;
+
+      // Credenciamento
+      const credTitulo = document.getElementById('mg-credenciamento-titulo');
+      const credDiv    = document.getElementById('mg-credenciamento');
+      if (insc.presenca) {
+        credTitulo.style.display = 'block';
+        const horario = insc.presenca_em
+          ? new Date(insc.presenca_em).toLocaleString('pt-BR')
+          : '—';
+        credDiv.innerHTML = `
+          <div class="modal-row"><span class="modal-label">Credenciado</span><span class="modal-val" style="color:#16a34a;">✅ Sim</span></div>
+          <div class="modal-row"><span class="modal-label">Horário</span><span class="modal-val">${horario}</span></div>`;
+      } else {
+        credTitulo.style.display = 'none';
+      }
+    } else {
+      inscTitulo.style.display = 'none';
+    }
+  } else {
+    inscTitulo.style.display = 'none';
+    document.getElementById('mg-credenciamento-titulo').style.display = 'none';
+  }
+
+  document.getElementById('modal-ganhador-bg').classList.add('aberto');
+}
+
+function fecharModalGanhador(e) {
+  if (e.target === document.getElementById('modal-ganhador-bg')) fecharModalGanhadorBtn();
+}
+function fecharModalGanhadorBtn() {
+  document.getElementById('modal-ganhador-bg').classList.remove('aberto');
+}
+
+// ================================================================
+// HISTÓRICO
+// ================================================================
+function renderHistorico() {
+  const tl = document.getElementById('timeline-historico');
+  tl.innerHTML = HISTORICO.map(item => `
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-data">${item.data}</div>
+      <div class="tl-titulo">${item.titulo}</div>
+      <div class="tl-body">${item.body}</div>
+    </div>`).join('');
+}
+
+// ================================================================
+// NAVEGAÇÃO POR ABAS
+// ================================================================
+function mostrarAba(id) {
+  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('aba-' + id)?.classList.add('ativa');
+  event.target.classList.add('ativo');
+}
+
+// ================================================================
+// INICIALIZAÇÃO
+// ================================================================
+carregarDados();
+renderHistorico();
+</script>
+</body>
+</html>
