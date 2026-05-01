@@ -1528,8 +1528,11 @@ async function salvarInscricaoManual() {
 
 // ── Verifica permissão de exclusão em tempo real no servidor ──
 async function checarPermissaoExclusao() {
+  // Admin master sempre pode excluir — sem consulta extra
+  if (perfilAdmin?.perfil === 'admin') return true;
   try {
-    const usuario = sessionStorage.getItem('adminUser') || 'admin';
+    const usuario = sessionStorage.getItem('adminUser') || '';
+    if (!usuario) return false;
     const r = await fetch('/api/admin-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1541,6 +1544,21 @@ async function checarPermissaoExclusao() {
     return d.podeExcluir === true;
   } catch(e) {
     return false;
+  }
+}
+
+// ── Auditoria de ações ─────────────────────────────────────
+function gravarLog(acao, detalhe) {
+  try {
+    const usuario = sessionStorage.getItem('adminUser') || 'admin';
+    const nome    = perfilAdmin?.nome || usuario;
+    const hora    = new Date().toLocaleString('pt-BR');
+    const logs    = JSON.parse(localStorage.getItem('fi_auditoria') || '[]');
+    logs.unshift({ hora, usuario, nome, acao, detalhe });
+    if (logs.length > 200) logs.length = 200; // mantém só os 200 últimos
+    localStorage.setItem('fi_auditoria', JSON.stringify(logs));
+  } catch(e) {
+    // silencioso
   }
 }
 
