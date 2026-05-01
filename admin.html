@@ -2097,8 +2097,13 @@ function guSetOps(ops) {
 // ── Abrir / fechar modal ──────────────────────────────────────
 function abrirGerenciarUsuarios() {
   document.getElementById('modal-usuarios-bg').style.display = 'flex';
-  guVerificarVercel();
+  document.getElementById('gu-msg').style.display = 'none';
+  // Limpa campos do formulário
+  document.getElementById('gu-user').value  = '';
+  document.getElementById('gu-senha').value = '';
+  document.getElementById('gu-nome').value  = '';
   guRenderLista();
+  guVerificarVercel();
 }
 function fecharGerenciarUsuarios() {
   document.getElementById('modal-usuarios-bg').style.display = 'none';
@@ -2597,17 +2602,17 @@ function imprimirQuantitativo() {
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     BOTÃO FLUTUANTE DE USUÁRIOS (cadeado no canto)
-════════════════════════════════════════════════════════════ -->
+<!-- Botão cadeado discreto fixo no canto inferior esquerdo -->
 <button id="btn-usuarios-float" onclick="abrirGerenciarUsuarios()"
   title="Gerenciar Usuários"
-  style="position:fixed;bottom:24px;right:24px;z-index:900;
-         width:44px;height:44px;border-radius:50%;border:none;
-         background:#1a56a0;color:white;font-size:20px;cursor:pointer;
-         box-shadow:0 4px 12px rgba(0,0,0,0.25);display:none;
-         align-items:center;justify-content:center;">
-  🔐
+  style="position:fixed;bottom:12px;left:12px;z-index:900;
+         padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;
+         background:#f8fafc;color:#64748b;font-size:11px;cursor:pointer;
+         display:none;align-items:center;gap:5px;opacity:0.7;
+         transition:opacity 0.2s;"
+  onmouseover="this.style.opacity='1'"
+  onmouseout="this.style.opacity='0.7'">
+  🔐 <span style="font-size:10px;">Usuários</span>
 </button>
 
 <!-- Modal de gerenciamento de usuários -->
@@ -2630,7 +2635,15 @@ function imprimirQuantitativo() {
     </div>
 
     <!-- Lista de usuários -->
-    <div id="gu-lista" style="padding:16px 24px;"></div>
+    <div style="padding:12px 24px 0;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:12px;font-weight:600;color:#475569;">Usuários cadastrados</div>
+      <button onclick="localStorage.removeItem('fi_operadores');guRenderLista();"
+        style="font-size:10px;color:#94a3b8;background:none;border:none;cursor:pointer;text-decoration:underline;">
+        🔄 Limpar cache local
+      </button>
+    </div>
+    <div id="gu-lista" style="padding:8px 24px 0;"></div>
+    <hr style="margin:0 24px 4px;border:none;border-top:1px solid #f1f5f9;">
 
     <!-- Formulário adicionar -->
     <div style="padding:0 24px 20px;">
