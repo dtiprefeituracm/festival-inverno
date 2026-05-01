@@ -263,6 +263,7 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
+      <span id="topbar-usuario" style="font-size:11px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:6px;"></span>
       <a href="checkin.html" target="_blank" style="background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:6px;font-size:12px;text-decoration:none;font-weight:600;">📷 Credenciamento</a>
       <button class="sair-btn" onclick="sair()">Sair</button>
     </div>
@@ -421,8 +422,54 @@
     <div style="padding:12px 16px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;" id="contador-label"></div>
   </div>
 
+  <!-- Usuários operadores -->
+  <div class="section" style="margin-bottom:16px;border-left:3px solid #0891b2;" id="section-usuarios">
+    <div class="section-header">
+      <div>
+        <span class="section-titulo" style="color:#0891b2;">👥 Usuários Operadores</span>
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Gerencie quem pode acessar o credenciamento. Configure as variáveis OPERADOR_N no painel da Vercel.</div>
+      </div>
+    </div>
+    <div id="usuarios-grid" class="usuarios-grid">
+      <div class="loading" style="grid-column:1/-1;">Carregando...</div>
+    </div>
+    <div class="add-user-form" id="form-add-user">
+      <h3>➕ Adicionar operador</h3>
+      <div class="add-user-row">
+        <input type="text" id="nu-user" placeholder="Usuário (ex: joao)" maxlength="20">
+        <input type="password" id="nu-senha" placeholder="Senha" maxlength="30">
+        <input type="text" id="nu-nome" placeholder="Nome completo" maxlength="40">
+        <select id="nu-excluir">
+          <option value="false">🔒 Sem permissão de excluir</option>
+          <option value="true">🗑 Pode excluir participantes</option>
+        </select>
+        <button class="btn-add-user" onclick="adicionarOperador()">Salvar</button>
+      </div>
+      <div id="add-user-msg" style="margin-top:8px;font-size:12px;display:none;"></div>
+      <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;border:1px solid #fde68a;">
+        ⚠️ <strong>Importante:</strong> Após salvar, você precisa <strong>adicionar manualmente</strong> a variável de ambiente na Vercel
+        (<code>OPERADOR_N=usuario:senha:nome:podeExcluir</code>) e fazer um novo deploy para que os operadores possam logar no checkin.
+        Esta tela serve como guia visual dos usuários configurados.
+      </div>
+    </div>
+  </div>
+
+  <!-- Log de atividade -->
+  <div class="section" style="margin-bottom:16px;border-left:3px solid #7c3aed;" id="section-log">
+    <div class="section-header">
+      <div>
+        <span class="section-titulo" style="color:#7c3aed;">📋 Log de Atividade</span>
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Registro de credenciamentos e exclusões realizados por cada operador</div>
+      </div>
+      <button class="print-btn outline" style="border-color:#7c3aed;color:#7c3aed;" onclick="exportarLog()">⬇️ Exportar CSV</button>
+    </div>
+    <div id="log-lista" style="padding:0 16px 16px;">
+      <div class="loading">Carregando log...</div>
+    </div>
+  </div>
+
   <!-- Backup SQL -->
-  <div class="section" style="margin-bottom:16px;border-left:3px solid #7c3aed;">
+  <div class="section" style="margin-bottom:16px;border-left:3px solid #0891b2;">
     <div class="section-header">
       <div>
         <span class="section-titulo" style="color:#7c3aed;">🗄️ Backup do Banco de Dados</span>
@@ -536,7 +583,9 @@ const LOGO_URL = window.location.origin + '/10.png';
 // ================================================================
 // COMUNICAÇÃO SEGURA COM O SERVIDOR
 // ================================================================
-let tokenAdmin = sessionStorage.getItem('adminToken') || null;
+let tokenAdmin  = sessionStorage.getItem('adminToken') || null;
+let perfilAdmin = JSON.parse(sessionStorage.getItem('adminPerfil') || 'null');
+// perfilAdmin = { perfil, nome, podeExcluir }
 
 async function apiGet(tabela, query = '') {
   const r = await fetch('/api/supabase', {
@@ -571,9 +620,18 @@ async function entrar() {
 
     if (data.ok) {
       tokenAdmin = data.token;
+      perfilAdmin = { perfil: data.perfil, nome: data.nome, podeExcluir: data.podeExcluir };
       sessionStorage.setItem('adminToken', tokenAdmin);
+      sessionStorage.setItem('adminPerfil', JSON.stringify(perfilAdmin));
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('painel').style.display = 'block';
+      // Só admin master vê seção de usuários
+      if (perfilAdmin.perfil !== 'admin') {
+        const su = document.getElementById('section-usuarios');
+        if (su) su.style.display = 'none';
+      }
+      const tu = document.getElementById('topbar-usuario');
+      if (tu) tu.textContent = '👤 ' + (perfilAdmin.nome || 'Operador');
       carregarDados();
     } else {
       erro.style.display = 'block';
@@ -588,8 +646,10 @@ async function entrar() {
 }
 
 function sair() {
-  tokenAdmin = null;
+  tokenAdmin  = null;
+  perfilAdmin = null;
   sessionStorage.removeItem('adminToken');
+  sessionStorage.removeItem('adminPerfil');
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('painel').style.display = 'none';
   document.getElementById('login-senha').value = '';
@@ -604,13 +664,22 @@ let todosInscritos = [];
 // AUTO-LOGIN — restaura sessão após F5 se token ainda válido
 // ================================================================
 (function() {
-  const token = sessionStorage.getItem('adminToken');
+  const token  = sessionStorage.getItem('adminToken');
+  const perfil = JSON.parse(sessionStorage.getItem('adminPerfil') || 'null');
   if (token) {
-    tokenAdmin = token;
+    tokenAdmin  = token;
+    perfilAdmin = perfil;
     const lw = document.getElementById('login-wrap');
     const p  = document.getElementById('painel');
     if (lw) lw.style.display = 'none';
-    if (p)  { p.style.display = 'block'; carregarDados(); }
+    if (p)  { p.style.display = 'block'; }
+    if (perfilAdmin?.perfil !== 'admin') {
+      const su = document.getElementById('section-usuarios');
+      if (su) su.style.display = 'none';
+    }
+    const tu = document.getElementById('topbar-usuario');
+    if (tu) tu.textContent = '👤 ' + (perfilAdmin?.nome || 'Operador');
+    carregarDados();
   }
 })();
 
@@ -638,6 +707,8 @@ async function carregarDados() {
     try { renderRelatorio(todosInscritos, inscricoes); } catch(e) { console.error('renderRelatorio:', e); document.getElementById('relatorio-grid').innerHTML = '<div class="vazio">Erro ao carregar relatório.</div>'; }
     try { renderSemInscricao(todosInscritos, inscricoes); } catch(e) { console.error('renderSemInscricao:', e); }
     try { renderCredenciamento(todosInscritos); }        catch(e) { console.error('renderCredenciamento:', e); document.getElementById('credenciamento-resumo').innerHTML = '<div class="vazio" style="padding:12px;">Erro ao carregar credenciamento.</div>'; }
+    try { renderUsuarios(); }                            catch(e) { console.error('renderUsuarios:', e); }
+    try { renderLog(); }                                 catch(e) { console.error('renderLog:', e); }
 
   } catch (e) {
     console.error('carregarDados ERRO:', e);
@@ -1579,8 +1650,13 @@ function fecharModalExcluirBg(e) {
 }
 
 async function confirmarExclusao() {
-  const pid  = document.getElementById('excluir-pid').value;
-  const btn  = document.getElementById('btn-excluir-ok');
+  if (!perfilAdmin?.podeExcluir) {
+    alert('❌ Você não tem permissão para excluir participantes.');
+    return;
+  }
+  const pid   = document.getElementById('excluir-pid').value;
+  const nome  = document.getElementById('excluir-nome-display').textContent;
+  const btn   = document.getElementById('btn-excluir-ok');
 
   btn.disabled = true;
   btn.textContent = 'Excluindo...';
@@ -1609,6 +1685,7 @@ async function confirmarExclusao() {
     const dPart = await rPart.json();
     if (!dPart.ok) throw new Error('Falha ao excluir participante: ' + JSON.stringify(dPart));
 
+    gravarLog('excluiu', 'Excluiu participante: ' + nome + ' (ID: ' + pid + ')');
     fecharModalExcluir();
     todosInscritos = todosInscritos.filter(p => p.id !== pid);
     filtrar();
@@ -1964,6 +2041,166 @@ CREATE POLICY "exclusao_inscricoes"           ON inscricoes    FOR DELETE USING 
     btn.textContent = '⬇️ Exportar Backup SQL';
     alert('❌ Erro ao gerar backup: ' + err.message);
   }
+}
+
+// ================================================================
+// SISTEMA DE USUÁRIOS OPERADORES
+// ================================================================
+// Os operadores são armazenados localmente (guia visual).
+// O login real depende das variáveis OPERADOR_N na Vercel.
+function getOperadores() {
+  try { return JSON.parse(localStorage.getItem('fi_operadores') || '[]'); }
+  catch { return []; }
+}
+function setOperadores(ops) {
+  localStorage.setItem('fi_operadores', JSON.stringify(ops));
+}
+
+function renderUsuarios() {
+  const grid = document.getElementById('usuarios-grid');
+  if (!grid) return;
+  const ops = getOperadores();
+
+  let html = `<div class="usuario-card admin-card">
+    <div class="usuario-nome">Administrador</div>
+    <div class="usuario-user">Usuário: <code>admin</code> (definido na Vercel)</div>
+    <span class="usuario-badge badge-admin">👑 Admin Master</span>
+    <div style="font-size:11px;color:#64748b;margin-top:6px;">Acesso total · pode excluir · gerencia operadores</div>
+  </div>`;
+
+  ops.forEach((op, i) => {
+    html += `<div class="usuario-card">
+      <div class="usuario-nome">${escHtml(op.nome)}</div>
+      <div class="usuario-user">Usuário: <code>${escHtml(op.user)}</code></div>
+      <span class="usuario-badge ${op.podeExcluir ? 'badge-op' : 'badge-op-restrito'}">
+        ${op.podeExcluir ? '✅ Pode excluir' : '🔒 Sem exclusão'}
+      </span>
+      <div class="usuario-acoes">
+        <button class="btn-del-user" onclick="removerOperador(${i})">🗑 Remover</button>
+      </div>
+      <div style="margin-top:8px;padding:6px 8px;background:#fef3c7;border-radius:6px;font-size:10px;color:#92400e;">
+        Variável Vercel: <code>OPERADOR_${i+1}=${op.user}:${op.senha}:${escHtml(op.nome)}:${op.podeExcluir}</code>
+      </div>
+    </div>`;
+  });
+
+  if (ops.length === 0) {
+    html += `<div style="color:#94a3b8;font-size:13px;padding:8px 0;">
+      Nenhum operador cadastrado ainda. Use o formulário abaixo para adicionar.</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function adicionarOperador() {
+  const user    = document.getElementById('nu-user').value.trim();
+  const senha   = document.getElementById('nu-senha').value.trim();
+  const nome    = document.getElementById('nu-nome').value.trim();
+  const excluir = document.getElementById('nu-excluir').value === 'true';
+  const msg     = document.getElementById('add-user-msg');
+
+  if (!user || !senha || !nome) {
+    msg.textContent = '⚠️ Preencha todos os campos.';
+    msg.style.color = '#dc2626'; msg.style.display = 'block'; return;
+  }
+  if (user === 'admin') {
+    msg.textContent = '⚠️ O usuário "admin" é reservado.';
+    msg.style.color = '#dc2626'; msg.style.display = 'block'; return;
+  }
+
+  const ops = getOperadores();
+  if (ops.some(o => o.user === user)) {
+    msg.textContent = '⚠️ Usuário já existe.';
+    msg.style.color = '#dc2626'; msg.style.display = 'block'; return;
+  }
+
+  ops.push({ user, senha, nome, podeExcluir: excluir });
+  setOperadores(ops);
+  document.getElementById('nu-user').value = '';
+  document.getElementById('nu-senha').value = '';
+  document.getElementById('nu-nome').value = '';
+  msg.textContent = `✅ Operador "${nome}" salvo! Adicione a variável na Vercel para ativar o login.`;
+  msg.style.color = '#166534'; msg.style.display = 'block';
+  renderUsuarios();
+}
+
+function removerOperador(idx) {
+  const ops = getOperadores();
+  const nome = ops[idx]?.nome;
+  if (!confirm(`Remover operador "${nome}" da lista local?
+
+Lembre-se de também remover a variável OPERADOR_${idx+1} na Vercel.`)) return;
+  ops.splice(idx, 1);
+  setOperadores(ops);
+  renderUsuarios();
+}
+
+// ================================================================
+// LOG DE ATIVIDADE (localStorage por dispositivo)
+// ================================================================
+function gravarLog(tipo, descricao) {
+  const entrada = {
+    ts:       new Date().toISOString(),
+    usuario:  perfilAdmin?.nome || 'Desconhecido',
+    perfil:   perfilAdmin?.perfil || 'operador',
+    tipo,
+    descricao
+  };
+  const logs = getLogs();
+  logs.unshift(entrada); // mais recente primeiro
+  // Mantém só os últimos 500 registros
+  if (logs.length > 500) logs.length = 500;
+  localStorage.setItem('fi_logs', JSON.stringify(logs));
+  renderLog();
+}
+
+function getLogs() {
+  try { return JSON.parse(localStorage.getItem('fi_logs') || '[]'); }
+  catch { return []; }
+}
+
+function renderLog() {
+  const div = document.getElementById('log-lista');
+  if (!div) return;
+  const logs = getLogs();
+  if (logs.length === 0) {
+    div.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:8px 0;">Nenhuma atividade registrada neste dispositivo ainda.</div>';
+    return;
+  }
+  div.innerHTML = `<div style="max-height:320px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;">` +
+    logs.slice(0, 100).map(l => {
+      const hora = new Date(l.ts).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+      const cls  = l.tipo === 'excluiu' ? 'log-excluiu' : l.tipo === 'credenciou' ? 'log-credenciou' : '';
+      return `<div class="log-item">
+        <div class="log-hora">${hora}</div>
+        <div class="log-usuario">${escHtml(l.usuario)}</div>
+        <div class="log-acao ${cls}">${escHtml(l.descricao)}</div>
+      </div>`;
+    }).join('') +
+    `</div><div style="font-size:11px;color:#94a3b8;margin-top:8px;">
+      ⚠️ O log é local deste dispositivo. Cada computador/celular tem seu próprio histórico.
+    </div>`;
+}
+
+function exportarLog() {
+  const logs = getLogs();
+  if (logs.length === 0) { alert('Nenhum log para exportar.'); return; }
+  const linhas = ['Data/Hora,Usuário,Perfil,Tipo,Descrição'];
+  logs.forEach(l => {
+    const hora = new Date(l.ts).toLocaleString('pt-BR');
+    linhas.push(`"${hora}","${l.usuario}","${l.perfil}","${l.tipo}","${l.descricao.replace(/"/g, '""')}"`);
+  });
+  const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'log_atividades_festival.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function imprimirHTML(html) {
