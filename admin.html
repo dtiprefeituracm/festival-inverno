@@ -1170,6 +1170,37 @@ function fecharModalBtn() {
 }
 
 // ================================================================
+// IMPRESSÃO — Função utilitária base (abre janela separada)
+// ================================================================
+function imprimirHTML(html) {
+  const w = window.open('', '_blank');
+  if (!w) {
+    alert('Popup bloqueado. Permita pop-ups para este site e tente novamente.');
+    return;
+  }
+  w.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impressão — Festival de Inverno 2026</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    @media print {
+      body { margin: 0; }
+      @page { margin: 12mm 14mm; }
+    }
+  </style>
+</head>
+<body>${html}</body>
+</html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 300);
+}
+
+// ================================================================
 // IMPRESSÃO — Ficha individual
 // ================================================================
 function imprimirFicha() {
