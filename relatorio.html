@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<!--
+  relatorio.html — Relatórios do Festival de Inverno 2026
+  3 consultas: alimentos arrecadados | participante + foto | prestação de contas
+  © 2026 Ewerson Luiz de Oliveira — DTI / Prefeitura de Costa Marques/RO
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatórios — Festival de Inverno 2026</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; color: #1e293b; }
+
+/* ── Login ── */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: #0f172a; }
+.login-box  { background: #1e293b; border-radius: 20px; padding: 32px 24px; width: 100%; max-width: 360px; border: 1px solid #334155; }
+.login-logo { text-align: center; margin-bottom: 28px; }
+.login-logo img { height: 64px; margin-bottom: 12px; }
+.login-logo h1  { font-size: 20px; font-weight: 800; color: white; }
+.login-logo p   { font-size: 13px; color: #64748b; margin-top: 4px; }
+.login-box label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; margin-top: 16px; }
+.login-box input { width: 100%; padding: 14px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: white; font-size: 16px; outline: none; }
+.login-box input:focus { border-color: #3b82f6; }
+.login-btn  { width: 100%; padding: 15px; background: #1a56a0; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; }
+.login-btn:active { background: #154794; }
+.login-erro { color: #f87171; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+
+/* ── App ── */
+.app { display: none; }
+
+/* ── Header ── */
+.topbar { background: #1a56a0; color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+.topbar-titulo { font-size: 15px; font-weight: 800; }
+.topbar-sub    { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.sair-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+/* ── Tabs ── */
+.tabs { display: flex; background: #1e293b; border-bottom: 2px solid #334155; overflow-x: auto; }
+.tab  { flex: 1; min-width: 110px; padding: 13px 8px; text-align: center; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+.tab.ativo { color: #60a5fa; border-bottom-color: #60a5fa; background: #0f172a; }
+
+/* ── Painéis ── */
+.painel { display: none; padding: 20px; max-width: 900px; margin: 0 auto; }
+.painel.ativo { display: block; }
+
+/* ── Card genérico ── */
+.card { background: white; border-radius: 14px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.card-titulo { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.card-sub    { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+/* ── Painel 1: Alimentos ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat-box  { background: linear-gradient(135deg, #1a56a0, #2563eb); color: white; border-radius: 14px; padding: 20px; text-align: center; }
+.stat-box.verde  { background: linear-gradient(135deg, #059669, #10b981); }
+.stat-box.laranja { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.stat-num   { font-size: 40px; font-weight: 900; line-height: 1; }
+.stat-label { font-size: 12px; opacity: 0.85; margin-top: 6px; line-height: 1.4; }
+
+.barra-modalidade { margin-bottom: 12px; }
+.barra-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+.barra-label span:first-child { color: #475569; }
+.barra-label span:last-child  { font-weight: 700; color: #1e293b; }
+.barra-track { background: #f1f5f9; border-radius: 6px; height: 10px; overflow: hidden; }
+.barra-fill  { height: 100%; border-radius: 6px; background: #1a56a0; transition: width 0.6s ease; }
+
+/* ── Painel 2: Participante ── */
+.busca-row { display: flex; gap: 10px; }
+.busca-input { flex: 1; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; outline: none; }
+.busca-input:focus { border-color: #1a56a0; }
+.busca-btn   { padding: 12px 20px; background: #1a56a0; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.busca-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+.participante-card { border: 2px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-top: 16px; display: none; }
+.participante-card.show { display: block; }
+.participante-header { background: linear-gradient(135deg, #1a56a0, #2563eb); color: white; padding: 18px; display: flex; align-items: center; gap: 14px; }
+.participante-avatar { font-size: 44px; }
+.participante-nome   { font-size: 18px; font-weight: 800; }
+.participante-ficha  { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+.participante-badge  { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-top: 6px; }
+.badge-presente { background: rgba(52,211,153,0.25); color: #34d399; }
+.badge-ausente  { background: rgba(248,113,113,0.25); color: #f87171; }
+
+.participante-body { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 600px) { .participante-body { grid-template-columns: 1fr; } }
+
+.info-bloco { }
+.info-titulo { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.info-row    { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.info-row:last-child { border-bottom: none; }
+.info-label  { color: #64748b; }
+.info-val    { font-weight: 600; color: #1e293b; text-align: right; max-width: 55%; }
+
+.foto-alimento-bloco { grid-column: 1 / -1; }
+.foto-alimento-titulo { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.foto-alimento-img   { width: 100%; max-height: 300px; object-fit: contain; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8faff; }
+.foto-sem-foto       { background: #f8faff; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 30px; text-align: center; color: #94a3b8; font-size: 13px; }
+.foto-sem-foto-icon  { font-size: 36px; margin-bottom: 8px; }
+
+.evento-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 3px; }
+.chip-conf   { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.chip-esp    { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+/* ── Painel 3: Prestação de Contas ── */
+.relatorio-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.rel-btn { padding: 10px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.rel-btn-print { background: #1a56a0; color: white; }
+.rel-btn-filtro { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.rel-btn-filtro.ativo { background: #eff6ff; color: #1a56a0; border-color: #bfdbfe; }
+
+.tabela-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table th { background: #f8faff; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+table tr:last-child td { border-bottom: none; }
+table tr:hover td { background: #f8faff; }
+.td-foto img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; }
+.td-foto .sem-foto { width: 60px; height: 60px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #cbd5e1; border: 1px dashed #cbd5e1; }
+.status-chip { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.chip-presente { background: #f0fdf4; color: #166534; }
+.chip-ausente  { background: #fef2f2; color: #dc2626; }
+
+/* ── Lightbox foto ── */
+.lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 500; align-items: center; justify-content: center; flex-direction: column; gap: 14px; padding: 20px; }
+.lightbox.show { display: flex; }
+.lightbox img  { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 12px; }
+.lightbox-info { color: white; font-size: 14px; font-weight: 600; text-align: center; }
+.lightbox-fechar { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 20px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+
+/* ── Loading / Mensagens ── */
+.loading { text-align: center; padding: 40px; color: #64748b; font-size: 14px; }
+.loading-spin { font-size: 30px; animation: spin 1s linear infinite; display: block; margin-bottom: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.msg-vazio { text-align: center; padding: 40px; color: #94a3b8; }
+.msg-vazio-icon { font-size: 40px; margin-bottom: 10px; }
+
+/* ── Print ── */
+@media print {
+  .topbar, .tabs, .relatorio-acoes, .busca-row, .lightbox, .sair-btn { display: none !important; }
+  .painel { display: block !important; padding: 0; }
+  .card { box-shadow: none; border: 1px solid #e2e8f0; page-break-inside: avoid; }
+  body { background: white; }
+  .stat-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table th { background: #f8faff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .td-foto img { width: 80px; height: 80px; }
+  .relatorio-header-print { display: block !important; }
+}
+.relatorio-header-print { display: none; text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0; }
+.relatorio-header-print h1 { font-size: 20px; font-weight: 800; color: #1a56a0; }
+.relatorio-header-print p  { font-size: 12px; color: #64748b; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="10.png" alt="SEMESP">
+      <h1>Relatórios</h1>
+      <p>Festival de Inverno 2026 — Gestão</p>
+    </div>
+    <label>Senha de acesso</label>
+    <input type="password" id="login-senha" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter') entrar()" autocomplete="current-password">
+    <button class="login-btn" onclick="entrar()">Entrar</button>
+    <div class="login-erro" id="login-erro">Senha incorreta.</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="app" id="app">
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-titulo">📊 Relatórios — Festival de Inverno 2026</div>
+      <div class="topbar-sub">Costa Marques / RO · SEMESP</div>
+    </div>
+    <button class="sair-btn" onclick="sair()">Sair</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab ativo" onclick="mudarPainel('alimentos')">📦 Alimentos</div>
+    <div class="tab"       onclick="mudarPainel('participante')">🔍 Participante</div>
+    <div class="tab"       onclick="mudarPainel('prestacao')">📋 Prestação de Contas</div>
+  </div>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- PAINEL 1 — Alimentos Arrecadados  -->
+  <!-- ══════════════════════════════════ -->
+  <div class="painel ativo" id="painel-alimentos">
+
+    <div class="relatorio-header-print">
+      <h1>Festival de Inverno 2026 — Costa Marques/RO</h1>
+      <p>Relatório de Alimentos Arrecadados · gerado em <span id="data-print-al"></span></p>
+    </div>
+
+    <div class="stat-grid" id="stat-grid">
+      <div class="card loading" style="grid-column:1/-1;">
+        <span class="loading-spin">⏳</span>Carregando dados...
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">🏅 Arrecadação por modalidade</div>
+      <div class="card-sub">Quantidade de participantes presentes em cada evento</div>
+      <div id="barras-modalidade"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">📸 Cobertura fotográfica</div>
+      <div class="card-sub">Proporção de credenciamentos com foto do alimento registrada</div>
+      <div id="cobertura-foto"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- PAINEL 2 — Consulta de Participante -->
+  <!-- ══════════════════════════════════ -->
+  <div class="painel" id="painel-participante">
+
+    <div class="card">
+      <div class="card-titulo">🔍 Consultar participante</div>
+      <div class="card-sub">Busque por CPF ou número de ficha (FI-XXXX)</div>
+      <div class="busca-row">
+        <input type="text" class="busca-input" id="busca-cpf"
+               placeholder="CPF ou FI-XXXX"
+               oninput="formatarBusca2(this)"
+               onkeydown="if(event.key==='Enter') buscarParticipante()">
+        <button class="busca-btn" id="busca-btn2" onclick="buscarParticipante()">Buscar</button>
+      </div>
+      <div id="busca-msg" style="font-size:13px;color:#dc2626;margin-top:8px;display:none;"></div>
+    </div>
+
+    <div class="participante-card" id="participante-card">
+      <div class="participante-header">
+        <div class="participante-avatar" id="p-avatar">👤</div>
+        <div>
+          <div class="participante-nome"  id="p-nome">—</div>
+          <div class="participante-ficha" id="p-ficha">Ficha —</div>
+          <div class="participante-badge" id="p-badge">—</div>
+        </div>
+      </div>
+      <div class="participante-body">
+        <div class="info-bloco">
+          <div class="info-titulo">📋 Dados pessoais</div>
+          <div id="p-dados"></div>
+        </div>
+        <div class="info-bloco">
+          <div class="info-titulo">🏅 Modalidades inscritas</div>
+          <div id="p-modalidades"></div>
+        </div>
+        <div class="foto-alimento-bloco">
+          <div class="foto-alimento-titulo">
+            📸 Foto do alimento entregue
+            <span id="p-foto-hora" style="font-weight:400;text-transform:none;color:#94a3b8;font-size:11px;"></span>
+          </div>
+          <div id="p-foto"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PAINEL 3 — Prestação de Contas        -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="painel" id="painel-prestacao">
+
+    <div class="relatorio-header-print">
+      <h1>Festival de Inverno 2026 — Costa Marques/RO</h1>
+      <p>Relatório de Prestação de Contas · gerado em <span id="data-print-pc"></span></p>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">📋 Relatório de Prestação de Contas</div>
+      <div class="card-sub" id="pc-sub">Todos os participantes credenciados com registro de alimento</div>
+      <div class="relatorio-acoes">
+        <button class="rel-btn rel-btn-print" onclick="imprimirRelatorio()">🖨️ Imprimir / Exportar PDF</button>
+        <button class="rel-btn rel-btn-filtro ativo" id="filtro-todos"      onclick="filtrar('todos')">Todos</button>
+        <button class="rel-btn rel-btn-filtro"       id="filtro-presentes"  onclick="filtrar('presentes')">✅ Presentes</button>
+        <button class="rel-btn rel-btn-filtro"       id="filtro-com-foto"   onclick="filtrar('com-foto')">📸 Com foto</button>
+        <button class="rel-btn rel-btn-filtro"       id="filtro-sem-foto"   onclick="filtrar('sem-foto')">⚠️ Sem foto</button>
+      </div>
+      <div class="tabela-wrap">
+        <table id="tabela-prestacao">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ficha</th>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Modalidades</th>
+              <th>Credenciado em</th>
+              <th>Alimento (1kg)</th>
+              <th>Foto</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-body">
+            <tr><td colspan="8" class="loading"><span class="loading-spin">⏳</span><br>Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ── Lightbox ── -->
+<div class="lightbox" id="lightbox" onclick="fecharLightbox()">
+  <button class="lightbox-fechar" onclick="fecharLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-info" id="lightbox-info"></div>
+</div>
+
+<script>
+// ================================================================
+// CONFIG
+// ================================================================
+const MODALIDADES = {
+  1:'Vôlei de Areia (M)', 2:'Vôlei de Areia (F)',
+  3:'Futevôlei (M)', 4:'Canoagem (Dupla)',
+  5:'Caiaque (Ind)', 6:'Pesca (M)', 7:'Pesca (F)'
+};
+const CORES_MOD = {
+  1:'#1a56a0',2:'#db2777',3:'#059669',4:'#0284c7',
+  5:'#7c3aed',6:'#d97706',7:'#be123c'
+};
+
+// ── Auth ──────────────────────────────────────────────────────────
+async function entrar() {
+  const senha = document.getElementById('login-senha').value.trim();
+  const erro  = document.getElementById('login-erro');
+  erro.style.display = 'none';
+  if (!senha) { erro.textContent = 'Digite a senha.'; erro.style.display = 'block'; return; }
+  try {
+    const r = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senha })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      localStorage.setItem('relatorio_auth', '1');
+      mostrarApp();
+    } else {
+      erro.textContent = 'Senha incorreta.';
+      erro.style.display = 'block';
+    }
+  } catch {
+    erro.textContent = 'Erro de conexão.';
+    erro.style.display = 'block';
+  }
+}
+
+function sair() {
+  localStorage.removeItem('relatorio_auth');
+  location.reload();
+}
+
+function mostrarApp() {
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  carregarTudo();
+}
+
+if (localStorage.getItem('relatorio_auth') === '1') mostrarApp();
+
+// ── Dados em memória ──────────────────────────────────────────────
+let todosParticipantes = [];
+let todasInscricoes    = [];
+let filtroAtual        = 'todos';
+
+async function carregarTudo() {
+  try {
+    const [rPart, rInsc] = await Promise.all([
+      api('participantes', 'select=*'),
+      api('inscricoes',    'select=*')
+    ]);
+    todosParticipantes = Array.isArray(rPart) ? rPart : [];
+    todasInscricoes    = Array.isArray(rInsc) ? rInsc : [];
+    renderAlimentos();
+    renderPrestacao();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ── Navegação ─────────────────────────────────────────────────────
+function mudarPainel(id) {
+  document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+  document.getElementById('painel-' + id).classList.add('ativo');
+  event.target.classList.add('ativo');
+}
+
+// ================================================================
+// PAINEL 1 — ALIMENTOS ARRECADADOS
+// ================================================================
+function renderAlimentos() {
+  const agora = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.querySelectorAll('.data-print-al').forEach(el => el.textContent = agora);
+  document.getElementById('data-print-al').textContent = agora;
+
+  // IDs de participantes presentes (únicos)
+  const partPresentes  = new Set();
+  const presencaEmMap  = {};  // participante_id → presenca_em
+  for (const i of todasInscricoes) {
+    if (i.presenca) {
+      partPresentes.add(i.participante_id);
+      if (!presencaEmMap[i.participante_id]) presencaEmMap[i.participante_id] = i.presenca_em;
+    }
+  }
+
+  const totalInscritos  = todosParticipantes.length;
+  const totalPresentes  = partPresentes.size;
+  const kgArrecadado    = totalPresentes; // 1kg por participante
+  const comFoto         = todosParticipantes.filter(p => partPresentes.has(p.id) && p.foto_alimento).length;
+
+  // Stats
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-num">${kgArrecadado}</div>
+      <div class="stat-label">kg de alimentos<br>arrecadados</div>
+    </div>
+    <div class="stat-box verde">
+      <div class="stat-num">${totalPresentes}</div>
+      <div class="stat-label">participantes<br>credenciados</div>
+    </div>
+    <div class="stat-box laranja">
+      <div class="stat-num">${totalInscritos}</div>
+      <div class="stat-label">total de<br>inscritos</div>
+    </div>
+    <div class="stat-box" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6)">
+      <div class="stat-num">${comFoto}</div>
+      <div class="stat-label">registros com<br>foto do alimento</div>
+    </div>`;
+
+  // Barras por modalidade
+  const contMod = {};
+  const totalMod = {};
+  for (const i of todasInscricoes) {
+    const m = i.modalidade_id;
+    totalMod[m] = (totalMod[m] || 0) + 1;
+    if (i.presenca) contMod[m] = (contMod[m] || 0) + 1;
+  }
+  const maxMod = Math.max(...Object.values(contMod), 1);
+  let barrasHtml = '';
+  for (const [mid, nome] of Object.entries(MODALIDADES)) {
+    const pres  = contMod[mid] || 0;
+    const total = totalMod[mid] || 0;
+    const pct   = Math.round(pres / Math.max(maxMod, 1) * 100);
+    const cor   = CORES_MOD[mid] || '#1a56a0';
+    barrasHtml += `
+      <div class="barra-modalidade">
+        <div class="barra-label"><span>${nome}</span><span>${pres} presentes / ${total} inscritos</span></div>
+        <div class="barra-track"><div class="barra-fill" style="width:${pct}%;background:${cor};"></div></div>
+      </div>`;
+  }
+  document.getElementById('barras-modalidade').innerHTML = barrasHtml || '<p style="color:#94a3b8;font-size:13px;">Sem dados.</p>';
+
+  // Cobertura de fotos
+  const semFoto = totalPresentes - comFoto;
+  const pctFoto = totalPresentes > 0 ? Math.round(comFoto / totalPresentes * 100) : 0;
+  document.getElementById('cobertura-foto').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div class="barra-label"><span>📸 Com foto</span><span>${comFoto} (${pctFoto}%)</span></div>
+        <div class="barra-track"><div class="barra-fill" style="width:${pctFoto}%;background:#16a34a;"></div></div>
+        <div style="margin-top:8px;" class="barra-label"><span>⚠️ Sem foto</span><span>${semFoto} (${100 - pctFoto}%)</span></div>
+        <div class="barra-track"><div class="barra-fill" style="width:${100 - pctFoto}%;background:#f59e0b;"></div></div>
+      </div>
+      <div style="text-align:center;min-width:100px;">
+        <div style="font-size:36px;font-weight:900;color:${pctFoto >= 80 ? '#16a34a' : '#f59e0b'}">${pctFoto}%</div>
+        <div style="font-size:12px;color:#64748b;">cobertura fotográfica</div>
+      </div>
+    </div>`;
+}
+
+// ================================================================
+// PAINEL 2 — CONSULTA DE PARTICIPANTE
+// ================================================================
+function formatarBusca2(input) {
+  let v = input.value.toUpperCase().replace(/[^0-9FI-]/g, '');
+  input.value = v;
+}
+
+async function buscarParticipante() {
+  const q   = document.getElementById('busca-cpf').value.trim();
+  const msg = document.getElementById('busca-msg');
+  const btn = document.getElementById('busca-btn2');
+  msg.style.display = 'none';
+  document.getElementById('participante-card').classList.remove('show');
+  if (!q) { msg.textContent = 'Digite um CPF ou número de ficha.'; msg.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Buscando...';
+
+  try {
+    let participante = null;
+    let inscricoes   = [];
+
+    // Busca por ficha (FI-xxxx) ou CPF
+    if (q.startsWith('FI-') || /^\d{1,4}$/.test(q)) {
+      const ficha  = q.replace('FI-', '').padStart(4, '0');
+      const rInsc  = await api('inscricoes', `select=*&numero_ficha=eq.FI-${ficha}`);
+      inscricoes   = Array.isArray(rInsc) ? rInsc : [];
+      if (inscricoes.length > 0) {
+        const rPart = await api('participantes', `select=*&id=eq.${inscricoes[0].participante_id}`);
+        participante = Array.isArray(rPart) && rPart[0] ? rPart[0] : null;
+      }
+    } else {
+      // CPF
+      const cpfLimpo = q.replace(/\D/g, '');
+      const rPart    = await api('participantes', `select=*&cpf=eq.${cpfLimpo}`);
+      participante   = Array.isArray(rPart) && rPart[0] ? rPart[0] : null;
+      if (participante) {
+        const rInsc = await api('inscricoes', `select=*&participante_id=eq.${participante.id}`);
+        inscricoes  = Array.isArray(rInsc) ? rInsc : [];
+      }
+    }
+
+    if (!participante) {
+      msg.textContent = 'Participante não encontrado.'; msg.style.display = 'block';
+      return;
+    }
+
+    renderParticipante(participante, inscricoes);
+  } catch(e) {
+    msg.textContent = 'Erro na busca. Tente novamente.'; msg.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Buscar';
+  }
+}
+
+function renderParticipante(p, inscricoes) {
+  const presente = inscricoes.some(i => i.presenca);
+  const ficha    = inscricoes[0]?.numero_ficha || '—';
+  const presEm   = inscricoes.find(i => i.presenca_em)?.presenca_em;
+  const presHora = presEm ? new Date(presEm).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+
+  document.getElementById('p-avatar').textContent = p.sexo === 'F' ? '👩' : '👤';
+  document.getElementById('p-nome').textContent   = p.nome_completo || '—';
+  document.getElementById('p-ficha').textContent  = `Ficha ${ficha}`;
+  const badge = document.getElementById('p-badge');
+  badge.textContent  = presente ? '✅ Presente' : '❌ Não credenciado';
+  badge.className    = 'participante-badge ' + (presente ? 'badge-presente' : 'badge-ausente');
+
+  // Dados pessoais
+  const nasc = p.data_nascimento ? new Date(p.data_nascimento + 'T00:00').toLocaleDateString('pt-BR') : '—';
+  const cpfF = p.cpf ? p.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '—';
+  document.getElementById('p-dados').innerHTML = `
+    <div class="info-row"><span class="info-label">CPF</span><span class="info-val">${cpfF}</span></div>
+    <div class="info-row"><span class="info-label">Nascimento</span><span class="info-val">${nasc}</span></div>
+    <div class="info-row"><span class="info-label">Sexo</span><span class="info-val">${p.sexo === 'M' ? 'Masculino' : 'Feminino'}</span></div>
+    <div class="info-row"><span class="info-label">Telefone</span><span class="info-val">${p.telefone || '—'}</span></div>
+    <div class="info-row"><span class="info-label">Credenciamento</span><span class="info-val">${presHora}</span></div>`;
+
+  // Modalidades
+  let modHtml = '';
+  for (const i of inscricoes) {
+    const nome = MODALIDADES[i.modalidade_id] || `Mod. ${i.modalidade_id}`;
+    const cls  = i.status === 'lista_espera' ? 'chip-esp' : 'chip-conf';
+    const icone = i.status === 'lista_espera' ? '⏳' : '✅';
+    modHtml += `<div class="evento-chip ${cls}">${icone} ${nome}</div>`;
+  }
+  document.getElementById('p-modalidades').innerHTML = modHtml || '<span style="color:#94a3b8;font-size:13px;">Nenhuma modalidade.</span>';
+
+  // Foto do alimento
+  if (p.foto_alimento_em) {
+    const fotoHora = new Date(p.foto_alimento_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('p-foto-hora').textContent = `· registrada em ${fotoHora}`;
+  } else {
+    document.getElementById('p-foto-hora').textContent = '';
+  }
+
+  if (p.foto_alimento) {
+    document.getElementById('p-foto').innerHTML =
+      `<img class="foto-alimento-img" src="${escHtml(p.foto_alimento)}" alt="Foto do alimento de ${escHtml(p.nome_completo)}"
+            onclick="abrirLightbox('${escHtml(p.foto_alimento)}', '${escHtml(p.nome_completo)}')" style="cursor:zoom-in;">`;
+  } else {
+    document.getElementById('p-foto').innerHTML =
+      `<div class="foto-sem-foto">
+         <div class="foto-sem-foto-icon">📷</div>
+         Foto não registrada no credenciamento
+       </div>`;
+  }
+
+  document.getElementById('participante-card').classList.add('show');
+}
+
+// ================================================================
+// PAINEL 3 — PRESTAÇÃO DE CONTAS
+// ================================================================
+let dadosPrestacao = [];
+
+function renderPrestacao() {
+  const agora = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('data-print-pc').textContent = agora;
+
+  // Participantes presentes
+  const presMap = {};  // participante_id → { presenca_em, inscricoes[] }
+  for (const i of todasInscricoes) {
+    if (!presMap[i.participante_id]) presMap[i.participante_id] = { presenca_em: null, inscricoes: [] };
+    presMap[i.participante_id].inscricoes.push(i);
+    if (i.presenca && i.presenca_em && !presMap[i.participante_id].presenca_em) {
+      presMap[i.participante_id].presenca_em = i.presenca_em;
+    }
+    if (i.presenca) presMap[i.participante_id].presente = true;
+  }
+
+  dadosPrestacao = todosParticipantes.map(p => ({
+    ...p,
+    presente:    !!presMap[p.id]?.presente,
+    presenca_em: presMap[p.id]?.presenca_em || null,
+    inscricoes:  presMap[p.id]?.inscricoes || []
+  })).sort((a, b) => {
+    if (a.presente !== b.presente) return b.presente - a.presente;
+    return (a.nome_completo || '').localeCompare(b.nome_completo || '', 'pt-BR');
+  });
+
+  aplicarFiltro();
+}
+
+function filtrar(f) {
+  filtroAtual = f;
+  document.querySelectorAll('.rel-btn-filtro').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('filtro-' + f).classList.add('ativo');
+  aplicarFiltro();
+}
+
+function aplicarFiltro() {
+  let dados = dadosPrestacao;
+  if (filtroAtual === 'presentes') dados = dados.filter(p => p.presente);
+  if (filtroAtual === 'com-foto')  dados = dados.filter(p => p.presente && p.foto_alimento);
+  if (filtroAtual === 'sem-foto')  dados = dados.filter(p => p.presente && !p.foto_alimento);
+
+  const totalKg = dados.filter(p => p.presente).length;
+  document.getElementById('pc-sub').textContent =
+    `${dados.length} participante(s) · ${totalKg} kg de alimentos · gerado em ${new Date().toLocaleString('pt-BR')}`;
+
+  if (dados.length === 0) {
+    document.getElementById('tabela-body').innerHTML =
+      `<tr><td colspan="8" class="msg-vazio"><div class="msg-vazio-icon">🔍</div>Nenhum registro encontrado.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  dados.forEach((p, idx) => {
+    const cpfF    = p.cpf ? p.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '—';
+    const presHora = p.presenca_em
+      ? new Date(p.presenca_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : '—';
+    const ficha   = p.inscricoes[0]?.numero_ficha || '—';
+    const mods    = p.inscricoes.map(i => {
+      const n = MODALIDADES[i.modalidade_id] || `Mod.${i.modalidade_id}`;
+      const cor = CORES_MOD[i.modalidade_id] || '#1a56a0';
+      return `<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${cor}22;color:${cor};font-weight:600;margin:1px;display:inline-block;">${n}</span>`;
+    }).join('');
+
+    const statusHtml = p.presente
+      ? `<span class="status-chip chip-presente">✅ Presente</span>`
+      : `<span class="status-chip chip-ausente">❌ Ausente</span>`;
+
+    const fotoHtml = p.foto_alimento
+      ? `<div class="td-foto"><img src="${escHtml(p.foto_alimento)}" alt="Foto" onclick="abrirLightbox('${escHtml(p.foto_alimento)}','${escHtml(p.nome_completo)}')"></div>`
+      : `<div class="td-foto"><div class="sem-foto">📷</div></div>`;
+
+    html += `<tr>
+      <td style="color:#94a3b8;">${idx + 1}</td>
+      <td><strong>${ficha}</strong></td>
+      <td>${escHtml(p.nome_completo || '—')}</td>
+      <td style="font-size:12px;color:#64748b;">${cpfF}</td>
+      <td>${mods}</td>
+      <td style="font-size:12px;white-space:nowrap;">${presHora}</td>
+      <td style="text-align:center;font-weight:700;">${p.presente ? '1 kg' : '—'}</td>
+      <td>${fotoHtml}</td>
+    </tr>`;
+  });
+
+  // Totalizador
+  const totalPresentes = dados.filter(p => p.presente).length;
+  const totalComFoto   = dados.filter(p => p.foto_alimento).length;
+  html += `<tr style="background:#f8faff;font-weight:700;border-top:2px solid #e2e8f0;">
+    <td colspan="6" style="text-align:right;padding-right:16px;font-size:13px;color:#475569;">TOTAL ARRECADADO:</td>
+    <td style="font-size:15px;color:#1a56a0;">${totalPresentes} kg</td>
+    <td style="font-size:12px;color:#64748b;">${totalComFoto} fotos</td>
+  </tr>`;
+
+  document.getElementById('tabela-body').innerHTML = html;
+}
+
+function imprimirRelatorio() {
+  document.getElementById('data-print-pc').textContent = new Date().toLocaleString('pt-BR');
+  window.print();
+}
+
+// ================================================================
+// LIGHTBOX
+// ================================================================
+function abrirLightbox(url, nome) {
+  document.getElementById('lightbox-img').src  = url;
+  document.getElementById('lightbox-info').textContent = `📸 Alimento de ${nome}`;
+  document.getElementById('lightbox').classList.add('show');
+}
+function fecharLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+
+// ================================================================
+// UTILITÁRIOS
+// ================================================================
+async function api(tabela, query) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'buscar', tabela, query })
+  });
+  return r.json();
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>
