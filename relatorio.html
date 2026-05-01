@@ -137,14 +137,23 @@ table tr:hover td { background: #f8faff; }
 
 /* ── Print ── */
 @media print {
-  .topbar, .tabs, .relatorio-acoes, .busca-row, .lightbox, .sair-btn { display: none !important; }
-  .painel { display: block !important; padding: 0; }
+  @page { size: A4 landscape; margin: 1cm; }
+  .topbar, .tabs, .relatorio-acoes, .busca-row, .lightbox, .sair-btn, .login-wrap { display: none !important; }
+  .painel { display: block !important; padding: 0; max-width: none; }
   .card { box-shadow: none; border: 1px solid #e2e8f0; page-break-inside: avoid; }
-  body { background: white; }
+  body { background: white; font-size: 11px; }
   .stat-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  table th { background: #f8faff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .td-foto img { width: 80px; height: 80px; }
+  table { font-size: 10px; }
+  table th { background: #f8faff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 5px 6px !important; }
+  table td { padding: 5px 6px !important; }
+  .td-foto img { width: 50px; height: 50px; }
+  .td-foto .sem-foto { width: 50px; height: 50px; }
   .relatorio-header-print { display: block !important; }
+  .participante-card { page-break-inside: avoid; }
+  /* Na prestação de contas: oculta coluna foto no print para não quebrar */
+  #tabela-prestacao th:last-child,
+  #tabela-prestacao td:last-child { display: none; }
+  .tabela-wrap { overflow: visible; }
 }
 .relatorio-header-print { display: none; text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0; }
 .relatorio-header-print h1 { font-size: 20px; font-weight: 800; color: #1a56a0; }
@@ -281,7 +290,8 @@ table tr:hover td { background: #f8faff; }
       <div class="card-titulo">📋 Relatório de Prestação de Contas</div>
       <div class="card-sub" id="pc-sub">Todos os participantes credenciados com registro de alimento</div>
       <div class="relatorio-acoes">
-        <button class="rel-btn rel-btn-print" onclick="imprimirRelatorio()">🖨️ Imprimir / Exportar PDF</button>
+        <button class="rel-btn rel-btn-print" onclick="imprimirRelatorio(false)" title="Sem coluna de foto — cabe melhor na página">🖨️ Imprimir (sem fotos)</button>
+        <button class="rel-btn rel-btn-print" onclick="imprimirRelatorio(true)" style="background:#7c3aed;" title="Com coluna de foto">📸 Imprimir com fotos</button>
         <button class="rel-btn rel-btn-filtro ativo" id="filtro-todos"      onclick="filtrar('todos')">Todos</button>
         <button class="rel-btn rel-btn-filtro"       id="filtro-presentes"  onclick="filtrar('presentes')">✅ Presentes</button>
         <button class="rel-btn rel-btn-filtro"       id="filtro-com-foto"   onclick="filtrar('com-foto')">📸 Com foto</button>
@@ -488,7 +498,8 @@ function renderAlimentos() {
 // PAINEL 2 — CONSULTA DE PARTICIPANTE
 // ================================================================
 function formatarBusca2(input) {
-  let v = input.value.toUpperCase().replace(/[^0-9FI-]/g, '');
+  // Permite dígitos, F, I, ponto, hífen (para CPF com máscara e FI-XXXX)
+  let v = input.value.toUpperCase().replace(/[^0-9FI.\-]/g, '');
   input.value = v;
 }
 
@@ -508,20 +519,31 @@ async function buscarParticipante() {
 
     // Busca por ficha (FI-xxxx) ou CPF
     if (q.startsWith('FI-') || /^\d{1,4}$/.test(q)) {
-      const ficha  = q.replace('FI-', '').padStart(4, '0');
-      const rInsc  = await api('inscricoes', `select=*&numero_ficha=eq.FI-${ficha}`);
+      // Busca por ficha: aceita "1234" ou "FI-1234"
+      const num    = q.replace(/^FI-?/i, '').replace(/\D/g, '').padStart(4, '0');
+      const ficha  = 'FI-' + num;
+      const rInsc  = await api('inscricoes', 'select=*&numero_ficha=eq.' + ficha);
       inscricoes   = Array.isArray(rInsc) ? rInsc : [];
       if (inscricoes.length > 0) {
-        const rPart = await api('participantes', `select=*&id=eq.${inscricoes[0].participante_id}`);
+        const rPart = await api('participantes', 'select=*&id=eq.' + inscricoes[0].participante_id);
         participante = Array.isArray(rPart) && rPart[0] ? rPart[0] : null;
       }
     } else {
-      // CPF
-      const cpfLimpo = q.replace(/\D/g, '');
-      const rPart    = await api('participantes', `select=*&cpf=eq.${cpfLimpo}`);
+      // CPF — tenta com e sem formatação
+      const cpfLimpo    = q.replace(/\D/g, '');
+      const cpfFormatado = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      // Tenta sem máscara primeiro, depois com máscara
+      let rPart = await api('participantes', 'select=*&cpf=eq.' + cpfLimpo);
+      if (!Array.isArray(rPart) || rPart.length === 0) {
+        rPart = await api('participantes', 'select=*&cpf=eq.' + cpfFormatado);
+      }
+      // Busca por nome parcial como fallback (se digitou texto)
+      if ((!Array.isArray(rPart) || rPart.length === 0) && q.length >= 4 && !/^\d/.test(q)) {
+        rPart = await api('participantes', 'select=*&nome_completo=ilike.*' + encodeURIComponent(q) + '*');
+      }
       participante   = Array.isArray(rPart) && rPart[0] ? rPart[0] : null;
       if (participante) {
-        const rInsc = await api('inscricoes', `select=*&participante_id=eq.${participante.id}`);
+        const rInsc = await api('inscricoes', 'select=*&participante_id=eq.' + participante.id);
         inscricoes  = Array.isArray(rInsc) ? rInsc : [];
       }
     }
@@ -696,8 +718,20 @@ function aplicarFiltro() {
   document.getElementById('tabela-body').innerHTML = html;
 }
 
-function imprimirRelatorio() {
+function imprimirRelatorio(comFotos) {
   document.getElementById('data-print-pc').textContent = new Date().toLocaleString('pt-BR');
+  if (comFotos) {
+    // Remove o display:none temporariamente para colunas de foto no print
+    const styleEl = document.getElementById('print-foto-style');
+    if (styleEl) styleEl.remove();
+    const s = document.createElement('style');
+    s.id = 'print-foto-style';
+    s.textContent = '@media print { #tabela-prestacao th:last-child, #tabela-prestacao td:last-child { display: table-cell !important; } }';
+    document.head.appendChild(s);
+  } else {
+    const styleEl = document.getElementById('print-foto-style');
+    if (styleEl) styleEl.remove();
+  }
   window.print();
 }
 
