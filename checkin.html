@@ -138,6 +138,37 @@
   .novo-btn { width: 100%; padding: 13px; background: #1e293b; color: #94a3b8;
     border: 1px solid #334155; border-radius: 14px; font-size: 14px; cursor: pointer; margin-top: 10px; }
 
+  /* ── Modal Foto Alimento ── */
+  .foto-modal { display: none; position: fixed; inset: 0; background: #0f172a; z-index: 300; flex-direction: column; }
+  .foto-modal.show { display: flex; }
+  .foto-modal-header { background: #1a56a0; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .foto-modal-titulo { font-size: 15px; font-weight: 700; flex: 1; }
+  .foto-modal-sub    { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+  .foto-modal-fechar { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .foto-modal-body   { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 14px; overflow-y: auto; }
+  .foto-instrucao    { background: #1e293b; border-radius: 14px; padding: 16px; text-align: center; }
+  .foto-instrucao-icon { font-size: 48px; margin-bottom: 8px; }
+  .foto-instrucao-titulo { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .foto-instrucao-desc   { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .foto-preview-wrap { display: none; position: relative; border-radius: 14px; overflow: hidden; background: #000; }
+  .foto-preview-wrap.show { display: block; }
+  .foto-preview-img  { width: 100%; max-height: 55vh; object-fit: contain; display: block; }
+  .foto-preview-badge { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: #34d399; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+  .foto-participante-label { background: #1e293b; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #94a3b8; }
+  .foto-participante-label strong { color: white; display: block; font-size: 15px; margin-top: 2px; }
+  .foto-btn-primario { width: 100%; padding: 18px; background: linear-gradient(135deg, #1a56a0 0%, #1d4ed8 100%); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .foto-btn-primario:active { transform: scale(0.98); }
+  .foto-btn-secundario { width: 100%; padding: 14px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .foto-btn-confirmar { width: 100%; padding: 18px; background: #16a34a; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .foto-btn-confirmar:disabled { background: #334155; color: #475569; cursor: not-allowed; }
+  .foto-progress { background: #1e293b; border-radius: 10px; padding: 14px; text-align: center; display: none; }
+  .foto-progress.show { display: block; }
+  .foto-progress-bar-wrap { background: #334155; border-radius: 6px; height: 6px; margin-top: 10px; overflow: hidden; }
+  .foto-progress-bar { height: 100%; background: #1a56a0; width: 0%; border-radius: 6px; transition: width 0.3s; }
+  .foto-pular-link { text-align: center; font-size: 12px; color: #475569; cursor: pointer; padding: 4px; text-decoration: underline; }
+  /* Input oculto para captura de foto do alimento */
+  #foto-input { display: none; }
+
   /* ── Feedback full-screen ── */
   .feedback { display: none; position: fixed; inset: 0; background: #059669;
     align-items: center; justify-content: center; flex-direction: column; gap: 14px; z-index: 200;
@@ -285,6 +316,72 @@
 
 </div>
 
+<!-- INPUT oculto para foto do alimento -->
+<input type="file" id="foto-input" accept="image/*" capture="environment" onchange="fotoCapturada(this)">
+
+<!-- MODAL: Foto do Alimento -->
+<div class="foto-modal" id="foto-modal">
+  <div class="foto-modal-header">
+    <div>
+      <div class="foto-modal-titulo">📸 Foto do Alimento</div>
+      <div class="foto-modal-sub">Registre o 1kg de alimento entregue</div>
+    </div>
+    <button class="foto-modal-fechar" onclick="fecharModalFoto()">✕ Pular</button>
+  </div>
+  <div class="foto-modal-body">
+
+    <!-- Label com nome do participante -->
+    <div class="foto-participante-label" id="foto-participante-label">
+      Participante:
+      <strong id="foto-participante-nome">—</strong>
+    </div>
+
+    <!-- Instrução (antes de tirar foto) -->
+    <div class="foto-instrucao" id="foto-instrucao">
+      <div class="foto-instrucao-icon">🥫</div>
+      <div class="foto-instrucao-titulo">Fotografe o alimento</div>
+      <div class="foto-instrucao-desc">
+        Posicione o <strong>1kg de alimento não-perecível</strong><br>
+        em local visível e tire a foto para registro.<br><br>
+        Esta foto será vinculada ao cadastro do participante<br>
+        e usada na <strong>prestação de contas do evento</strong>.
+      </div>
+    </div>
+
+    <!-- Preview da foto -->
+    <div class="foto-preview-wrap" id="foto-preview-wrap">
+      <img id="foto-preview-img" class="foto-preview-img" src="" alt="Foto do alimento">
+      <div class="foto-preview-badge">✓ 1kg registrado</div>
+    </div>
+
+    <!-- Progresso de upload -->
+    <div class="foto-progress" id="foto-progress">
+      <div style="font-size:13px;color:#94a3b8;" id="foto-progress-texto">Enviando foto...</div>
+      <div class="foto-progress-bar-wrap">
+        <div class="foto-progress-bar" id="foto-progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Botões dinâmicos (trocam conforme estado) -->
+    <div id="foto-btns">
+      <!-- Estado 1: sem foto -->
+      <button class="foto-btn-primario" id="foto-btn-tirar" onclick="document.getElementById('foto-input').click()">
+        <span style="font-size:28px;">📷</span>
+        <div style="text-align:left;">
+          <div>Tirar foto do alimento</div>
+          <div style="font-size:12px;font-weight:400;opacity:0.8;margin-top:2px;">Abre a câmera traseira</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Link discreto para pular -->
+    <div class="foto-pular-link" onclick="fecharModalFoto()">
+      Não foi possível fotografar — pular esta etapa
+    </div>
+
+  </div>
+</div>
+
 <!-- Feedback full-screen -->
 <div class="feedback" id="feedback">
   <div class="feedback-icone">✅</div>
@@ -312,6 +409,7 @@ let streamAtivo       = null;
 let animFrame         = null;
 let scanBloqueado     = false;
 let barcodeDetector   = null;
+let fotoAlimentoUrl   = null;   // URL da foto do alimento após upload
 
 // Verifica suporte à BarcodeDetector API (nativa do navegador)
 if ('BarcodeDetector' in window) {
@@ -981,10 +1079,165 @@ function mostrarNaoEncontrado(ref) {
 async function confirmarPresenca() {
   if (!participanteAtual) return;
   const btn = document.getElementById('confirmar-btn');
-  btn.disabled = true;
-  btn.textContent = 'Registrando...';
 
-  const agora = new Date().toISOString();
+  // Se já foi credenciado, não faz nada
+  if (btn.classList.contains('ja')) return;
+
+  // Abre modal de foto PRIMEIRO
+  abrirModalFoto();
+}
+
+// ================================================================
+// MODAL DE FOTO DO ALIMENTO
+// ================================================================
+function abrirModalFoto() {
+  fotoAlimentoUrl = null;
+  document.getElementById('foto-participante-nome').textContent = participanteAtual?.nome_completo || '—';
+
+  // Resetar estado visual do modal
+  document.getElementById('foto-instrucao').style.display   = '';
+  document.getElementById('foto-preview-wrap').classList.remove('show');
+  document.getElementById('foto-progress').classList.remove('show');
+  document.getElementById('foto-input').value = '';
+
+  document.getElementById('foto-btns').innerHTML = `
+    <button class="foto-btn-primario" id="foto-btn-tirar"
+      onclick="document.getElementById('foto-input').click()">
+      <span style="font-size:28px;">📷</span>
+      <div style="text-align:left;">
+        <div>Tirar foto do alimento</div>
+        <div style="font-size:12px;font-weight:400;opacity:0.8;margin-top:2px;">Abre a câmera traseira</div>
+      </div>
+    </button>`;
+
+  document.getElementById('foto-modal').classList.add('show');
+}
+
+function fecharModalFoto() {
+  document.getElementById('foto-modal').classList.remove('show');
+  // Chama confirmação sem foto
+  _executarConfirmacao(null);
+}
+
+async function fotoCapturada(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Mostrar preview imediato
+  const leitor = new FileReader();
+  leitor.onload = async (e) => {
+    document.getElementById('foto-instrucao').style.display = 'none';
+    const preview = document.getElementById('foto-preview-wrap');
+    const img     = document.getElementById('foto-preview-img');
+    img.src = e.target.result;
+    preview.classList.add('show');
+
+    // Botões de retake + confirmar
+    document.getElementById('foto-btns').innerHTML = `
+      <button class="foto-btn-confirmar" id="foto-btn-confirmar" onclick="uploadEConfirmar()">
+        ✅ Confirmar com esta foto
+      </button>
+      <button class="foto-btn-secundario" style="margin-top:8px;"
+        onclick="document.getElementById('foto-input').click()">
+        🔄 Tirar outra foto
+      </button>`;
+  };
+  leitor.readAsDataURL(file);
+}
+
+async function uploadEConfirmar() {
+  const btn = document.getElementById('foto-btn-confirmar');
+  if (btn) btn.disabled = true;
+
+  const input = document.getElementById('foto-input');
+  const file  = input.files[0];
+  if (!file) { fecharModalFoto(); return; }
+
+  // Mostrar barra de progresso
+  const prog      = document.getElementById('foto-progress');
+  const progBar   = document.getElementById('foto-progress-bar');
+  const progTexto = document.getElementById('foto-progress-texto');
+  prog.classList.add('show');
+  progTexto.textContent = 'Comprimindo imagem...';
+  progBar.style.width   = '20%';
+
+  try {
+    // Comprimir imagem via canvas (max 900px, JPEG 75%)
+    const base64Comprimida = await comprimirImagem(file, 900, 0.75);
+    progTexto.textContent = 'Enviando para o servidor...';
+    progBar.style.width   = '50%';
+
+    // Nome único para o arquivo
+    const ext  = 'jpg';
+    const nome = `${Date.now()}_${(participanteAtual?.id || 'X').toString().slice(-6)}.${ext}`;
+
+    const resp = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao:   'uploadFoto',
+        base64: base64Comprimida,
+        nome,
+        tipo:   'image/jpeg'
+      })
+    });
+
+    progBar.style.width = '85%';
+    const data = await resp.json();
+
+    if (data?.url) {
+      fotoAlimentoUrl = data.url;
+      progTexto.textContent = '✓ Foto salva com sucesso!';
+      progBar.style.width = '100%';
+      progBar.style.background = '#16a34a';
+      setTimeout(() => {
+        document.getElementById('foto-modal').classList.remove('show');
+        _executarConfirmacao(fotoAlimentoUrl);
+      }, 700);
+    } else {
+      throw new Error('URL não retornada');
+    }
+  } catch (err) {
+    console.error('Erro upload foto:', err);
+    progTexto.textContent = '⚠️ Falha no envio — prosseguindo sem foto';
+    progBar.style.background = '#f59e0b';
+    setTimeout(() => {
+      document.getElementById('foto-modal').classList.remove('show');
+      _executarConfirmacao(null);
+    }, 1200);
+  }
+}
+
+// Comprime imagem usando canvas (retorna base64 sem prefixo data:...)
+function comprimirImagem(file, maxDim, qualidade) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else                 { width  = Math.round(width  * maxDim / height); height = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', qualidade);
+      resolve(dataUrl.split(',')[1]); // só o base64
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// Executa o check-in de fato (com ou sem foto)
+async function _executarConfirmacao(urlFoto) {
+  if (!participanteAtual) return;
+  const btn = document.getElementById('confirmar-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
+
+  const agora    = new Date().toISOString();
   const inscConf = inscricoesAtuais.filter(i => i.status !== 'lista_espera');
   let ok = true;
 
@@ -1003,6 +1256,20 @@ async function confirmarPresenca() {
     if (!Array.isArray(d) || d.length === 0) { ok = false; }
   }
 
+  // Salvar URL da foto no participante (se houver)
+  if (urlFoto && participanteAtual?.id) {
+    await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        acao:   'atualizar',
+        tabela: 'participantes',
+        id:     participanteAtual.id,
+        dados:  { foto_alimento: urlFoto, foto_alimento_em: agora }
+      })
+    });
+  }
+
   if (ok) {
     atualizarContador(1);
     const ficha  = inscricoesAtuais[0]?.numero_ficha || '—';
@@ -1012,6 +1279,10 @@ async function confirmarPresenca() {
     document.getElementById('feedback-ficha').textContent = `Ficha ${ficha}`;
     document.getElementById('feedback-hora').textContent  = `Credenciado às ${horaBR}`;
 
+    // Ícone diferente se tem foto
+    const fbSub = document.querySelector('.feedback-sub');
+    if (fbSub) fbSub.textContent = urlFoto ? '1kg de alimento registrado com foto ✓' : '1kg de alimento recebido ✓';
+
     const fb = document.getElementById('feedback');
     fb.classList.add('show');
     setTimeout(() => {
@@ -1019,8 +1290,7 @@ async function confirmarPresenca() {
       novaLeitura();
     }, 2800);
   } else {
-    btn.textContent = '❌ Erro — tente novamente';
-    btn.disabled    = false;
+    if (btn) { btn.textContent = '❌ Erro — tente novamente'; btn.disabled = false; }
   }
 }
 
@@ -1030,6 +1300,7 @@ async function confirmarPresenca() {
 function novaLeitura() {
   participanteAtual = null;
   inscricoesAtuais  = [];
+  fotoAlimentoUrl   = null;
   scanBloqueado     = false;
   document.getElementById('resultado').style.display = 'none';
   document.getElementById('camera-status').style.display = 'none';
