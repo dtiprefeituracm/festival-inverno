@@ -622,6 +622,7 @@ async function entrar() {
       perfilAdmin = { perfil: data.perfil, nome: data.nome, podeExcluir: data.podeExcluir };
       sessionStorage.setItem('adminToken', tokenAdmin);
       sessionStorage.setItem('adminPerfil', JSON.stringify(perfilAdmin));
+      sessionStorage.setItem('adminUser', user);
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('painel').style.display = 'block';
       // Só admin master vê seção de usuários e botão de senha
@@ -1525,10 +1526,34 @@ async function salvarInscricaoManual() {
   }
 }
 
+// ── Verifica permissão de exclusão em tempo real no servidor ──
+async function checarPermissaoExclusao() {
+  try {
+    const usuario = sessionStorage.getItem('adminUser') || 'admin';
+    const r = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'verificarPermissao', usuario })
+    });
+    const d = await r.json();
+    if (!d.ok) return false;
+    if (perfilAdmin) perfilAdmin.podeExcluir = d.podeExcluir;
+    return d.podeExcluir === true;
+  } catch(e) {
+    return false;
+  }
+}
+
 async function deletarParticipanteSemInscricao(pid, nome) {
   if (!confirm(`Excluir o participante "${nome}"?
 
 Esta ação remove o cadastro permanentemente do banco de dados.`)) return;
+
+  const podeExcluir = await checarPermissaoExclusao();
+  if (!podeExcluir) {
+    alert('❌ Você não tem permissão para excluir participantes.\nSe acredita que isso é um erro, contate o administrador.');
+    return;
+  }
 
   const r = await fetch('/api/supabase', {
     method: 'POST',
@@ -1664,8 +1689,10 @@ function fecharModalExcluirBg(e) {
 }
 
 async function confirmarExclusao() {
-  if (!perfilAdmin?.podeExcluir) {
-    alert('❌ Você não tem permissão para excluir participantes.');
+  const podeExcluir = await checarPermissaoExclusao();
+  if (!podeExcluir) {
+    alert('❌ Você não tem permissão para excluir participantes.\nSe acredita que isso é um erro, contate o administrador.');
+    fecharModalExcluir();
     return;
   }
   const pid   = document.getElementById('excluir-pid').value;
@@ -1747,6 +1774,13 @@ async function descredenciar(participanteId, inscricaoId, nome) {
 // ================================================================
 async function excluirModalidade(inscricaoId, nomeModalidade, participanteId) {
   if (!confirm(`Excluir a inscrição em "${nomeModalidade}"?\n\nO participante permanece cadastrado, mas perde esta modalidade.`)) return;
+
+  const podeExcluir = await checarPermissaoExclusao();
+  if (!podeExcluir) {
+    alert('❌ Você não tem permissão para excluir inscrições.\nSe acredita que isso é um erro, contate o administrador.');
+    return;
+  }
+
   try {
     const r = await fetch('/api/supabase', {
       method: 'POST',
