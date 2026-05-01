@@ -422,47 +422,7 @@
     <div style="padding:12px 16px;font-size:12px;color:#94a3b8;border-top:1px solid #f1f5f9;" id="contador-label"></div>
   </div>
 
-  <!-- Usuários operadores -->
-  <div class="section" style="margin-bottom:16px;border-left:3px solid #0891b2;" id="section-usuarios">
-    <div class="section-header">
-      <div>
-        <span class="section-titulo" style="color:#0891b2;">👥 Usuários Operadores</span>
-        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Gerencie quem pode acessar o credenciamento. Com <strong>VERCEL_TOKEN</strong> configurado uma vez, operadores são ativados automaticamente — sem acessar a Vercel novamente.</div>
-      </div>
-    </div>
-    <div id="usuarios-grid" class="usuarios-grid">
-      <div class="loading" style="grid-column:1/-1;">Carregando...</div>
-    </div>
-    <div class="add-user-form" id="form-add-user">
-      <h3>➕ Adicionar operador</h3>
-      <div class="add-user-row">
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <label style="font-size:10px;color:#64748b;font-weight:600;">LOGIN (usuário)</label>
-          <input type="text" id="nu-user" placeholder="ex: joao" maxlength="20">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <label style="font-size:10px;color:#64748b;font-weight:600;">SENHA</label>
-          <input type="password" id="nu-senha" placeholder="ex: senha123" maxlength="30">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <label style="font-size:10px;color:#64748b;font-weight:600;">NOME COMPLETO</label>
-          <input type="text" id="nu-nome" placeholder="ex: João Silva" maxlength="40">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <label style="font-size:10px;color:#64748b;font-weight:600;">PERMISSÃO</label>
-          <select id="nu-excluir">
-            <option value="false">🔒 Sem permissão de excluir</option>
-            <option value="true">🗑 Pode excluir participantes</option>
-          </select>
-        </div>
-        <button class="btn-add-user" onclick="adicionarOperador()" style="align-self:flex-end;">Salvar</button>
-      </div>
-      <div id="add-user-msg" style="margin-top:8px;font-size:12px;display:none;"></div>
-      <div id="vercel-status-box" style="margin-top:12px;padding:10px 12px;border-radius:8px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;">
-        ⏳ Verificando integração com Vercel...
-      </div>
-    </div>
-  </div>
+
 
   <!-- Log de atividade -->
   <div class="section" style="margin-bottom:16px;border-left:3px solid #7c3aed;" id="section-log">
@@ -636,9 +596,11 @@ async function entrar() {
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('painel').style.display = 'block';
       // Só admin master vê seção de usuários
-      if (perfilAdmin.perfil !== 'admin') {
-        const su = document.getElementById('section-usuarios');
-        if (su) su.style.display = 'none';
+      const btnFloat = document.getElementById('btn-usuarios-float');
+      if (perfilAdmin.perfil === 'admin') {
+        if (btnFloat) btnFloat.style.display = 'flex';
+      } else {
+        if (btnFloat) btnFloat.style.display = 'none';
       }
       const tu = document.getElementById('topbar-usuario');
       if (tu) tu.textContent = '👤 ' + (perfilAdmin.nome || 'Operador');
@@ -663,6 +625,8 @@ function sair() {
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('painel').style.display = 'none';
   document.getElementById('login-senha').value = '';
+  const btnFloat = document.getElementById('btn-usuarios-float');
+  if (btnFloat) btnFloat.style.display = 'none';
 }
 
 // ================================================================
@@ -683,9 +647,9 @@ let todosInscritos = [];
     const p  = document.getElementById('painel');
     if (lw) lw.style.display = 'none';
     if (p)  { p.style.display = 'block'; }
-    if (perfilAdmin?.perfil !== 'admin') {
-      const su = document.getElementById('section-usuarios');
-      if (su) su.style.display = 'none';
+    const btnFloatAuto = document.getElementById('btn-usuarios-float');
+    if (perfilAdmin?.perfil === 'admin') {
+      if (btnFloatAuto) btnFloatAuto.style.display = 'flex';
     }
     const tu = document.getElementById('topbar-usuario');
     if (tu) tu.textContent = '👤 ' + (perfilAdmin?.nome || 'Operador');
@@ -717,9 +681,7 @@ async function carregarDados() {
     try { renderRelatorio(todosInscritos, inscricoes); } catch(e) { console.error('renderRelatorio:', e); document.getElementById('relatorio-grid').innerHTML = '<div class="vazio">Erro ao carregar relatório.</div>'; }
     try { renderSemInscricao(todosInscritos, inscricoes); } catch(e) { console.error('renderSemInscricao:', e); }
     try { renderCredenciamento(todosInscritos); }        catch(e) { console.error('renderCredenciamento:', e); document.getElementById('credenciamento-resumo').innerHTML = '<div class="vazio" style="padding:12px;">Erro ao carregar credenciamento.</div>'; }
-    try { renderUsuarios(); }                            catch(e) { console.error('renderUsuarios:', e); }
-    try { renderLog(); }                                 catch(e) { console.error('renderLog:', e); }
-    try { verificarVercel(); }                           catch(e) { console.error('verificarVercel:', e); }
+
 
   } catch (e) {
     console.error('carregarDados ERRO:', e);
@@ -2118,22 +2080,37 @@ CREATE POLICY "exclusao_inscricoes"           ON inscricoes    FOR DELETE USING 
 }
 
 // ================================================================
-// ================================================================
-// SISTEMA DE USUÁRIOS OPERADORES — Integrado com API Vercel
+// GERENCIAMENTO DE USUÁRIOS — Modal flutuante
+// Operadores salvos na Vercel via API. localStorage só para cache visual.
 // ================================================================
 let vercelIntegrado = false;
 
-function getOperadores() {
+// ── Utilitários de cache local ────────────────────────────────
+function guGetOps() {
   try { return JSON.parse(localStorage.getItem('fi_operadores') || '[]'); }
   catch { return []; }
 }
-function setOperadores(ops) {
+function guSetOps(ops) {
   localStorage.setItem('fi_operadores', JSON.stringify(ops));
 }
 
-async function verificarVercel() {
-  const box = document.getElementById('vercel-status-box');
-  if (!box) return;
+// ── Abrir / fechar modal ──────────────────────────────────────
+function abrirGerenciarUsuarios() {
+  document.getElementById('modal-usuarios-bg').style.display = 'flex';
+  guVerificarVercel();
+  guRenderLista();
+}
+function fecharGerenciarUsuarios() {
+  document.getElementById('modal-usuarios-bg').style.display = 'none';
+}
+// Fecha ao clicar fora
+document.getElementById('modal-usuarios-bg').addEventListener('click', function(e) {
+  if (e.target === this) fecharGerenciarUsuarios();
+});
+
+// ── Verificar integração Vercel ───────────────────────────────
+async function guVerificarVercel() {
+  const el = document.getElementById('gu-vercel-status');
   try {
     const r = await fetch('/api/vercel-env', {
       method: 'POST',
@@ -2143,109 +2120,129 @@ async function verificarVercel() {
     const d = await r.json();
     if (d.ok) {
       vercelIntegrado = true;
-      box.style.background = '#f0fdf4';
-      box.style.borderColor = '#bbf7d0';
-      box.style.color = '#166534';
-      box.innerHTML = '✅ <strong>Integração Vercel ativa!</strong> Operadores são ativados automaticamente — sem configuração manual ou redeploy.';
+      el.textContent = '✅ Integração Vercel ativa — operadores salvos automaticamente';
+      el.style.color = '#166534';
     } else {
-      mostrarBoxManual(box, d.ajuda || d.erro);
+      vercelIntegrado = false;
+      el.textContent = '⚠️ Vercel inativa — variáveis serão exibidas para cópia manual';
+      el.style.color = '#92400e';
     }
-  } catch (e) {
-    mostrarBoxManual(box, 'Endpoint /api/vercel-env não disponível.');
+  } catch {
+    vercelIntegrado = false;
+    el.textContent = '⚠️ Sem integração Vercel — modo manual';
+    el.style.color = '#92400e';
   }
+  guRenderLista();
 }
 
-function mostrarBoxManual(box, motivo) {
-  vercelIntegrado = false;
-  box.style.background = '#fef3c7';
-  box.style.borderColor = '#fde68a';
-  box.style.color = '#92400e';
-  box.innerHTML = `⚠️ <strong>Integração Vercel inativa.</strong> Após salvar, copie a variável e adicione manualmente na Vercel.<br>
-    <span style="font-size:11px;opacity:0.8;">${escHtml(motivo || '')}</span><br>
-    <span style="font-size:11px;">Configure <code>VERCEL_TOKEN</code> e <code>VERCEL_PROJECT_ID</code> para ativar integração automática.</span>`;
-}
+// ── Renderizar lista de usuários ──────────────────────────────
+function guRenderLista() {
+  const lista = document.getElementById('gu-lista');
+  const ops = guGetOps();
 
-function renderUsuarios() {
-  const grid = document.getElementById('usuarios-grid');
-  if (!grid) return;
-  const ops = getOperadores();
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;
+                border-radius:8px;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:700;font-size:13px;color:#0c4a6e;">👑 Administrador</div>
+        <div style="font-size:11px;color:#0369a1;">Login: <strong>admin</strong> · Acesso total · gerencia usuários</div>
+      </div>
+      <span style="font-size:10px;background:#0891b2;color:white;padding:2px 8px;border-radius:20px;">Admin Master</span>
+    </div>`;
 
-  let html = `<div class="usuario-card admin-card">
-    <div class="usuario-nome">Administrador</div>
-    <div class="usuario-user">Usuário: <code>admin</code> (definido na Vercel)</div>
-    <span class="usuario-badge badge-admin">👑 Admin Master</span>
-    <div style="font-size:11px;color:#64748b;margin-top:6px;">Acesso total · pode excluir · gerencia operadores</div>
-  </div>`;
+  if (ops.length === 0) {
+    html += `<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">
+      Nenhum operador cadastrado.</div>`;
+  }
 
   ops.forEach((op, i) => {
-    const statusLabel = op.ativo ? '✅ Ativo na Vercel' : '⏳ Aguardando ativação...';
-    const statusCls   = op.ativo ? 'color:#166534' : 'color:#92400e';
-    html += `<div class="usuario-card">
-      <div class="usuario-nome">${escHtml(op.nome)}</div>
-      <div class="usuario-user">Usuário: <code>${escHtml(op.user)}</code></div>
-      <span class="usuario-badge ${op.podeExcluir ? 'badge-op' : 'badge-op-restrito'}">
-        ${op.podeExcluir ? '✅ Pode excluir' : '🔒 Sem exclusão'}
-      </span>
-      <div style="font-size:10px;${statusCls};margin-top:4px;">${statusLabel}</div>
-      <div class="usuario-acoes">
-        <button class="btn-del-user" onclick="removerOperador(${i})">🗑 Remover</button>
+    html += `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+                padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:13px;color:#1e293b;">${escHtml(op.nome)}</div>
+        <div style="font-size:11px;color:#64748b;">
+          Login: <strong>${escHtml(op.user)}</strong> ·
+          ${op.podeExcluir
+            ? '<span style="color:#dc2626;">🗑 Pode excluir</span>'
+            : '<span style="color:#64748b;">🔒 Sem exclusão</span>'}
+        </div>
       </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="guEditarUsuario(${i})"
+          style="padding:4px 10px;font-size:11px;background:#f1f5f9;color:#1e293b;
+                 border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-weight:600;">
+          ✏️ Editar
+        </button>
+        <button onclick="guRemoverUsuario(${i})"
+          style="padding:4px 10px;font-size:11px;background:#fff5f5;color:#dc2626;
+                 border:1px solid #fecaca;border-radius:6px;cursor:pointer;font-weight:600;">
+          🗑 Remover
+        </button>
+      </div>
+      ${!vercelIntegrado && !op.ativo ? `
+      <div style="width:100%;margin-top:4px;padding:6px 8px;background:#fef9c3;
+                  border:1px solid #fde047;border-radius:6px;font-size:10px;color:#854d0e;">
+        Adicione na Vercel → Environment Variables:<br>
+        <strong>OPERADOR_${i+1}</strong> =
+        <code>${op.user}:${op.senha}:${escHtml(op.nome)}:${op.podeExcluir}</code>
+        <button onclick="navigator.clipboard.writeText('${op.user}:${op.senha}:${escHtml(op.nome)}:${op.podeExcluir}').then(()=>this.textContent='✅ Copiado!').catch(()=>{})"
+          style="margin-left:6px;padding:2px 6px;font-size:10px;background:#0891b2;
+                 color:white;border:none;border-radius:4px;cursor:pointer;">
+          📋 Copiar
+        </button>
+      </div>` : ''}
     </div>`;
   });
 
-  if (ops.length === 0) {
-    html += `<div style="color:#94a3b8;font-size:13px;padding:8px 0;">Nenhum operador cadastrado. Use o formulário abaixo para adicionar.</div>`;
-  }
-  grid.innerHTML = html;
+  lista.innerHTML = html;
 }
 
-async function adicionarOperador() {
-  const user    = document.getElementById('nu-user').value.trim();
-  const senha   = document.getElementById('nu-senha').value.trim();
-  const nome    = document.getElementById('nu-nome').value.trim();
-  const excluir = document.getElementById('nu-excluir').value === 'true';
-  const msg     = document.getElementById('add-user-msg');
+// ── Adicionar usuário ─────────────────────────────────────────
+async function guAdicionarUsuario() {
+  const user    = document.getElementById('gu-user').value.trim().toLowerCase();
+  const senha   = document.getElementById('gu-senha').value.trim();
+  const nome    = document.getElementById('gu-nome').value.trim();
+  const excluir = document.getElementById('gu-excluir').value === 'true';
+  const msg     = document.getElementById('gu-msg');
 
-  if (!user || !senha || !nome) {
-    msg.textContent = '⚠️ Preencha todos os campos.';
-    msg.style.color = '#dc2626'; msg.style.display = 'block'; return;
-  }
-  if (user === 'admin') {
-    msg.textContent = '⚠️ O usuário "admin" é reservado.';
-    msg.style.color = '#dc2626'; msg.style.display = 'block'; return;
-  }
-  const ops = getOperadores();
-  if (ops.some(o => o.user === user)) {
-    msg.textContent = '⚠️ Usuário já existe.';
-    msg.style.color = '#dc2626'; msg.style.display = 'block'; return;
-  }
+  const mostrar = (txt, ok) => {
+    msg.textContent = txt;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fff5f5';
+    msg.style.color = ok ? '#166534' : '#dc2626';
+    msg.style.border = `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`;
+  };
 
-  ops.push({ user, senha, nome, podeExcluir: excluir });
-  setOperadores(ops);
-  document.getElementById('nu-user').value  = '';
-  document.getElementById('nu-senha').value = '';
-  document.getElementById('nu-nome').value  = '';
+  if (!user || !senha || !nome) return mostrar('⚠️ Preencha todos os campos.', false);
+  if (user === 'admin') return mostrar('⚠️ O login "admin" é reservado.', false);
+  if (!/^[a-z0-9_]+$/.test(user)) return mostrar('⚠️ Login: use só letras minúsculas, números e _.', false);
 
-  // Salva localmente como pendente
-  ops[ops.length - 1].ativo = false;
-  setOperadores(ops);
-  renderUsuarios();
+  const ops = guGetOps();
+  if (ops.some(o => o.user === user)) return mostrar('⚠️ Este login já existe. Escolha outro.', false);
+
+  const novoOp = { user, senha, nome, podeExcluir: excluir, ativo: false };
+  ops.push(novoOp);
+  guSetOps(ops);
+
+  // Limpa campos
+  document.getElementById('gu-user').value  = '';
+  document.getElementById('gu-senha').value = '';
+  document.getElementById('gu-nome').value  = '';
 
   if (vercelIntegrado) {
-    msg.innerHTML = '⏳ Salvando operador na Vercel...';
-    msg.style.color = '#0891b2'; msg.style.display = 'block';
+    mostrar('⏳ Salvando na Vercel...', true);
     try {
-      // 1) Salva a variável
       const r = await fetch('/api/vercel-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ acao: 'adicionar', key: `OPERADOR_${ops.length}`, value: `${user}:${senha}:${nome}:${excluir}` })
       });
       const d = await r.json();
-      if (!d.ok) throw new Error(d.erro || 'Erro ao salvar variável');
+      if (!d.ok) throw new Error(d.erro || 'Erro Vercel');
 
-      // 2) Aciona redeploy automático
-      msg.innerHTML = '⏳ Variável salva! Acionando redeploy automático...';
+      mostrar('⏳ Variável salva! Acionando redeploy...', true);
       const rDep = await fetch('/api/vercel-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2253,94 +2250,90 @@ async function adicionarOperador() {
       });
       const dDep = await rDep.json();
 
+      ops[ops.length - 1].ativo = true;
+      guSetOps(ops);
+      guRenderLista();
+
       if (dDep.ok) {
-        // Marca como ativo localmente
-        const opsAtual = getOperadores();
-        opsAtual[opsAtual.length - 1].ativo = true;
-        setOperadores(opsAtual);
-        renderUsuarios();
-        msg.innerHTML = `✅ Operador <strong>"${nome}"</strong> ativado! Redeploy em andamento — login disponível em ~1 minuto.`;
-        msg.style.color = '#166534';
+        mostrar(`✅ "${nome}" ativado! Login disponível em ~1 minuto.`, true);
       } else {
-        msg.innerHTML = `✅ Variável salva na Vercel. Redeploy automático falhou — acione manualmente no painel da Vercel.<br><small style="color:#92400e">${dDep.erro || ''}</small>`;
-        msg.style.color = '#92400e';
+        mostrar(`✅ Variável salva. Redeploy falhou — acione manualmente na Vercel.`, false);
       }
     } catch (e) {
-      msg.innerHTML = `⚠️ Erro: ${e.message}`;
-      msg.style.color = '#dc2626';
+      mostrar(`❌ Erro: ${e.message}`, false);
     }
   } else {
-    const varIdx = ops.length;
-    const varVal = `${user}:${senha}:${nome}:${excluir}`;
-    msg.innerHTML = `
-      <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:10px 12px;">
-        <div style="font-weight:600;color:#854d0e;margin-bottom:6px;">⚠️ VERCEL_TOKEN não configurado — adicione manualmente:</div>
-        <div style="font-size:11px;color:#1e293b;margin-bottom:6px;">
-          Na Vercel → seu projeto → <strong>Settings → Environment Variables</strong>, adicione:
-        </div>
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;font-family:monospace;font-size:11px;word-break:break-all;">
-          <strong>OPERADOR_${varIdx}</strong> = <span id="var-val-copy">${varVal}</span>
-        </div>
-        <button onclick="navigator.clipboard.writeText('${varVal}').then(()=>this.textContent='✅ Copiado!').catch(()=>{})"
-          style="margin-top:8px;padding:4px 12px;font-size:11px;background:#0891b2;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:600;">
-          📋 Copiar valor
-        </button>
-        <div style="font-size:10px;color:#64748b;margin-top:6px;">Após adicionar, clique em <strong>Save</strong> na Vercel e aguarde o redeploy (~1 min).</div>
-      </div>`;
-    msg.style.color = '#166534';
+    guRenderLista();
+    mostrar(`✅ "${nome}" registrado. Copie a variável exibida no card e adicione na Vercel.`, true);
   }
-  msg.style.display = 'block';
 }
 
-async function removerOperador(idx) {
-  const ops = getOperadores();
-  const op  = ops[idx];
+// ── Editar usuário ────────────────────────────────────────────
+function guEditarUsuario(idx) {
+  const ops = guGetOps();
+  const op = ops[idx];
   if (!op) return;
-  if (!confirm(`Remover operador "${op.nome}"?\n\n${vercelIntegrado ? 'A variável será removida automaticamente da Vercel e um redeploy será acionado.' : 'Lembre-se de remover OPERADOR_' + (idx+1) + ' na Vercel.'}`)) return;
+  const novaSenha = prompt(`Editar "${op.nome}"
+
+Nova senha (deixe em branco para manter):`);
+  if (novaSenha === null) return; // cancelou
+  const novoExcluir = confirm(`"${op.nome}" pode excluir inscrições/participantes?
+
+OK = Sim · Cancelar = Não`);
+  if (novaSenha.trim()) ops[idx].senha = novaSenha.trim();
+  ops[idx].podeExcluir = novoExcluir;
+  ops[idx].ativo = false;
+  guSetOps(ops);
+  guRenderLista();
+  if (vercelIntegrado) {
+    fetch('/api/vercel-env', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'adicionar', key: `OPERADOR_${idx+1}`, value: `${ops[idx].user}:${ops[idx].senha}:${ops[idx].nome}:${novoExcluir}` })
+    }).then(r => r.json()).then(d => {
+      if (d.ok) {
+        ops[idx].ativo = true; guSetOps(ops); guRenderLista();
+        fetch('/api/vercel-env', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({acao:'redeploy'}) });
+      }
+    }).catch(() => {});
+  }
+}
+
+// ── Remover usuário ───────────────────────────────────────────
+async function guRemoverUsuario(idx) {
+  const ops = guGetOps();
+  const op = ops[idx];
+  if (!op) return;
+  if (!confirm(`Remover "${op.nome}" (${op.user})?
+
+O acesso será bloqueado.`)) return;
 
   if (vercelIntegrado) {
     try {
-      // Lista variáveis na Vercel para pegar o ID
       const rList = await fetch('/api/vercel-env', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ acao: 'listar' })
       });
       const dList = await rList.json();
-      const varKey = `OPERADOR_${idx+1}`;
-      const envVar = (dList.variaveis || []).find(v => v.key === varKey);
-
+      const envVar = (dList.variaveis || []).find(v => v.key === `OPERADOR_${idx+1}`);
       if (envVar) {
         await fetch('/api/vercel-env', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ acao: 'remover', envId: envVar.id })
         });
       }
-
-      // Renumera: remove o slot e reescreve os seguintes
       ops.splice(idx, 1);
-      setOperadores(ops);
-      renderUsuarios();
-
-      // Aciona redeploy
-      const rDep = await fetch('/api/vercel-env', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao: 'redeploy' })
-      });
-      const dDep = await rDep.json();
-      if (dDep.ok) {
-        alert(`✅ Operador "${op.nome}" removido! Redeploy em andamento — acesso bloqueado em ~1 minuto.`);
-      } else {
-        alert(`✅ Operador "${op.nome}" removido da Vercel. Redeploy automático falhou — acione manualmente.`);
-      }
-    } catch (e) { alert('Erro Vercel: ' + e.message); }
+      guSetOps(ops);
+      guRenderLista();
+      fetch('/api/vercel-env', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({acao:'redeploy'}) });
+      document.getElementById('gu-msg').style.display = 'none';
+    } catch (e) { alert('Erro: ' + e.message); }
   } else {
     ops.splice(idx, 1);
-    setOperadores(ops);
-    renderUsuarios();
-    alert(`✅ Operador "${op.nome}" removido localmente.\nRemova também OPERADOR_${idx+1} na Vercel para bloquear o acesso.`);
+    guSetOps(ops);
+    guRenderLista();
   }
 }
-
 
 async function promoverParaConfirmado(inscricaoId, nomeParticipante) {
   if (!confirm(`Promover "${nomeParticipante}" para CONFIRMADO?
@@ -2603,5 +2596,79 @@ function imprimirQuantitativo() {
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     BOTÃO FLUTUANTE DE USUÁRIOS (cadeado no canto)
+════════════════════════════════════════════════════════════ -->
+<button id="btn-usuarios-float" onclick="abrirGerenciarUsuarios()"
+  title="Gerenciar Usuários"
+  style="position:fixed;bottom:24px;right:24px;z-index:900;
+         width:44px;height:44px;border-radius:50%;border:none;
+         background:#1a56a0;color:white;font-size:20px;cursor:pointer;
+         box-shadow:0 4px 12px rgba(0,0,0,0.25);display:none;
+         align-items:center;justify-content:center;">
+  🔐
+</button>
+
+<!-- Modal de gerenciamento de usuários -->
+<div id="modal-usuarios-bg"
+  style="display:none;position:fixed;inset:0;z-index:1000;
+         background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;width:100%;max-width:540px;
+               max-height:85vh;overflow-y:auto;margin:16px;
+               box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:20px 24px 16px;border-bottom:1px solid #e2e8f0;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#1a56a0;">🔐 Gerenciar Usuários</div>
+        <div id="gu-vercel-status" style="font-size:11px;color:#94a3b8;margin-top:2px;">Verificando integração...</div>
+      </div>
+      <button onclick="fecharGerenciarUsuarios()"
+        style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1;">×</button>
+    </div>
+
+    <!-- Lista de usuários -->
+    <div id="gu-lista" style="padding:16px 24px;"></div>
+
+    <!-- Formulário adicionar -->
+    <div style="padding:0 24px 20px;">
+      <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:12px;">➕ Novo usuário</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">LOGIN</label>
+          <input id="gu-user" type="text" placeholder="ex: joao" maxlength="20"
+            style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">SENHA</label>
+          <input id="gu-senha" type="password" placeholder="ex: senha123" maxlength="30"
+            style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">NOME COMPLETO</label>
+          <input id="gu-nome" type="text" placeholder="ex: João Silva" maxlength="40"
+            style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">PERMISSÃO DE EXCLUIR DADOS</label>
+          <select id="gu-excluir"
+            style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;box-sizing:border-box;">
+            <option value="false">🔒 Não pode excluir inscrições/participantes</option>
+            <option value="true">🗑 Pode excluir inscrições e participantes</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="guAdicionarUsuario()"
+        style="width:100%;padding:10px;background:#1a56a0;color:white;border:none;
+               border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+        ✅ Salvar usuário
+      </button>
+      <div id="gu-msg" style="margin-top:10px;font-size:12px;display:none;padding:8px 12px;border-radius:6px;"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
