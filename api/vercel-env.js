@@ -103,29 +103,29 @@ export default async function handler(req, res) {
   // ── Alterar senha do admin master ────────────────────────────
   if (acao === 'alterarSenhaAdmin') {
     const { novaSenha } = req.body;
-    if (!novaSenha || novaSenha.length < 8) return res.status(400).json({ erro: 'Nova senha inválida (mínimo 8 caracteres)' });
+    if (!novaSenha || novaSenha.length < 8) return res.status(400).json({ erro: 'Nova senha invalida (minimo 8 caracteres)' });
 
     try {
-      // Busca o ID da variável ADMIN_SENHA se existir
       const rList = await fetch(`${baseUrl}${teamParam}`, { headers });
       const dataList = await rList.json();
       const existente = (dataList.envs || []).find(e => e.key === 'ADMIN_SENHA');
 
-      let r;
+      // Se existir, deleta primeiro — Vercel nao permite alterar type de variavel existente
       if (existente) {
-        r = await fetch(`${baseUrl}/${existente.id}${teamParam}`, {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ value: novaSenha, target: ['production', 'preview', 'development'], type: 'encrypted' })
-        });
-      } else {
-        r = await fetch(`${baseUrl}${teamParam}`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ key: 'ADMIN_SENHA', value: novaSenha, target: ['production', 'preview', 'development'], type: 'encrypted' })
-        });
+        await fetch(`${baseUrl}/${existente.id}${teamParam}`, { method: 'DELETE', headers });
       }
 
+      // Recria com novo valor
+      const r = await fetch(`${baseUrl}${teamParam}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          key: 'ADMIN_SENHA',
+          value: novaSenha,
+          target: ['production', 'preview', 'development'],
+          type: 'encrypted'
+        })
+      });
       const data = await r.json();
       if (!r.ok) return res.status(r.status).json({ erro: data.error?.message || 'Erro ao salvar senha' });
       return res.status(200).json({ ok: true });
