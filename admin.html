@@ -427,7 +427,7 @@
     <div class="section-header">
       <div>
         <span class="section-titulo" style="color:#0891b2;">👥 Usuários Operadores</span>
-        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Gerencie quem pode acessar o credenciamento. Com <strong>VERCEL_TOKEN</strong> configurado, as variáveis são salvas automaticamente na Vercel.</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Gerencie quem pode acessar o credenciamento. Com <strong>VERCEL_TOKEN</strong> configurado uma vez, operadores são ativados automaticamente — sem acessar a Vercel novamente.</div>
       </div>
     </div>
     <div id="usuarios-grid" class="usuarios-grid">
@@ -446,9 +446,7 @@
         <button class="btn-add-user" onclick="adicionarOperador()">Salvar</button>
       </div>
       <div id="add-user-msg" style="margin-top:8px;font-size:12px;display:none;"></div>
-      <div id="vercel-status-box" style="margin-top:12px;padding:10px 12px;border-radius:8px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;">
-        ⏳ Verificando integração com Vercel...
-      </div>
+
     </div>
   </div>
 
@@ -2166,21 +2164,18 @@ function renderUsuarios() {
   </div>`;
 
   ops.forEach((op, i) => {
-    const vercelLabel = vercelIntegrado ? '✅ Ativo na Vercel' : '⚠️ Adicionar manualmente';
-    const vercelCls   = vercelIntegrado ? 'color:#166534' : 'color:#92400e';
+    const statusLabel = op.ativo ? '✅ Ativo na Vercel' : '⏳ Aguardando ativação...';
+    const statusCls   = op.ativo ? 'color:#166534' : 'color:#92400e';
     html += `<div class="usuario-card">
       <div class="usuario-nome">${escHtml(op.nome)}</div>
       <div class="usuario-user">Usuário: <code>${escHtml(op.user)}</code></div>
       <span class="usuario-badge ${op.podeExcluir ? 'badge-op' : 'badge-op-restrito'}">
         ${op.podeExcluir ? '✅ Pode excluir' : '🔒 Sem exclusão'}
       </span>
-      <div style="font-size:10px;${vercelCls};margin-top:4px;">${vercelLabel}</div>
+      <div style="font-size:10px;${statusCls};margin-top:4px;">${statusLabel}</div>
       <div class="usuario-acoes">
         <button class="btn-del-user" onclick="removerOperador(${i})">🗑 Remover</button>
       </div>
-      ${!vercelIntegrado ? `<div style="margin-top:8px;padding:6px 8px;background:#fef3c7;border-radius:6px;font-size:10px;color:#92400e;">
-        Variável Vercel: <code>OPERADOR_${i+1}=${op.user}:${op.senha}:${escHtml(op.nome)}:${op.podeExcluir}</code>
-      </div>` : ''}
     </div>`;
   });
 
@@ -2217,217 +2212,106 @@ async function adicionarOperador() {
   document.getElementById('nu-senha').value = '';
   document.getElementById('nu-nome').value  = '';
 
+  // Salva localmente como pendente
+  ops[ops.length - 1].ativo = false;
+  setOperadores(ops);
+  renderUsuarios();
+
   if (vercelIntegrado) {
-    msg.textContent = '⏳ Salvando na Vercel...';
+    msg.innerHTML = '⏳ Salvando operador na Vercel...';
     msg.style.color = '#0891b2'; msg.style.display = 'block';
     try {
+      // 1) Salva a variável
       const r = await fetch('/api/vercel-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ acao: 'adicionar', key: `OPERADOR_${ops.length}`, value: `${user}:${senha}:${nome}:${excluir}` })
       });
       const d = await r.json();
-      if (d.ok) {
-        msg.textContent = `✅ Operador "${nome}" ativado na Vercel! Login disponível imediatamente.`;
+      if (!d.ok) throw new Error(d.erro || 'Erro ao salvar variável');
+
+      // 2) Aciona redeploy automático
+      msg.innerHTML = '⏳ Variável salva! Acionando redeploy automático...';
+      const rDep = await fetch('/api/vercel-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'redeploy' })
+      });
+      const dDep = await rDep.json();
+
+      if (dDep.ok) {
+        // Marca como ativo localmente
+        const opsAtual = getOperadores();
+        opsAtual[opsAtual.length - 1].ativo = true;
+        setOperadores(opsAtual);
+        renderUsuarios();
+        msg.innerHTML = `✅ Operador <strong>"${nome}"</strong> ativado! Redeploy em andamento — login disponível em ~1 minuto.`;
         msg.style.color = '#166534';
       } else {
-        msg.textContent = `⚠️ Salvo localmente. Erro Vercel: ${d.erro}`;
+        msg.innerHTML = `✅ Variável salva na Vercel. Redeploy automático falhou — acione manualmente no painel da Vercel.<br><small style="color:#92400e">${dDep.erro || ''}</small>`;
         msg.style.color = '#92400e';
       }
     } catch (e) {
-      msg.textContent = `⚠️ Salvo localmente. Erro: ${e.message}`;
-      msg.style.color = '#92400e';
+      msg.innerHTML = `⚠️ Erro: ${e.message}`;
+      msg.style.color = '#dc2626';
     }
   } else {
-    msg.textContent = `✅ Operador "${nome}" salvo! Adicione a variável na Vercel para ativar o login.`;
+    msg.innerHTML = `✅ Operador <strong>"${nome}"</strong> salvo localmente.<br>
+      <span style="color:#92400e;font-size:11px;">⚠️ Integração Vercel inativa — configure <code>VERCEL_TOKEN</code> e <code>VERCEL_PROJECT_ID</code> uma única vez para ativar automaticamente.</span>`;
     msg.style.color = '#166534';
   }
   msg.style.display = 'block';
-  renderUsuarios();
 }
 
 async function removerOperador(idx) {
   const ops = getOperadores();
   const op  = ops[idx];
   if (!op) return;
-  if (!confirm(`Remover operador "${op.nome}"?\n\n${vercelIntegrado ? 'A variável será removida automaticamente da Vercel.' : 'Lembre-se de remover OPERADOR_' + (idx+1) + ' na Vercel.'}`)) return;
+  if (!confirm(`Remover operador "${op.nome}"?\n\n${vercelIntegrado ? 'A variável será removida automaticamente da Vercel e um redeploy será acionado.' : 'Lembre-se de remover OPERADOR_' + (idx+1) + ' na Vercel.'}`)) return;
 
   if (vercelIntegrado) {
     try {
+      // Lista variáveis na Vercel para pegar o ID
       const rList = await fetch('/api/vercel-env', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ acao: 'listar' })
       });
       const dList = await rList.json();
-      if (dList.ok) {
-        for (const v of dList.variaveis) {
-          await fetch('/api/vercel-env', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ acao: 'remover', envId: v.id })
-          });
-        }
-        ops.splice(idx, 1);
-        setOperadores(ops);
-        for (let i = 0; i < ops.length; i++) {
-          const o = ops[i];
-          await fetch('/api/vercel-env', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ acao: 'adicionar', key: `OPERADOR_${i+1}`, value: `${o.user}:${o.senha}:${o.nome}:${o.podeExcluir}` })
-          });
-        }
-        alert(`✅ Operador "${op.nome}" removido e Vercel atualizada!`);
+      const varKey = `OPERADOR_${idx+1}`;
+      const envVar = (dList.variaveis || []).find(v => v.key === varKey);
+
+      if (envVar) {
+        await fetch('/api/vercel-env', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'remover', envId: envVar.id })
+        });
+      }
+
+      // Renumera: remove o slot e reescreve os seguintes
+      ops.splice(idx, 1);
+      setOperadores(ops);
+      renderUsuarios();
+
+      // Aciona redeploy
+      const rDep = await fetch('/api/vercel-env', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'redeploy' })
+      });
+      const dDep = await rDep.json();
+      if (dDep.ok) {
+        alert(`✅ Operador "${op.nome}" removido! Redeploy em andamento — acesso bloqueado em ~1 minuto.`);
+      } else {
+        alert(`✅ Operador "${op.nome}" removido da Vercel. Redeploy automático falhou — acione manualmente.`);
       }
     } catch (e) { alert('Erro Vercel: ' + e.message); }
   } else {
     ops.splice(idx, 1);
     setOperadores(ops);
+    renderUsuarios();
+    alert(`✅ Operador "${op.nome}" removido localmente.\nRemova também OPERADOR_${idx+1} na Vercel para bloquear o acesso.`);
   }
-  renderUsuarios();
 }
 
-// ================================================================
-// LOG DE ATIVIDADE (localStorage por dispositivo)
-// ================================================================
-function gravarLog(tipo, descricao) {
-  const entrada = {
-    ts:       new Date().toISOString(),
-    usuario:  perfilAdmin?.nome || 'Desconhecido',
-    perfil:   perfilAdmin?.perfil || 'operador',
-    tipo,
-    descricao
-  };
-  const logs = getLogs();
-  logs.unshift(entrada); // mais recente primeiro
-  // Mantém só os últimos 500 registros
-  if (logs.length > 500) logs.length = 500;
-  localStorage.setItem('fi_logs', JSON.stringify(logs));
-  renderLog();
-}
-
-function getLogs() {
-  try { return JSON.parse(localStorage.getItem('fi_logs') || '[]'); }
-  catch { return []; }
-}
-
-function renderLog() {
-  const div = document.getElementById('log-lista');
-  if (!div) return;
-  const logs = getLogs();
-  if (logs.length === 0) {
-    div.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:8px 0;">Nenhuma atividade registrada neste dispositivo ainda.</div>';
-    return;
-  }
-  div.innerHTML = `<div style="max-height:320px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;">` +
-    logs.slice(0, 100).map(l => {
-      const hora = new Date(l.ts).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-      const cls  = l.tipo === 'excluiu' ? 'log-excluiu' : l.tipo === 'credenciou' ? 'log-credenciou' : '';
-      return `<div class="log-item">
-        <div class="log-hora">${hora}</div>
-        <div class="log-usuario">${escHtml(l.usuario)}</div>
-        <div class="log-acao ${cls}">${escHtml(l.descricao)}</div>
-      </div>`;
-    }).join('') +
-    `</div><div style="font-size:11px;color:#94a3b8;margin-top:8px;">
-      ⚠️ O log é local deste dispositivo. Cada computador/celular tem seu próprio histórico.
-    </div>`;
-}
-
-function exportarLog() {
-  const logs = getLogs();
-  if (logs.length === 0) { alert('Nenhum log para exportar.'); return; }
-  const linhas = ['Data/Hora,Usuário,Perfil,Tipo,Descrição'];
-  logs.forEach(l => {
-    const hora = new Date(l.ts).toLocaleString('pt-BR');
-    linhas.push(`"${hora}","${l.usuario}","${l.perfil}","${l.tipo}","${l.descricao.replace(/"/g, '""')}"`);
-  });
-  const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'log_atividades_festival.csv';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function imprimirHTML(html) {
-  // Abre janela separada apenas com o conteúdo a imprimir
-  // Isso evita imprimir as 5 páginas do painel admin
-  const janela = window.open('', '_blank', 'width=800,height=600');
-  janela.document.write(`<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Impressão — Festival de Inverno 2026</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; }
-    @media print {
-      @page { margin: 1cm; }
-    }
-  </style>
-</head>
-<body>
-  ${html}
-  <scr` + `ipt>
-    window.onload = function() {
-      window.print();
-      window.onafterprint = function() { window.close(); };
-      setTimeout(function() { window.close(); }, 3000);
-    };
-  </scr` + `ipt>
-</body>
-</html>`);
-  janela.document.close();
-}
-
-// ================================================================
-// LISTA DE ESPERA
-// ================================================================
-function renderEspera(inscricoes) {
-  const grid = document.getElementById('espera-grid');
-  const secao = document.getElementById('section-espera');
-  const porMod = {};
-
-  inscricoes.forEach(p => {
-    p.inscricoes.filter(i => i.status === 'lista_espera').forEach(i => {
-      if (!porMod[i.modalidade_id]) porMod[i.modalidade_id] = [];
-      porMod[i.modalidade_id].push({ p, i });
-    });
-  });
-
-  const ids = Object.keys(porMod);
-  if (ids.length === 0) {
-    secao.style.display = 'none';
-    return;
-  }
-
-  secao.style.display = 'block';
-  grid.innerHTML = ids.map(id => {
-    const mod   = MODALIDADES[id];
-    const itens = porMod[id];
-    const rows  = itens.map((item, idx) => `
-      <div class="espera-item">
-        <div class="espera-pos">${idx + 1}</div>
-        <div>
-          <div class="espera-nome">${item.p.nome_completo}</div>
-          <div class="espera-detalhe">${item.p.telefone || '—'} · ${item.p.cidade || '—'}/${item.p.uf || '—'} · Ficha: ${item.i.numero_ficha}</div>
-        </div>
-        <button class="promover-btn" onclick="promoverParaConfirmado('${item.i.id}', '${item.p.nome_completo}')">✓ Promover</button>
-      </div>`).join('');
-
-    return `<div class="espera-mod-bloco">
-      <div class="espera-mod-titulo">
-        ⏳ ${mod ? mod.nome + ' — ' + mod.sub : 'Modalidade ' + id}
-        <span style="font-size:11px;font-weight:500;color:#64748b;">${itens.length} na espera</span>
-      </div>
-      ${rows}
-    </div>`;
-  }).join('');
-}
 
 async function promoverParaConfirmado(inscricaoId, nomeParticipante) {
   if (!confirm(`Promover "${nomeParticipante}" para CONFIRMADO?
