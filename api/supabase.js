@@ -74,6 +74,36 @@ export default async function handler(req, res) {
       return res.status(r.status).json(data);
     }
 
+    // Upload de foto para Supabase Storage (bucket "alimentos")
+    if (acao === 'uploadFoto') {
+      const { base64, nome, tipo } = req.body;
+      if (!base64 || !nome) return res.status(400).json({ erro: 'base64 e nome são obrigatórios' });
+
+      const buffer = Buffer.from(base64, 'base64');
+      const bucket = 'alimentos';
+      const storageUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${nome}`;
+
+      const r = await fetch(storageUrl, {
+        method: 'POST',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type':  tipo || 'image/jpeg',
+          'x-upsert':      'true'
+        },
+        body: buffer
+      });
+
+      if (r.ok) {
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${nome}`;
+        return res.status(200).json({ url: publicUrl });
+      }
+
+      let errData = {};
+      try { errData = await r.json(); } catch {}
+      return res.status(r.status).json({ erro: 'Falha no upload', detalhe: errData });
+    }
+
     return res.status(400).json({ erro: 'Ação não reconhecida' });
 
   } catch (err) {
