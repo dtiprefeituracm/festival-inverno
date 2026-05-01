@@ -2335,33 +2335,78 @@ async function guAdicionarUsuario() {
 }
 
 // ── Editar usuário ────────────────────────────────────────────
-function guEditarUsuario(idx) {
+async function guEditarUsuario(idx) {
   const ops = guGetOps();
   const op = ops[idx];
   if (!op) return;
-  const novaSenha = prompt(`Editar "${op.nome}"
 
-Nova senha (deixe em branco para manter):`);
+  // Monta modal de edição inline
+  const msgEl = document.getElementById('gu-msg');
+  const mostrar = (txt, ok) => {
+    msgEl.textContent = txt;
+    msgEl.style.display = 'block';
+    msgEl.style.background = ok ? '#f0fdf4' : '#fff5f5';
+    msgEl.style.color = ok ? '#166534' : '#dc2626';
+    msgEl.style.border = `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`;
+  };
+
+  const novaSenha = prompt(`Editar "${op.nome}"\n\nNova senha (deixe em branco para manter a senha atual):`);
   if (novaSenha === null) return; // cancelou
-  const novoExcluir = confirm(`"${op.nome}" pode excluir inscrições/participantes?
 
-OK = Sim · Cancelar = Não`);
-  if (novaSenha.trim()) ops[idx].senha = novaSenha.trim();
+  const novoExcluir = confirm(`"${op.nome}" pode excluir inscrições/participantes?\n\nOK = Sim pode excluir · Cancelar = Não pode excluir`);
+
+  // Se não informou nova senha, precisa pedir a senha atual para reescrever corretamente na Vercel
+  let senhaFinal = novaSenha.trim();
+  if (!senhaFinal) {
+    const senhaAtual = prompt(`Para manter a senha atual de "${op.nome}", confirme a senha:`);
+    if (senhaAtual === null) return;
+    senhaFinal = senhaAtual.trim();
+    if (!senhaFinal) {
+      mostrar('⚠️ Senha não informada. Edição cancelada.', false);
+      return;
+    }
+  }
+
+  ops[idx].senha      = senhaFinal;
   ops[idx].podeExcluir = novoExcluir;
-  ops[idx].ativo = false;
+  ops[idx].ativo      = false;
   guSetOps(ops);
   guRenderLista();
+
   if (vercelIntegrado) {
-    fetch('/api/vercel-env', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'adicionar', key: `OPERADOR_${idx+1}`, value: `${ops[idx].user}:${ops[idx].senha}:${ops[idx].nome}:${novoExcluir}` })
-    }).then(r => r.json()).then(d => {
-      if (d.ok) {
-        ops[idx].ativo = true; guSetOps(ops); guRenderLista();
-        fetch('/api/vercel-env', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({acao:'redeploy'}) });
+    mostrar('⏳ Salvando alterações na Vercel...', true);
+    try {
+      // Usa a envKey salva (ex: OPERADOR_1) para garantir a chave certa
+      const envKey = op.envKey || `OPERADOR_${idx+1}`;
+      const novoValor = `${ops[idx].user}:${senhaFinal}:${ops[idx].nome}:${novoExcluir}`;
+      const r = await fetch('/api/vercel-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'adicionar', key: envKey, value: novoValor })
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.erro || 'Erro ao salvar');
+      ops[idx].ativo = true;
+      guSetOps(ops);
+      guRenderLista();
+      mostrar(`✅ "${op.nome}" atualizado! Acionando redeploy...`, true);
+      const rDep = await fetch('/api/vercel-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'redeploy' })
+      });
+      const dDep = await rDep.json();
+      if (dDep.ok) {
+        mostrar(`✅ Alteração de "${op.nome}" ativa em ~1 minuto.`, true);
+      } else {
+        mostrar(`✅ Salvo. Faça redeploy manual na Vercel para ativar.`, false);
       }
-    }).catch(() => {});
+    } catch(e) {
+      mostrar(`❌ Erro: ${e.message}`, false);
+    }
+  } else {
+    guRenderLista();
+    mostrar(`✅ "${op.nome}" atualizado localmente.`, true);
   }
 }
 
