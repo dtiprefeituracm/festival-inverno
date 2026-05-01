@@ -264,6 +264,12 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="topbar-usuario" style="font-size:11px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:6px;"></span>
+      <button id="btn-alterar-senha" onclick="abrirAlterarSenha()"
+        title="Alterar minha senha"
+        style="display:none;background:rgba(255,255,255,0.15);border:none;color:white;
+               padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">
+        🔑 Minha senha
+      </button>
       <a href="checkin.html" target="_blank" style="background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:6px;font-size:12px;text-decoration:none;font-weight:600;">📷 Credenciamento</a>
       <button class="sair-btn" onclick="sair()">Sair</button>
     </div>
@@ -452,13 +458,23 @@
   </div>
 
   <!-- Footer -->
-  <div class="admin-footer">
+  <div class="admin-footer" style="position:relative;">
     SEMESP — Secretaria Municipal de Esporte · Prefeitura de Costa Marques / RO
     <div class="admin-footer-inner">
       Desenvolvido por <strong>Ewerson Luiz de Oliveira</strong><br>
       Gestor em Tecnologia da Informação<br>
       © 2026 Prefeitura Municipal de Costa Marques / RO. Todos os direitos reservados.
     </div>
+    <!-- Botão cadeado: estático no rodapé, só visível para admin -->
+    <button id="btn-usuarios-float" onclick="abrirGerenciarUsuarios()"
+      title="Gerenciar Usuários"
+      style="display:none;position:absolute;bottom:12px;right:12px;
+             width:30px;height:30px;border-radius:50%;border:1px solid #e2e8f0;
+             background:transparent;color:#cbd5e1;font-size:14px;cursor:pointer;
+             align-items:center;justify-content:center;
+             opacity:0.5;transition:opacity 0.2s;padding:0;"
+      onmouseover="this.style.opacity='1'"
+      onmouseout="this.style.opacity='0.5'">🔒</button>
   </div>
 
 </div>
@@ -608,12 +624,15 @@ async function entrar() {
       sessionStorage.setItem('adminPerfil', JSON.stringify(perfilAdmin));
       document.getElementById('login-wrap').style.display = 'none';
       document.getElementById('painel').style.display = 'block';
-      // Só admin master vê seção de usuários
+      // Só admin master vê seção de usuários e botão de senha
       const btnFloat = document.getElementById('btn-usuarios-float');
+      const btnSenha = document.getElementById('btn-alterar-senha');
       if (perfilAdmin.perfil === 'admin') {
         if (btnFloat) btnFloat.style.display = 'flex';
+        if (btnSenha) btnSenha.style.display = 'inline-block';
       } else {
         if (btnFloat) btnFloat.style.display = 'none';
+        if (btnSenha) btnSenha.style.display = 'none';
       }
       const tu = document.getElementById('topbar-usuario');
       if (tu) tu.textContent = '👤 ' + (perfilAdmin.nome || 'Operador');
@@ -661,8 +680,10 @@ let todosInscritos = [];
     if (lw) lw.style.display = 'none';
     if (p)  { p.style.display = 'block'; }
     const btnFloatAuto = document.getElementById('btn-usuarios-float');
+    const btnSenhaAuto = document.getElementById('btn-alterar-senha');
     if (perfilAdmin?.perfil === 'admin') {
       if (btnFloatAuto) btnFloatAuto.style.display = 'flex';
+      if (btnSenhaAuto) btnSenhaAuto.style.display = 'inline-block';
     }
     const tu = document.getElementById('topbar-usuario');
     if (tu) tu.textContent = '👤 ' + (perfilAdmin?.nome || 'Operador');
@@ -2122,8 +2143,11 @@ function fecharGerenciarUsuarios() {
   document.getElementById('modal-usuarios-bg').style.display = 'none';
 }
 // Fecha ao clicar fora
-document.getElementById('modal-usuarios-bg').addEventListener('click', function(e) {
-  if (e.target === this) fecharGerenciarUsuarios();
+document.addEventListener('DOMContentLoaded', function() {
+  const mbg = document.getElementById('modal-usuarios-bg');
+  if (mbg) mbg.addEventListener('click', function(e) {
+    if (e.target === this) fecharGerenciarUsuarios();
+  });
 });
 
 // ── Verificar integração Vercel ───────────────────────────────
@@ -2615,19 +2639,6 @@ function imprimirQuantitativo() {
   </div>
 </div>
 
-<!-- Botão cadeado discreto fixo no canto inferior esquerdo -->
-<button id="btn-usuarios-float" onclick="abrirGerenciarUsuarios()"
-  title="Gerenciar Usuários"
-  style="position:fixed;bottom:16px;right:16px;z-index:900;
-         width:34px;height:34px;border-radius:50%;border:1px solid #e2e8f0;
-         background:#f8fafc;color:#94a3b8;font-size:15px;cursor:pointer;
-         display:none;align-items:center;justify-content:center;
-         opacity:0.45;transition:opacity 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08);"
-  onmouseover="this.style.opacity='0.9'"
-  onmouseout="this.style.opacity='0.45'">
-  🔒
-</button>
-
 <!-- Modal de gerenciamento de usuários -->
 <div id="modal-usuarios-bg"
   style="display:none;position:fixed;inset:0;z-index:1000;
@@ -2695,6 +2706,133 @@ function imprimirQuantitativo() {
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  MODAL — Alterar minha senha (admin)          -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-alterar-senha-bg"
+  style="display:none;position:fixed;inset:0;z-index:1100;
+         background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;width:100%;max-width:400px;
+               margin:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1a56a0,#1e3a5f);padding:18px 20px;
+                display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-weight:700;font-size:15px;color:white;">🔑 Alterar minha senha</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">Somente o administrador master</div>
+      </div>
+      <button onclick="fecharAlterarSenha()"
+        style="background:rgba(255,255,255,0.15);border:none;color:white;
+               width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;">×</button>
+    </div>
+    <!-- Body -->
+    <div style="padding:20px;">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">SENHA ATUAL</label>
+        <input id="as-atual" type="password" placeholder="Digite sua senha atual"
+          style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;
+                 font-size:13px;box-sizing:border-box;outline:none;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">NOVA SENHA</label>
+        <input id="as-nova" type="password" placeholder="Mínimo 8 caracteres"
+          style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;
+                 font-size:13px;box-sizing:border-box;outline:none;">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:5px;">CONFIRMAR NOVA SENHA</label>
+        <input id="as-confirma" type="password" placeholder="Repita a nova senha"
+          style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;
+                 font-size:13px;box-sizing:border-box;outline:none;">
+      </div>
+      <button onclick="salvarNovaSenha()"
+        style="width:100%;padding:11px;background:#1a56a0;color:white;border:none;
+               border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+        ✅ Salvar nova senha
+      </button>
+      <div id="as-msg" style="margin-top:12px;font-size:12px;display:none;
+           padding:8px 12px;border-radius:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Modal alterar senha ────────────────────────────────────
+function abrirAlterarSenha() {
+  document.getElementById('as-atual').value = '';
+  document.getElementById('as-nova').value = '';
+  document.getElementById('as-confirma').value = '';
+  document.getElementById('as-msg').style.display = 'none';
+  const bg = document.getElementById('modal-alterar-senha-bg');
+  bg.style.display = 'flex';
+}
+
+function fecharAlterarSenha() {
+  document.getElementById('modal-alterar-senha-bg').style.display = 'none';
+}
+
+async function salvarNovaSenha() {
+  const atual    = document.getElementById('as-atual').value.trim();
+  const nova     = document.getElementById('as-nova').value.trim();
+  const confirma = document.getElementById('as-confirma').value.trim();
+  const msg      = document.getElementById('as-msg');
+
+  const mostrar = (txt, ok) => {
+    msg.textContent = txt;
+    msg.style.display = 'block';
+    msg.style.background = ok ? '#f0fdf4' : '#fff5f5';
+    msg.style.color = ok ? '#166534' : '#dc2626';
+    msg.style.border = `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`;
+  };
+
+  if (!atual || !nova || !confirma) return mostrar('⚠️ Preencha todos os campos.', false);
+  if (nova.length < 8) return mostrar('⚠️ A nova senha precisa ter ao menos 8 caracteres.', false);
+  if (nova !== confirma) return mostrar('⚠️ A nova senha e a confirmação não coincidem.', false);
+
+  // Verifica a senha atual tentando autenticar
+  mostrar('⏳ Verificando senha atual...', true);
+  try {
+    const r = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: 'admin', senha: atual })
+    });
+    const d = await r.json();
+    if (!d.ok || d.perfil !== 'admin') return mostrar('❌ Senha atual incorreta.', false);
+  } catch(e) {
+    return mostrar('❌ Erro ao verificar senha atual.', false);
+  }
+
+  // Salva nova senha via Vercel env
+  mostrar('⏳ Salvando nova senha...', true);
+  try {
+    const r2 = await fetch('/api/vercel-env', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'alterarSenhaAdmin', novaSenha: nova })
+    });
+    const d2 = await r2.json();
+    if (!d2.ok) throw new Error(d2.erro || 'Erro ao salvar');
+
+    mostrar('⏳ Senha salva! Acionando redeploy...', true);
+    const r3 = await fetch('/api/vercel-env', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'redeploy' })
+    });
+    const d3 = await r3.json();
+    if (d3.ok) {
+      mostrar('✅ Senha alterada com sucesso! Válida em ~1 minuto. Você será desconectado.', true);
+      setTimeout(() => { sair(); fecharAlterarSenha(); }, 3000);
+    } else {
+      mostrar('✅ Senha salva na Vercel. Faça um redeploy manual para ativar.', false);
+    }
+  } catch(e) {
+    mostrar(`❌ Erro: ${e.message}`, false);
+  }
+}
+</script>
 
 </body>
 </html>
