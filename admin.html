@@ -2129,15 +2129,39 @@ function guSetOps(ops) {
 }
 
 // ── Abrir / fechar modal ──────────────────────────────────────
-function abrirGerenciarUsuarios() {
+async function abrirGerenciarUsuarios() {
   document.getElementById('modal-usuarios-bg').style.display = 'flex';
   document.getElementById('gu-msg').style.display = 'none';
-  // Limpa campos do formulário
   document.getElementById('gu-user').value  = '';
   document.getElementById('gu-senha').value = '';
   document.getElementById('gu-nome').value  = '';
   guRenderLista();
   guVerificarVercel();
+  // Busca operadores reais salvos na Vercel
+  await guCarregarOperadoresVercel();
+}
+
+async function guCarregarOperadoresVercel() {
+  try {
+    const r = await fetch('/api/vercel-env', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'lerOperadores' })
+    });
+    const d = await r.json();
+    if (d.ok && Array.isArray(d.operadores) && d.operadores.length > 0) {
+      // Mescla com localStorage: mantém da Vercel, sem duplicar
+      const local = guGetOps();
+      const merged = d.operadores.map(op => {
+        const localOp = local.find(l => l.user === op.user);
+        return { ...op, ativo: true, senha: localOp?.senha || '' };
+      });
+      guSetOps(merged);
+      guRenderLista();
+    }
+  } catch(e) {
+    // silencioso — lista local continua visível
+  }
 }
 function fecharGerenciarUsuarios() {
   document.getElementById('modal-usuarios-bg').style.display = 'none';
