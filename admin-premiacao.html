@@ -211,10 +211,10 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   <div class="auth-box">
     <h2>🔐 Admin — Premiação</h2>
     <p>Festival de Inverno 2026 — SEMESP</p>
-    <input type="email" id="auth-email" placeholder="E-mail" autocomplete="username">
+    <input type="text" id="auth-usuario" placeholder="Usuário" autocomplete="username">
     <input type="password" id="auth-senha" placeholder="Senha" autocomplete="current-password">
     <button class="btn-login" onclick="fazerLogin()">Entrar</button>
-    <div class="auth-err" id="auth-err">E-mail ou senha incorretos.</div>
+    <div class="auth-err" id="auth-err">Usuário ou senha incorretos.</div>
   </div>
 </div>
 
@@ -404,19 +404,22 @@ const MODALIDADES = {
 // AUTH
 // ================================================================
 async function fazerLogin() {
-  const email = document.getElementById('auth-email').value;
-  const senha = document.getElementById('auth-senha').value;
-  const err   = document.getElementById('auth-err');
+  const usuario = document.getElementById('auth-usuario').value.trim();
+  const senha   = document.getElementById('auth-senha').value;
+  const err     = document.getElementById('auth-err');
   err.style.display = 'none';
+  if (!usuario || !senha) { err.style.display = 'block'; return; }
   try {
     const r = await fetch('/api/admin-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'login', email, senha })
+      body: JSON.stringify({ usuario, senha })
     });
     const d = await r.json();
     if (d.ok) {
       sessionStorage.setItem('adminToken', d.token || 'ok');
+      sessionStorage.setItem('adminUsuario', usuario);
+      sessionStorage.setItem('adminPerfil', d.perfil || 'operador');
       document.getElementById('auth-overlay').classList.remove('show');
       inicializar();
     } else { err.style.display = 'block'; }
