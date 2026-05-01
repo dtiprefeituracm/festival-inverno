@@ -415,19 +415,9 @@ const MODALIDADES = {
 };
 
 // ================================================================
-// GANHADORES — Edite aqui após o evento
+// GANHADORES — Carregados automaticamente do banco (admin-premiacao.html)
 // ================================================================
-// Para registrar ganhadores, preencha o array abaixo.
-// foto_url: URL da foto com o troféu (Supabase Storage ou link externo)
-// participante_id: ID do participante no banco (opcional, para buscar ficha)
-//
-// Exemplo:
-// { posicao: 1, modalidade_id: 1, nome: 'João Silva', cidade: 'Costa Marques/RO',
-//   parceiro: 'Pedro Santos', foto_url: 'https://...', participante_id: 'uuid' }
-//
-const GANHADORES = [
-  // Preencher após o evento — deixe vazio para exibir "Aguardando resultado"
-];
+let GANHADORES = []; // preenchido via API (ganhadores com publicado=true)
 
 // ================================================================
 // HISTÓRICO — Edite aqui
@@ -477,11 +467,15 @@ async function apiGet(tabela, query = '') {
   return r.json();
 }
 
+let todasFotosGaleria = [];
+
 async function carregarDados() {
   try {
-    const [participantes, inscricoes] = await Promise.all([
+    const [participantes, inscricoes, ganhadores, galeria] = await Promise.all([
       apiGet('participantes', 'select=id,nome_completo,cidade,uf,autorizacao_imagem,criado_em'),
-      apiGet('inscricoes', 'select=*')
+      apiGet('inscricoes', 'select=*'),
+      apiGet('ganhadores', 'select=*').catch(() => []),
+      apiGet('galeria_fotos', 'select=*').catch(() => []),
     ]);
 
     if (!Array.isArray(participantes) || !Array.isArray(inscricoes)) throw new Error('Dados inválidos');
@@ -490,10 +484,31 @@ async function carregarDados() {
     todasInscricoes    = inscricoes;
     dadosFiltrados     = participantes;
 
+    // Carrega apenas ganhadores publicados
+    GANHADORES = (Array.isArray(ganhadores) ? ganhadores : [])
+      .filter(g => g.publicado)
+      .map(g => ({
+        posicao:        g.posicao,
+        modalidade_id:  g.modalidade_id,
+        nome:           g.nome_exibicao || '—',
+        cidade:         g.cidade || '',
+        parceiro:       g.parceiro || null,
+        equipe:         g.equipe  || null,
+        foto_url:       g.foto_url || null,
+        premio:         g.premio_descricao || null,
+        participante_id: g.participante_id || null,
+      }));
+
+    // Galeria: apenas fotos publicadas, ordenadas
+    todasFotosGaleria = (Array.isArray(galeria) ? galeria : [])
+      .filter(f => f.publicado)
+      .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+
     renderVisaoGeral();
     renderParticipantes(participantes);
     renderGanhadores();
     renderHistorico();
+    renderGaleria();
   } catch (e) {
     console.error('Erro ao carregar:', e);
     document.getElementById('tbody-part').innerHTML =
@@ -588,6 +603,7 @@ function renderParticipantes(lista) {
   tbody.innerHTML = lista.map((p, idx) => {
     const insc = todasInscricoes.filter(i => i.participante_id === p.id);
     const credenciado = insc.some(i => i.presenca);
+    const fotoAlimento = insc.find(i => i.foto_alimento_url)?.foto_alimento_url;
     const mods = insc.map(i => {
       const m = MODALIDADES[i.modalidade_id];
       return m ? `<span class="badge badge-${m.tipo === 'agua' ? 'agua' : m.tipo === 'pesca' ? 'pesca' : 'areia'}" style="margin:1px;">${m.nome} ${m.sub}</span>` : '';
@@ -598,7 +614,11 @@ function renderParticipantes(lista) {
       <td style="font-weight:600;">${p.nome_completo}</td>
       <td>${p.cidade || '—'} / ${p.uf || 'RO'}</td>
       <td>${mods || '<span style="color:#94a3b8;font-size:11px;">—</span>'}</td>
-      <td style="text-align:center;">${credenciado ? '<span class="badge badge-ok">✅ Sim</span>' : '<span style="color:#94a3b8;font-size:11px;">Não</span>'}</td>
+      <td style="text-align:center;">
+        ${credenciado
+          ? `<span class="badge badge-ok" title="${fotoAlimento ? 'Ver foto do alimento' : 'Credenciado'}">✅ Sim</span>${fotoAlimento ? `<br><a href="${fotoAlimento}" target="_blank" style="font-size:10px;color:#1a56a0;">📷 Alimento</a>` : ''}`
+          : '<span style="color:#94a3b8;font-size:11px;">Não</span>'}
+      </td>
     </tr>`;
   }).join('');
 }
@@ -803,8 +823,20 @@ function renderHistorico() {
 }
 
 // ================================================================
-// NAVEGAÇÃO POR ABAS
+// GALERIA — carregada do banco (galeria_fotos publicado=true)
 // ================================================================
+function renderGaleria() {
+  const container = document.getElementById('galeria-container');
+  if (!todasFotosGaleria || todasFotosGaleria.length === 0) {
+    container.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento. ⏳</div>';
+    return;
+  }
+  container.innerHTML = todasFotosGaleria.map(f => `
+    <div class="galeria-item" onclick="window.open('${f.url}','_blank')">
+      <img src="${f.url}" alt="${f.legenda || 'Foto do evento'}" loading="lazy">
+      ${f.legenda ? `<div class="galeria-legenda">${f.legenda}</div>` : ''}
+    </div>`).join('');
+}
 function mostrarAba(id) {
   document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
@@ -816,7 +848,6 @@ function mostrarAba(id) {
 // INICIALIZAÇÃO
 // ================================================================
 carregarDados();
-renderHistorico();
 </script>
 </body>
 </html>

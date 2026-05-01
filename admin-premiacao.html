@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<!--
+  Admin — Premiação · Galeria · Fotos Credenciamento
+  Festival de Inverno 2026 — SEMESP / Costa Marques/RO
+  Desenvolvido por Ewerson Luiz de Oliveira — DTI
+  Requer: /api/supabase e /api/admin-auth
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Premiação — Festival de Inverno 2026</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+/* ── Header ── */
+.header { background: linear-gradient(135deg, #1e3a5f 0%, #1a56a0 100%);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.1); }
+.header-title { font-size: 17px; font-weight: 800; color: white; }
+.header-sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+.header-actions { display: flex; gap: 8px; }
+.btn-back { padding: 8px 16px; background: rgba(255,255,255,0.12); color: white;
+  border: none; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; text-decoration: none; }
+.btn-back:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Alerta de auth ── */
+.auth-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 999; align-items: center; justify-content: center; }
+.auth-overlay.show { display: flex; }
+.auth-box { background: #1e293b; border-radius: 16px; padding: 32px; width: 340px;
+  border: 1px solid #334155; }
+.auth-box h2 { font-size: 18px; margin-bottom: 4px; color: white; }
+.auth-box p { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+.auth-box input { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; color: white; font-size: 14px; margin-bottom: 12px; outline: none; }
+.auth-box input:focus { border-color: #3b82f6; }
+.auth-box .btn-login { width: 100%; padding: 11px; background: #1a56a0; color: white;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.auth-err { color: #f87171; font-size: 12px; text-align: center; margin-top: 8px; display: none; }
+
+/* ── Navegação tabs ── */
+.tabs { background: #1e293b; border-bottom: 1px solid #334155; padding: 0 24px;
+  display: flex; gap: 2px; }
+.tab-btn { padding: 14px 18px; color: #64748b; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent;
+  transition: all 0.15s; white-space: nowrap; }
+.tab-btn:hover { color: #e2e8f0; }
+.tab-btn.ativo { color: #60a5fa; border-bottom-color: #60a5fa; }
+
+/* ── Conteúdo das tabs ── */
+.tab-content { display: none; padding: 24px; max-width: 1100px; margin: 0 auto; }
+.tab-content.ativa { display: block; }
+
+/* ── Cards de modalidade ── */
+.modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.modal-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+  padding: 16px; cursor: pointer; transition: all 0.2s; }
+.modal-card:hover { border-color: #3b82f6; background: #1e3a5f; transform: translateY(-1px); }
+.modal-card.expandido { border-color: #3b82f6; background: #1e3a5f; }
+.modal-card-header { display: flex; align-items: center; justify-content: space-between; }
+.modal-card-titulo { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+.modal-card-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.modal-card-badge { font-size: 20px; }
+.modal-card-stats { display: flex; gap: 12px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid #334155; }
+.mod-stat { text-align: center; }
+.mod-stat-val { font-size: 18px; font-weight: 800; color: #60a5fa; }
+.mod-stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; }
+.mod-arrow { color: #64748b; font-size: 16px; }
+
+/* ── Painel de participantes por modalidade ── */
+.painel-mod { background: #1e293b; border: 1px solid #3b82f6; border-radius: 12px;
+  margin-top: 14px; overflow: hidden; display: none; }
+.painel-mod.aberto { display: block; }
+.painel-mod-header { padding: 14px 18px; background: #1e3a5f;
+  border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+.painel-mod-titulo { font-size: 14px; font-weight: 700; color: #60a5fa; }
+.painel-mod-body { padding: 16px 18px; }
+
+/* ── Participante item ── */
+.part-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid #334155; border-radius: 8px; margin-bottom: 6px; background: #0f172a;
+  transition: all 0.15s; }
+.part-item:hover { border-color: #475569; }
+.part-nome { flex: 1; font-size: 13px; font-weight: 600; color: #e2e8f0; }
+.part-cidade { font-size: 11px; color: #64748b; }
+.part-cred { font-size: 10px; color: #22c55e; }
+.btn-ganhar { padding: 6px 12px; background: #fbbf24; color: #1c1c00; border: none;
+  border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.btn-ganhar:hover { background: #f59e0b; }
+.btn-sm { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: none; }
+.btn-danger { background: #fee2e2; color: #dc2626; }
+.btn-danger:hover { background: #fecaca; }
+.btn-edit { background: #eff6ff; color: #1d4ed8; }
+.btn-edit:hover { background: #dbeafe; }
+.btn-pub { background: #f0fdf4; color: #16a34a; }
+.btn-pub:hover { background: #dcfce7; }
+.btn-unpub { background: #fef9c3; color: #92400e; }
+.btn-unpub:hover { background: #fef08a; }
+
+/* ── Ganhadores existentes por modalidade ── */
+.ganhador-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border: 1px solid #334155; border-radius: 8px; margin-bottom: 8px; background: #0f172a; }
+.ganhador-medal { font-size: 26px; width: 36px; text-align: center; flex-shrink: 0; }
+.ganhador-dados { flex: 1; }
+.ganhador-nome { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+.ganhador-detalhe { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.ganhador-foto-thumb { width: 54px; height: 54px; object-fit: cover; border-radius: 6px;
+  border: 1px solid #334155; }
+.ganhador-foto-vazia { width: 54px; height: 54px; border-radius: 6px; border: 2px dashed #334155;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; color: #475569; }
+.pub-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.pub-dot.verde { background: #22c55e; }
+.pub-dot.cinza { background: #475569; }
+
+/* ── Modal de formulário ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.modal-bg.aberto { display: flex; }
+.modal-box { background: #1e293b; border-radius: 16px; padding: 24px; width: 100%;
+  max-width: 520px; max-height: 90vh; overflow-y: auto; border: 1px solid #334155; }
+.modal-titulo { font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 16px; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 11px; font-weight: 600; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; color: #e2e8f0; font-size: 13px; outline: none; font-family: inherit; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3b82f6; }
+.form-group select option { background: #0f172a; }
+.foto-preview { width: 100%; height: 160px; object-fit: cover; border-radius: 8px;
+  border: 1px solid #334155; margin-top: 8px; display: none; }
+.btn-salvar { width: 100%; padding: 12px; background: #1a56a0; color: white;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+.btn-salvar:hover { background: #154794; }
+.btn-salvar:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-cancelar { width: 100%; padding: 10px; background: transparent; color: #64748b;
+  border: 1px solid #334155; border-radius: 8px; font-size: 13px; cursor: pointer; margin-top: 8px; }
+.btn-cancelar:hover { color: #e2e8f0; }
+
+/* ── Galeria ── */
+.galeria-add { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+  padding: 18px; margin-bottom: 20px; }
+.galeria-add-titulo { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.galeria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.galeria-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+  overflow: hidden; transition: all 0.15s; }
+.galeria-card:hover { border-color: #475569; }
+.galeria-card img { width: 100%; height: 140px; object-fit: cover; display: block; background: #0f172a; }
+.galeria-card-body { padding: 10px; }
+.galeria-legenda { font-size: 12px; color: #94a3b8; margin-bottom: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.galeria-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.cat-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px;
+  font-weight: 600; background: #1e3a5f; color: #60a5fa; margin-bottom: 6px; }
+
+/* ── Fotos Alimentos ── */
+.credenciado-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 8px; }
+.credenciado-dados { flex: 1; min-width: 0; }
+.credenciado-nome { font-size: 13px; font-weight: 600; color: #e2e8f0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.credenciado-mod { font-size: 11px; color: #64748b; }
+.credenciado-foto-input { flex: 1; padding: 7px 10px; background: #0f172a;
+  border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 12px;
+  outline: none; min-width: 200px; }
+.credenciado-foto-input:focus { border-color: #3b82f6; }
+.foto-alimento-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px;
+  border: 1px solid #334155; display: none; flex-shrink: 0; }
+.btn-salvar-foto { padding: 7px 12px; background: #064e3b; color: #6ee7b7;
+  border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+.btn-salvar-foto:hover { background: #065f46; }
+.btn-salvar-foto.salvando { opacity: 0.5; }
+
+/* ── Vazio / loading ── */
+.vazio { text-align: center; padding: 32px; color: #475569; font-size: 13px; }
+.loading-txt { text-align: center; padding: 24px; color: #475569; font-size: 13px; }
+.aviso { background: #1e3a5f; border: 1px solid #3b82f6; border-radius: 8px;
+  padding: 12px 14px; font-size: 12px; color: #93c5fd; margin-bottom: 16px; }
+.aviso strong { display: block; margin-bottom: 3px; color: #60a5fa; }
+
+/* ── Sections ── */
+.secao-titulo { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.secao-sub { font-size: 11px; color: #64748b; font-weight: 400; }
+.divider { border: none; border-top: 1px solid #334155; margin: 20px 0; }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+  border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999;
+  transform: translateY(80px); transition: transform 0.3s; max-width: 320px; }
+.toast.show { transform: translateY(0); }
+.toast.sucesso { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+.toast.erro { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .modal-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .tab-content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Auth overlay -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <h2>🔐 Admin — Premiação</h2>
+    <p>Festival de Inverno 2026 — SEMESP</p>
+    <input type="email" id="auth-email" placeholder="E-mail" autocomplete="username">
+    <input type="password" id="auth-senha" placeholder="Senha" autocomplete="current-password">
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="auth-err" id="auth-err">E-mail ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <div class="header-title">🏆 Admin — Premiação · Galeria · Fotos</div>
+    <div class="header-sub">Festival de Inverno 2026 — SEMESP · Costa Marques/RO</div>
+  </div>
+  <div class="header-actions">
+    <a href="portal-transparencia.html" target="_blank" class="btn-back">👁️ Ver Portal</a>
+    <a href="admin.html" class="btn-back">← Admin Principal</a>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn ativo" onclick="abrirTab('premiacao', this)">🏆 Premiação</button>
+  <button class="tab-btn" onclick="abrirTab('galeria', this)">📸 Galeria do Evento</button>
+  <button class="tab-btn" onclick="abrirTab('alimentos', this)">🥦 Fotos de Alimentos</button>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  TAB: PREMIAÇÃO                        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content ativa" id="tab-premiacao">
+  <div class="aviso">
+    <strong>ℹ️ Como funciona a premiação</strong>
+    Clique em uma modalidade para ver os participantes inscritos → clique em "🏆 Marcar Ganhador" → preencha a colocação, prêmio e foto → salve → ative "Publicar" quando quiser que apareça no Portal da Transparência.
+  </div>
+
+  <div class="modal-grid" id="grid-modalidades">
+    <div class="loading-txt">Carregando modalidades...</div>
+  </div>
+
+  <div id="painel-participantes"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  TAB: GALERIA                          -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-galeria">
+  <div class="aviso">
+    <strong>📸 Galeria do Evento</strong>
+    Adicione URLs de fotos (Supabase Storage, Google Drive compartilhado, Imgur, etc.). As fotos marcadas como "Publicado" aparecem automaticamente na aba Galeria do Portal da Transparência.
+  </div>
+
+  <!-- Form adicionar foto -->
+  <div class="galeria-add">
+    <div class="galeria-add-titulo">➕ Adicionar foto</div>
+    <div class="form-group">
+      <label>URL da Foto *</label>
+      <input type="url" id="gal-url" placeholder="https://..." oninput="previewGaleriaFoto()">
+    </div>
+    <img id="gal-preview" class="foto-preview" alt="Preview">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Legenda</label>
+        <input type="text" id="gal-legenda" placeholder="Ex: Abertura do festival">
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <select id="gal-categoria">
+          <option value="evento">🎪 Evento geral</option>
+          <option value="abertura">🎉 Abertura</option>
+          <option value="competicao">🏅 Competição</option>
+          <option value="premiacao">🏆 Premiação</option>
+          <option value="encerramento">🎊 Encerramento</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-salvar" onclick="salvarFotoGaleria()" style="margin-top:0;">Adicionar à Galeria</button>
+  </div>
+
+  <!-- Lista de fotos -->
+  <div class="secao-titulo">📷 Fotos cadastradas <span class="secao-sub" id="cont-galeria"></span></div>
+  <div class="galeria-grid" id="galeria-lista">
+    <div class="loading-txt">Carregando...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  TAB: FOTOS DE ALIMENTOS               -->
+<!-- ═══════════════════════════════════════ -->
+<div class="tab-content" id="tab-alimentos">
+  <div class="aviso">
+    <strong>🥦 Fotos dos Alimentos do Credenciamento</strong>
+    Cada participante credenciado entregou 1kg de alimento. Aqui você cadastra a URL da foto da doação de cada um. Essas fotos aparecem no Portal de Transparência ao lado do nome do participante credenciado.
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <input type="text" id="busca-cred" placeholder="🔍 Buscar credenciado..."
+      style="padding:9px 12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;flex:1;min-width:200px;"
+      oninput="filtrarCredenciados()">
+    <select id="filtro-mod-cred" onchange="filtrarCredenciados()"
+      style="padding:9px 12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;">
+      <option value="">Todas as modalidades</option>
+      <option value="1">Vôlei Areia — Masc.</option>
+      <option value="2">Vôlei Areia — Fem.</option>
+      <option value="3">Futevôlei</option>
+      <option value="4">Canoagem</option>
+      <option value="5">Caiaque</option>
+      <option value="6">Pesca — Masc.</option>
+      <option value="7">Pesca — Fem.</option>
+    </select>
+  </div>
+
+  <div class="secao-titulo">✅ Credenciados <span class="secao-sub" id="cont-credenciados"></span></div>
+  <div id="lista-credenciados">
+    <div class="loading-txt">Carregando credenciados...</div>
+  </div>
+</div>
+
+<!-- Modal Formulário Ganhador -->
+<div class="modal-bg" id="modal-ganhador-bg">
+  <div class="modal-box">
+    <div class="modal-titulo" id="modal-titulo">Marcar Ganhador</div>
+    <input type="hidden" id="g-participante-id">
+    <input type="hidden" id="g-inscricao-mod-id">
+    <input type="hidden" id="g-edit-id">
+
+    <div class="form-group">
+      <label>Participante</label>
+      <input type="text" id="g-nome" placeholder="Nome completo" readonly style="color:#60a5fa;font-weight:600;">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Colocação *</label>
+        <select id="g-posicao">
+          <option value="1">🥇 1º lugar</option>
+          <option value="2">🥈 2º lugar</option>
+          <option value="3">🥉 3º lugar</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cidade/UF</label>
+        <input type="text" id="g-cidade" placeholder="Ex: Costa Marques/RO">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Parceiro(a) <span style="color:#475569;font-weight:400;">(modalidades em dupla)</span></label>
+      <input type="text" id="g-parceiro" placeholder="Nome do parceiro(a)">
+    </div>
+    <div class="form-group">
+      <label>Equipe <span style="color:#475569;font-weight:400;">(pesca)</span></label>
+      <input type="text" id="g-equipe" placeholder="Nome da equipe">
+    </div>
+    <div class="form-group">
+      <label>Descrição do Prêmio</label>
+      <textarea id="g-premio" rows="2" placeholder="Ex: Troféu + R$ 500,00 em dinheiro"></textarea>
+    </div>
+    <div class="form-group">
+      <label>URL da Foto com o Troféu</label>
+      <input type="url" id="g-foto" placeholder="https://..." oninput="previewFotoGanhador()">
+      <img id="g-foto-preview" class="foto-preview" alt="Preview da foto">
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="g-publicado" style="width:auto;accent-color:#22c55e;transform:scale(1.3);">
+      <label for="g-publicado" style="text-transform:none;font-size:13px;cursor:pointer;color:#e2e8f0;">
+        Publicar imediatamente no Portal da Transparência
+      </label>
+    </div>
+
+    <button class="btn-salvar" id="btn-salvar-ganhador" onclick="salvarGanhador()">💾 Salvar Ganhador</button>
+    <button class="btn-cancelar" onclick="fecharModalGanhador()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+// CONFIGURAÇÃO
+// ================================================================
+const MODALIDADES = {
+  1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia', emoji: '🏐' },
+  2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia', emoji: '🏐' },
+  3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia', emoji: '⚽' },
+  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua',  emoji: '🛶' },
+  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua',  emoji: '🚣' },
+  6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca', emoji: '🎣' },
+  7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca', emoji: '🎣' },
+};
+
+// ================================================================
+// AUTH
+// ================================================================
+async function fazerLogin() {
+  const email = document.getElementById('auth-email').value;
+  const senha = document.getElementById('auth-senha').value;
+  const err   = document.getElementById('auth-err');
+  err.style.display = 'none';
+  try {
+    const r = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'login', email, senha })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      sessionStorage.setItem('adminToken', d.token || 'ok');
+      document.getElementById('auth-overlay').classList.remove('show');
+      inicializar();
+    } else { err.style.display = 'block'; }
+  } catch(e) { err.style.display = 'block'; }
+}
+
+function verificarAuth() {
+  const t = sessionStorage.getItem('adminToken');
+  if (!t) document.getElementById('auth-overlay').classList.add('show');
+  else inicializar();
+}
+
+// ================================================================
+// API helpers
+// ================================================================
+async function apiGet(tabela, query = '') {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'buscar', tabela, query,
+      token: sessionStorage.getItem('adminToken') })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function apiPost(tabela, dados, metodo = 'inserir', id = null) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: metodo, tabela, dados, id,
+      token: sessionStorage.getItem('adminToken') })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+// ================================================================
+// TOAST
+// ================================================================
+function toast(msg, tipo = 'sucesso') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ================================================================
+// ESTADO GLOBAL
+// ================================================================
+let todosParticipantes = [];
+let todasInscricoes    = [];
+let todosGanhadores    = [];
+let todasFotos         = [];
+let modAtiva           = null;
+
+// ================================================================
+// INICIALIZAÇÃO
+// ================================================================
+async function inicializar() {
+  try {
+    const [participantes, inscricoes, ganhadores, fotos] = await Promise.all([
+      apiGet('participantes', 'select=id,nome_completo,cidade,uf'),
+      apiGet('inscricoes', 'select=*'),
+      apiGet('ganhadores', 'select=*').catch(() => []),
+      apiGet('galeria_fotos', 'select=*').catch(() => []),
+    ]);
+    todosParticipantes = Array.isArray(participantes) ? participantes : [];
+    todasInscricoes    = Array.isArray(inscricoes)    ? inscricoes    : [];
+    todosGanhadores    = Array.isArray(ganhadores)    ? ganhadores    : [];
+    todasFotos         = Array.isArray(fotos)         ? fotos         : [];
+
+    renderGridModalidades();
+    renderGaleria();
+    renderCredenciados();
+  } catch(e) {
+    console.error('Erro ao inicializar:', e);
+    toast('Erro ao carregar dados. Verifique a conexão.', 'erro');
+  }
+}
+
+// ================================================================
+// TABS
+// ================================================================
+function abrirTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('ativa'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('tab-' + id).classList.add('ativa');
+  btn.classList.add('ativo');
+}
+
+// ================================================================
+// PREMIAÇÃO — Grid de modalidades
+// ================================================================
+function renderGridModalidades() {
+  const grid = document.getElementById('grid-modalidades');
+  grid.innerHTML = Object.entries(MODALIDADES).map(([id, m]) => {
+    const inscritos = todasInscricoes.filter(i => i.modalidade_id == id).length;
+    const ganhs = todosGanhadores.filter(g => g.modalidade_id == id);
+    const pubCount = ganhs.filter(g => g.publicado).length;
+    return `
+    <div class="modal-card" id="card-mod-${id}" onclick="togglePainelMod(${id})">
+      <div class="modal-card-header">
+        <div>
+          <div class="modal-card-titulo">${m.emoji} ${m.nome}</div>
+          <div class="modal-card-sub">${m.sub}</div>
+        </div>
+        <span class="mod-arrow" id="arrow-${id}">▼</span>
+      </div>
+      <div class="modal-card-stats">
+        <div class="mod-stat">
+          <div class="mod-stat-val">${inscritos}</div>
+          <div class="mod-stat-label">inscritos</div>
+        </div>
+        <div class="mod-stat">
+          <div class="mod-stat-val">${ganhs.length}/3</div>
+          <div class="mod-stat-label">ganhadores</div>
+        </div>
+        <div class="mod-stat">
+          <div class="mod-stat-val" style="color:${pubCount > 0 ? '#22c55e' : '#475569'};">${pubCount}</div>
+          <div class="mod-stat-label">publicados</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePainelMod(modId) {
+  const painel = document.getElementById('painel-mod-' + modId);
+  const todos  = document.querySelectorAll('.painel-mod');
+  const card   = document.getElementById('card-mod-' + modId);
+
+  if (painel && painel.classList.contains('aberto')) {
+    painel.classList.remove('aberto');
+    card.classList.remove('expandido');
+    document.getElementById('arrow-' + modId).textContent = '▼';
+    return;
+  }
+
+  todos.forEach(p => p.classList.remove('aberto'));
+  document.querySelectorAll('.modal-card').forEach(c => c.classList.remove('expandido'));
+  document.querySelectorAll('.mod-arrow').forEach(a => a.textContent = '▼');
+
+  if (!painel) renderPainelMod(modId);
+  else {
+    painel.classList.add('aberto');
+    card.classList.add('expandido');
+    document.getElementById('arrow-' + modId).textContent = '▲';
+  }
+}
+
+function renderPainelMod(modId) {
+  const m = MODALIDADES[modId];
+  const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId);
+  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
+  const card = document.getElementById('card-mod-' + modId);
+  card.classList.add('expandido');
+  document.getElementById('arrow-' + modId).textContent = '▲';
+
+  // Participantes desta modalidade
+  const partsDaMod = inscritos.map(i => {
+    const p = todosParticipantes.find(p => p.id === i.participante_id);
+    return p ? { ...p, inscricao_id: i.id, presenca: i.presenca } : null;
+  }).filter(Boolean);
+
+  const listaParticipantes = partsDaMod.length === 0
+    ? '<div class="vazio">Nenhum participante inscrito nesta modalidade.</div>'
+    : partsDaMod.map(p => {
+        const jàGanhou = ganhs.some(g => g.participante_id === p.id);
+        return `<div class="part-item">
+          <div style="flex:1;min-width:0;">
+            <div class="part-nome">${p.nome_completo}</div>
+            <div class="part-cidade">${p.cidade || '—'} / ${p.uf || 'RO'}
+              ${p.presenca ? '<span class="part-cred"> · ✅ Credenciado</span>' : ''}</div>
+          </div>
+          ${jàGanhou
+            ? `<span style="font-size:11px;color:#fbbf24;">⭐ Já cadastrado</span>`
+            : `<button class="btn-ganhar" onclick="abrirModalGanhador(${JSON.stringify(p).replace(/"/g,'&quot;')}, ${modId})">🏆 Marcar</button>`}
+        </div>`;
+      }).join('');
+
+  // Ganhadores já cadastrados
+  const listaGanhadores = ganhs.length === 0
+    ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado ainda.</div>'
+    : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => {
+        const emoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
+        return `<div class="ganhador-item">
+          <div class="ganhador-medal">${emoji}</div>
+          <div class="ganhador-dados">
+            <div class="ganhador-nome">${g.nome_exibicao || '—'}</div>
+            <div class="ganhador-detalhe">${g.cidade || '—'} ${g.parceiro ? '· Parceiro: '+g.parceiro : ''} ${g.equipe ? '· '+g.equipe : ''}</div>
+            ${g.premio_descricao ? `<div class="ganhador-detalhe" style="color:#fbbf24;">🎁 ${g.premio_descricao}</div>` : ''}
+            <div style="margin-top:4px;">
+              <span class="pub-dot ${g.publicado ? 'verde' : 'cinza'}"></span>
+              <span style="font-size:10px;color:${g.publicado ? '#22c55e' : '#64748b'};">${g.publicado ? 'Publicado' : 'Rascunho'}</span>
+            </div>
+          </div>
+          ${g.foto_url
+            ? `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">`
+            : `<div class="ganhador-foto-vazia">📷</div>`}
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button class="btn-sm btn-edit" onclick="editarGanhador('${g.id}', ${modId})">✏️ Editar</button>
+            <button class="btn-sm ${g.publicado ? 'btn-unpub' : 'btn-pub'}"
+              onclick="togglePublicar('${g.id}', ${!g.publicado}, ${modId})">
+              ${g.publicado ? '🔒 Ocultar' : '🌐 Publicar'}
+            </button>
+            <button class="btn-sm btn-danger" onclick="excluirGanhador('${g.id}', '${g.nome_exibicao}', ${modId})">🗑️ Excluir</button>
+          </div>
+        </div>`;
+      }).join('');
+
+  const div = document.createElement('div');
+  div.className = 'painel-mod aberto';
+  div.id = 'painel-mod-' + modId;
+  div.innerHTML = `
+    <div class="painel-mod-header">
+      <div class="painel-mod-titulo">${m.emoji} ${m.nome} — ${m.sub}</div>
+    </div>
+    <div class="painel-mod-body">
+      <div class="secao-titulo" style="margin-bottom:10px;">🧑‍🤝‍🧑 Participantes inscritos</div>
+      <div id="lista-parts-${modId}">${listaParticipantes}</div>
+      <hr class="divider">
+      <div class="secao-titulo" style="margin-bottom:10px;">🏆 Ganhadores cadastrados <span class="secao-sub">(${ganhs.length}/3)</span></div>
+      <div id="lista-ganhs-${modId}">${listaGanhadores}</div>
+    </div>`;
+
+  card.insertAdjacentElement('afterend', div);
+}
+
+// ================================================================
+// MODAL FORMULÁRIO GANHADOR
+// ================================================================
+function abrirModalGanhador(participante, modId) {
+  document.getElementById('modal-titulo').textContent =
+    `🏆 Marcar Ganhador — ${MODALIDADES[modId].nome} ${MODALIDADES[modId].sub}`;
+  document.getElementById('g-participante-id').value = participante.id;
+  document.getElementById('g-inscricao-mod-id').value = modId;
+  document.getElementById('g-edit-id').value = '';
+  document.getElementById('g-nome').value = participante.nome_completo;
+  document.getElementById('g-cidade').value = (participante.cidade || '') + '/' + (participante.uf || 'RO');
+  document.getElementById('g-parceiro').value = '';
+  document.getElementById('g-equipe').value = '';
+  document.getElementById('g-premio').value = '';
+  document.getElementById('g-foto').value = '';
+  document.getElementById('g-foto-preview').style.display = 'none';
+  document.getElementById('g-publicado').checked = false;
+  document.getElementById('modal-ganhador-bg').classList.add('aberto');
+}
+
+function editarGanhador(id, modId) {
+  const g = todosGanhadores.find(g => g.id === id);
+  if (!g) return;
+  document.getElementById('modal-titulo').textContent =
+    `✏️ Editar Ganhador — ${MODALIDADES[modId].nome}`;
+  document.getElementById('g-participante-id').value = g.participante_id || '';
+  document.getElementById('g-inscricao-mod-id').value = modId;
+  document.getElementById('g-edit-id').value = id;
+  document.getElementById('g-nome').value = g.nome_exibicao || '';
+  document.getElementById('g-posicao').value = g.posicao;
+  document.getElementById('g-cidade').value = g.cidade || '';
+  document.getElementById('g-parceiro').value = g.parceiro || '';
+  document.getElementById('g-equipe').value = g.equipe || '';
+  document.getElementById('g-premio').value = g.premio_descricao || '';
+  document.getElementById('g-foto').value = g.foto_url || '';
+  document.getElementById('g-publicado').checked = !!g.publicado;
+  const prev = document.getElementById('g-foto-preview');
+  if (g.foto_url) { prev.src = g.foto_url; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+  document.getElementById('modal-ganhador-bg').classList.add('aberto');
+}
+
+function fecharModalGanhador() {
+  document.getElementById('modal-ganhador-bg').classList.remove('aberto');
+}
+
+function previewFotoGanhador() {
+  const url = document.getElementById('g-foto').value;
+  const prev = document.getElementById('g-foto-preview');
+  if (url) { prev.src = url; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+}
+
+async function salvarGanhador() {
+  const btn = document.getElementById('btn-salvar-ganhador');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  const participante_id   = document.getElementById('g-participante-id').value;
+  const modalidade_id     = parseInt(document.getElementById('g-inscricao-mod-id').value);
+  const editId            = document.getElementById('g-edit-id').value;
+  const nome              = document.getElementById('g-nome').value.trim();
+  const posicao           = parseInt(document.getElementById('g-posicao').value);
+  const cidade            = document.getElementById('g-cidade').value.trim();
+  const parceiro          = document.getElementById('g-parceiro').value.trim();
+  const equipe            = document.getElementById('g-equipe').value.trim();
+  const premio_descricao  = document.getElementById('g-premio').value.trim();
+  const foto_url          = document.getElementById('g-foto').value.trim();
+  const publicado         = document.getElementById('g-publicado').checked;
+
+  if (!nome) { toast('Informe o nome.', 'erro'); btn.disabled = false; btn.textContent = '💾 Salvar Ganhador'; return; }
+
+  // Verifica conflito de posição
+  const conflito = todosGanhadores.find(g =>
+    g.modalidade_id == modalidade_id && g.posicao == posicao && g.id !== editId);
+  if (conflito) {
+    if (!confirm(`Já existe um ${posicao}º lugar nesta modalidade (${conflito.nome_exibicao}). Substituir?`)) {
+      btn.disabled = false; btn.textContent = '💾 Salvar Ganhador'; return;
+    }
+    // Remove o conflitante
+    await apiPost('ganhadores', null, 'deletar', conflito.id).catch(() => {});
+    todosGanhadores = todosGanhadores.filter(g => g.id !== conflito.id);
+  }
+
+  const dados = { participante_id: participante_id || null, modalidade_id, posicao,
+    nome_exibicao: nome, cidade, parceiro: parceiro || null, equipe: equipe || null,
+    premio_descricao: premio_descricao || null, foto_url: foto_url || null, publicado };
+
+  try {
+    let resultado;
+    if (editId) {
+      resultado = await apiPost('ganhadores', dados, 'atualizar', editId);
+      todosGanhadores = todosGanhadores.map(g => g.id === editId ? { ...g, ...dados, id: editId } : g);
+    } else {
+      resultado = await apiPost('ganhadores', dados, 'inserir');
+      if (resultado?.id) todosGanhadores.push({ ...dados, id: resultado.id });
+      else if (Array.isArray(resultado) && resultado[0]) todosGanhadores.push({ ...dados, id: resultado[0].id });
+    }
+    fecharModalGanhador();
+    toast('✅ Ganhador salvo com sucesso!');
+    atualizarPainelMod(modalidade_id);
+    renderGridModalidades();
+  } catch(e) {
+    toast('Erro ao salvar. Verifique o console.', 'erro');
+    console.error(e);
+  }
+
+  btn.disabled = false; btn.textContent = '💾 Salvar Ganhador';
+}
+
+async function togglePublicar(id, publicar, modId) {
+  try {
+    await apiPost('ganhadores', { publicado: publicar }, 'atualizar', id);
+    todosGanhadores = todosGanhadores.map(g => g.id === id ? { ...g, publicado: publicar } : g);
+    toast(publicar ? '🌐 Publicado no portal!' : '🔒 Ocultado do portal.');
+    atualizarPainelMod(modId);
+    renderGridModalidades();
+  } catch(e) { toast('Erro ao atualizar.', 'erro'); }
+}
+
+async function excluirGanhador(id, nome, modId) {
+  if (!confirm(`Excluir ganhador "${nome}"?`)) return;
+  try {
+    await apiPost('ganhadores', null, 'deletar', id);
+    todosGanhadores = todosGanhadores.filter(g => g.id !== id);
+    toast('🗑️ Ganhador excluído.');
+    atualizarPainelMod(modId);
+    renderGridModalidades();
+  } catch(e) { toast('Erro ao excluir.', 'erro'); }
+}
+
+function atualizarPainelMod(modId) {
+  const painel = document.getElementById('painel-mod-' + modId);
+  if (!painel) return;
+  // Re-render apenas a lista de ganhadores
+  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
+  const listaGanhs = document.getElementById('lista-ganhs-' + modId);
+  if (!listaGanhs) return;
+  listaGanhs.innerHTML = ganhs.length === 0
+    ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado ainda.</div>'
+    : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => {
+        const emoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
+        return `<div class="ganhador-item">
+          <div class="ganhador-medal">${emoji}</div>
+          <div class="ganhador-dados">
+            <div class="ganhador-nome">${g.nome_exibicao || '—'}</div>
+            <div class="ganhador-detalhe">${g.cidade || '—'} ${g.parceiro ? '· Parceiro: '+g.parceiro : ''} ${g.equipe ? '· '+g.equipe : ''}</div>
+            ${g.premio_descricao ? `<div class="ganhador-detalhe" style="color:#fbbf24;">🎁 ${g.premio_descricao}</div>` : ''}
+            <div style="margin-top:4px;">
+              <span class="pub-dot ${g.publicado ? 'verde' : 'cinza'}"></span>
+              <span style="font-size:10px;color:${g.publicado ? '#22c55e' : '#64748b'};">${g.publicado ? 'Publicado' : 'Rascunho'}</span>
+            </div>
+          </div>
+          ${g.foto_url ? `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">` : `<div class="ganhador-foto-vazia">📷</div>`}
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button class="btn-sm btn-edit" onclick="editarGanhador('${g.id}', ${modId})">✏️ Editar</button>
+            <button class="btn-sm ${g.publicado ? 'btn-unpub' : 'btn-pub'}"
+              onclick="togglePublicar('${g.id}', ${!g.publicado}, ${modId})">
+              ${g.publicado ? '🔒 Ocultar' : '🌐 Publicar'}
+            </button>
+            <button class="btn-sm btn-danger" onclick="excluirGanhador('${g.id}', '${g.nome_exibicao}', ${modId})">🗑️ Excluir</button>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+// ================================================================
+// GALERIA
+// ================================================================
+function previewGaleriaFoto() {
+  const url  = document.getElementById('gal-url').value;
+  const prev = document.getElementById('gal-preview');
+  if (url) { prev.src = url; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+}
+
+async function salvarFotoGaleria() {
+  const url      = document.getElementById('gal-url').value.trim();
+  const legenda  = document.getElementById('gal-legenda').value.trim();
+  const categoria = document.getElementById('gal-categoria').value;
+
+  if (!url) { toast('Informe a URL da foto.', 'erro'); return; }
+
+  const dados = { url, legenda: legenda || null, categoria, publicado: false, ordem: todasFotos.length };
+  try {
+    const res = await apiPost('galeria_fotos', dados, 'inserir');
+    const id = res?.id || (Array.isArray(res) && res[0]?.id);
+    if (id) todasFotos.push({ ...dados, id });
+    document.getElementById('gal-url').value = '';
+    document.getElementById('gal-legenda').value = '';
+    document.getElementById('gal-preview').style.display = 'none';
+    renderGaleria();
+    toast('📸 Foto adicionada à galeria!');
+  } catch(e) { toast('Erro ao salvar foto.', 'erro'); console.error(e); }
+}
+
+function renderGaleria() {
+  const cont = document.getElementById('cont-galeria');
+  cont.textContent = `(${todasFotos.length} foto${todasFotos.length !== 1 ? 's' : ''})`;
+
+  const lista = document.getElementById('galeria-lista');
+  if (todasFotos.length === 0) {
+    lista.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhuma foto cadastrada.</div>';
+    return;
+  }
+
+  lista.innerHTML = todasFotos.map(f => `
+    <div class="galeria-card">
+      <img src="${f.url}" alt="${f.legenda || ''}" onerror="this.style.background='#334155';this.style.height='80px';">
+      <div class="galeria-card-body">
+        <div class="cat-badge">${f.categoria}</div>
+        <div class="galeria-legenda">${f.legenda || '(sem legenda)'}</div>
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+          <span class="pub-dot ${f.publicado ? 'verde' : 'cinza'}"></span>
+          <span style="font-size:10px;color:${f.publicado ? '#22c55e' : '#64748b'};">${f.publicado ? 'Publicado' : 'Rascunho'}</span>
+        </div>
+        <div class="galeria-actions">
+          <button class="btn-sm ${f.publicado ? 'btn-unpub' : 'btn-pub'}"
+            onclick="togglePublicarFoto('${f.id}', ${!f.publicado})">
+            ${f.publicado ? '🔒' : '🌐'} ${f.publicado ? 'Ocultar' : 'Publicar'}
+          </button>
+          <button class="btn-sm btn-danger" onclick="excluirFoto('${f.id}')">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function togglePublicarFoto(id, publicar) {
+  try {
+    await apiPost('galeria_fotos', { publicado: publicar }, 'atualizar', id);
+    todasFotos = todasFotos.map(f => f.id === id ? { ...f, publicado: publicar } : f);
+    renderGaleria();
+    toast(publicar ? '🌐 Foto publicada no portal!' : '🔒 Foto ocultada.');
+  } catch(e) { toast('Erro.', 'erro'); }
+}
+
+async function excluirFoto(id) {
+  if (!confirm('Excluir esta foto?')) return;
+  try {
+    await apiPost('galeria_fotos', null, 'deletar', id);
+    todasFotos = todasFotos.filter(f => f.id !== id);
+    renderGaleria();
+    toast('🗑️ Foto excluída.');
+  } catch(e) { toast('Erro ao excluir.', 'erro'); }
+}
+
+// ================================================================
+// FOTOS DE ALIMENTOS
+// ================================================================
+let credenciadosFiltrados = [];
+
+function renderCredenciados() {
+  const credenciados = todasInscricoes
+    .filter(i => i.presenca)
+    .map(i => {
+      const p = todosParticipantes.find(p => p.id === i.participante_id);
+      return p ? { ...p, inscricao_id: i.id, modalidade_id: i.modalidade_id, foto_alimento_url: i.foto_alimento_url } : null;
+    })
+    .filter(Boolean);
+
+  // Deduplicar por participante_id
+  const dedup = [];
+  const visto = new Set();
+  credenciados.forEach(c => {
+    if (!visto.has(c.id)) { visto.add(c.id); dedup.push(c); }
+  });
+  credenciadosFiltrados = dedup;
+  renderListaCredenciados(dedup);
+}
+
+function filtrarCredenciados() {
+  const busca = document.getElementById('busca-cred').value.toLowerCase();
+  const mod   = document.getElementById('filtro-mod-cred').value;
+
+  const filtrado = credenciadosFiltrados.filter(c => {
+    const nomeBate = !busca || c.nome_completo.toLowerCase().includes(busca);
+    const modBate  = !mod || c.modalidade_id == mod;
+    return nomeBate && modBate;
+  });
+  renderListaCredenciados(filtrado);
+}
+
+function renderListaCredenciados(lista) {
+  const cont = document.getElementById('cont-credenciados');
+  cont.textContent = `(${lista.length})`;
+
+  const div = document.getElementById('lista-credenciados');
+  if (lista.length === 0) {
+    div.innerHTML = '<div class="vazio">Nenhum credenciado encontrado.</div>';
+    return;
+  }
+
+  div.innerHTML = lista.map(c => {
+    const mod = MODALIDADES[c.modalidade_id];
+    return `<div class="credenciado-item">
+      <div class="credenciado-dados">
+        <div class="credenciado-nome">${c.nome_completo}</div>
+        <div class="credenciado-mod">${mod ? mod.nome + ' ' + mod.sub : '—'} · ${c.cidade || '—'}/${c.uf || 'RO'}</div>
+      </div>
+      ${c.foto_alimento_url
+        ? `<img src="${c.foto_alimento_url}" class="foto-alimento-thumb" id="thumb-${c.inscricao_id}" style="display:block;" alt="Alimento">`
+        : `<img class="foto-alimento-thumb" id="thumb-${c.inscricao_id}" alt="Alimento">`}
+      <input type="url" class="credenciado-foto-input" id="fa-${c.inscricao_id}"
+        placeholder="URL da foto do alimento..." value="${c.foto_alimento_url || ''}"
+        oninput="previewAlimento('${c.inscricao_id}')">
+      <button class="btn-salvar-foto" id="btn-fa-${c.inscricao_id}"
+        onclick="salvarFotoAlimento('${c.inscricao_id}', '${c.id}')">💾 Salvar</button>
+    </div>`;
+  }).join('');
+}
+
+function previewAlimento(inscricaoId) {
+  const url = document.getElementById('fa-' + inscricaoId).value;
+  const thumb = document.getElementById('thumb-' + inscricaoId);
+  if (url) { thumb.src = url; thumb.style.display = 'block'; }
+  else thumb.style.display = 'none';
+}
+
+async function salvarFotoAlimento(inscricaoId, participanteId) {
+  const btn = document.getElementById('btn-fa-' + inscricaoId);
+  const url = document.getElementById('fa-' + inscricaoId).value.trim();
+  btn.textContent = '⏳'; btn.classList.add('salvando');
+  try {
+    await apiPost('inscricoes', { foto_alimento_url: url || null }, 'atualizar', inscricaoId);
+    // Atualiza estado local
+    const insc = todasInscricoes.find(i => i.id === inscricaoId);
+    if (insc) insc.foto_alimento_url = url || null;
+    toast('✅ Foto do alimento salva!');
+  } catch(e) {
+    toast('Erro ao salvar foto.', 'erro');
+  }
+  btn.textContent = '💾 Salvar'; btn.classList.remove('salvando');
+}
+
+// ================================================================
+// INICIALIZAR
+// ================================================================
+window.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('auth-overlay').classList.contains('show'))
+    fazerLogin();
+  if (e.key === 'Escape') fecharModalGanhador();
+});
+
+verificarAuth();
+</script>
+</body>
+</html>
