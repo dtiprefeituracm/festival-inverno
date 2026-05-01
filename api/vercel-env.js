@@ -30,6 +30,20 @@ export default async function handler(req, res) {
     'Content-Type': 'application/json'
   };
 
+  // ── Ler operadores do process.env (valores reais disponíveis no servidor) ──
+  if (acao === 'lerOperadores') {
+    const ops = [];
+    for (let i = 1; i <= 20; i++) {
+      const val = process.env[`OPERADOR_${i}`];
+      if (!val) continue;
+      const partes = val.split(':');
+      if (partes.length < 3) continue;
+      const [user, senha, nome, podeExcluir] = partes;
+      ops.push({ user, nome, podeExcluir: podeExcluir === 'true', envKey: `OPERADOR_${i}` });
+    }
+    return res.status(200).json({ ok: true, operadores: ops });
+  }
+
   // ── Listar todas as variáveis OPERADOR_N ──────────────────────
   if (acao === 'listar') {
     try {
