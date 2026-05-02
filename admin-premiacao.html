@@ -226,7 +226,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   </div>
   <div class="header-actions">
     <a href="portal-transparencia.html" target="_blank" class="btn-back">👁️ Ver Portal</a>
-    <a href="admin.html" class="btn-back">← Admin Principal</a>
+    <button onclick="voltarAdmin()" class="btn-back">← Admin Principal</button>
   </div>
 </div>
 
@@ -448,6 +448,14 @@ async function fazerLogin() {
   } catch(e) { err.style.display = 'block'; }
 }
 
+function voltarAdmin() {
+  if (window.opener && !window.opener.closed) {
+    window.close(); // fecha esta aba, retorna à aba do admin.html
+  } else {
+    window.location.href = 'admin.html'; // acesso direto: navega normalmente
+  }
+}
+
 function verificarAuth() {
   const t = sessionStorage.getItem('adminToken');
   if (!t) document.getElementById('auth-overlay').classList.add('show');
@@ -601,25 +609,41 @@ function renderPainelMod(modId) {
   card.classList.add('expandido');
   document.getElementById('arrow-' + modId).textContent = '▲';
 
-  // Participantes desta modalidade
+  // Participantes desta modalidade — inclui dados da inscrição (parceiro, equipe, membros)
   const partsDaMod = inscritos.map(i => {
     const p = todosParticipantes.find(p => p.id === i.participante_id);
-    return p ? { ...p, inscricao_id: i.id, presenca: i.presenca } : null;
+    return p ? {
+      ...p,
+      inscricao_id:   i.id,
+      presenca:       i.presenca,
+      parceiro_nome:  i.parceiro_nome  || null,
+      membro3_nome:   i.membro3_nome   || null,
+      membro4_nome:   i.membro4_nome   || null,
+      nome_equipe:    i.nome_equipe    || null,
+    } : null;
   }).filter(Boolean);
 
   const listaParticipantes = partsDaMod.length === 0
     ? '<div class="vazio">Nenhum participante inscrito nesta modalidade.</div>'
     : partsDaMod.map(p => {
         const jàGanhou = ganhs.some(g => g.participante_id === p.id);
+        const extras = [];
+        if (p.parceiro_nome) extras.push('c/ ' + p.parceiro_nome);
+        if (p.membro3_nome)  extras.push(p.membro3_nome);
+        if (p.membro4_nome)  extras.push(p.membro4_nome);
+        if (p.nome_equipe)   extras.push('Equipe: ' + p.nome_equipe);
+        const extraHtml = extras.length
+          ? `<div style="font-size:11px;color:#60a5fa;margin-top:2px;">${extras.join(' · ')}</div>` : '';
         return `<div class="part-item">
           <div style="flex:1;min-width:0;">
             <div class="part-nome">${p.nome_completo}</div>
             <div class="part-cidade">${p.cidade || '—'} / ${p.uf || 'RO'}
               ${p.presenca ? '<span class="part-cred"> · ✅ Credenciado</span>' : ''}</div>
+            ${extraHtml}
           </div>
           ${jàGanhou
             ? `<span style="font-size:11px;color:#fbbf24;">⭐ Já cadastrado</span>`
-            : `<button class="btn-ganhar" onclick="abrirModalGanhador(${JSON.stringify(p).replace(/"/g,'&quot;')}, ${modId})">🏆 Marcar</button>`}
+            : `<button class="btn-ganhar" onclick="abrirModalGanhador(${JSON.stringify(p).replace(/\"/g,'&quot;')}, ${modId})">🏆 Marcar</button>`}
         </div>`;
       }).join('');
 
@@ -682,10 +706,20 @@ function abrirModalGanhador(participante, modId) {
   document.getElementById('g-edit-id').value = '';
   document.getElementById('g-nome').value = participante.nome_completo;
   document.getElementById('g-cidade').value = (participante.cidade || '') + '/' + (participante.uf || 'RO');
-  document.getElementById('g-parceiro').value = '';
-  document.getElementById('g-equipe').value = '';
+
+  // Auto-preenche parceiro (duplas) ou membros (pesca)
+  const membrosExtras = [];
+  if (participante.parceiro_nome) membrosExtras.push(participante.parceiro_nome);
+  if (participante.membro3_nome)  membrosExtras.push(participante.membro3_nome);
+  if (participante.membro4_nome)  membrosExtras.push(participante.membro4_nome);
+  // Para duplas: parceiro vai no campo Parceiro(a)
+  // Para pesca: todos os membros extras vão no campo Parceiro(a), equipe vai no campo Equipe
+  document.getElementById('g-parceiro').value = membrosExtras.join(', ');
+  document.getElementById('g-equipe').value   = participante.nome_equipe || '';
+
   document.getElementById('g-premio').value = '';
   document.getElementById('g-foto').value = '';
+  document.getElementById('g-foto-upload-status').textContent = '';
   document.getElementById('g-foto-preview').style.display = 'none';
   document.getElementById('g-publicado').checked = false;
   document.getElementById('modal-ganhador-bg').classList.add('aberto');
