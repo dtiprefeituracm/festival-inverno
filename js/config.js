@@ -5,7 +5,7 @@
 // ================================================================
 
 // Data limite para inscrições
-const DATA_LIMITE_INSCRICAO = new Date('2026-05-01T23:59:59');
+const DATA_LIMITE_INSCRICAO = new Date('2026-05-03T18:00:00');
 
 // Verifica se as inscrições estão abertas
 function inscricaoAberta() {
