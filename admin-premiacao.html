@@ -449,7 +449,8 @@ async function fazerLogin() {
     if (d.ok) {
       sessionStorage.setItem('adminToken', d.token || 'ok');
       sessionStorage.setItem('adminUsuario', usuario);
-      sessionStorage.setItem('adminPerfil', d.perfil || 'operador');
+      // Salva como objeto JSON para ser compatível com o JSON.parse do admin.html
+      sessionStorage.setItem('adminPerfil', JSON.stringify({ perfil: d.perfil || 'operador', nome: usuario, podeExcluir: false }));
       document.getElementById('auth-overlay').classList.remove('show');
       inicializar();
     } else { err.style.display = 'block'; }
