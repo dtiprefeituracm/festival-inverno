@@ -673,8 +673,19 @@ let todosInscritos = [];
 // AUTO-LOGIN — restaura sessão após F5 se token ainda válido
 // ================================================================
 (function() {
-  const token  = sessionStorage.getItem('adminToken');
-  const perfil = JSON.parse(sessionStorage.getItem('adminPerfil') || 'null');
+  // Tenta sessionStorage primeiro; se vier de outra aba usa localStorage como ponte
+  let token  = sessionStorage.getItem('adminToken');
+  let perfil = JSON.parse(sessionStorage.getItem('adminPerfil') || 'null');
+  if (!token) {
+    token  = localStorage.getItem('adminToken');
+    perfil = JSON.parse(localStorage.getItem('adminPerfil') || 'null');
+    if (token) {
+      sessionStorage.setItem('adminToken',  token);
+      if (perfil) sessionStorage.setItem('adminPerfil', JSON.stringify(perfil));
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminPerfil');
+    }
+  }
   if (token) {
     tokenAdmin  = token;
     perfilAdmin = perfil;
