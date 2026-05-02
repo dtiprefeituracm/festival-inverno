@@ -374,6 +374,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     <div class="form-group">
       <label>Parceiro(a) <span style="color:#475569;font-weight:400;">(modalidades em dupla)</span></label>
       <input type="text" id="g-parceiro" placeholder="Nome do parceiro(a)">
+      <div id="g-parceiro-aviso" style="display:none;font-size:11px;color:#f59e0b;margin-top:5px;padding:6px 10px;background:rgba(245,158,11,0.1);border-radius:6px;border-left:3px solid #f59e0b;"></div>
     </div>
     <div class="form-group">
       <label>Equipe <span style="color:#475569;font-weight:400;">(pesca)</span></label>
@@ -631,17 +632,50 @@ function renderPainelMod(modId) {
   document.getElementById('arrow-' + modId).textContent = '▲';
 
   // Participantes desta modalidade — inclui dados da inscrição (parceiro, equipe, membros)
+
+  // Para duplas: se parceiro_nome está vazio, busca reversa — quem listou este participante como parceiro?
+  function inferirParceiro(participanteId, nomePrincipal) {
+    const outro = inscritos.find(i =>
+      i.participante_id !== participanteId &&
+      i.parceiro_nome &&
+      i.parceiro_nome.trim().toLowerCase() === nomePrincipal.trim().toLowerCase()
+    );
+    if (outro) {
+      const pOutro = todosParticipantes.find(p => p.id === outro.participante_id);
+      return pOutro?.nome_completo || outro.parceiro_nome;
+    }
+    // Fallback: busca em TODAS as inscrições da mesma modalidade
+    const outraMod = todasInscricoes.find(i =>
+      i.modalidade_id == modId &&
+      i.participante_id !== participanteId &&
+      i.parceiro_nome &&
+      i.parceiro_nome.trim().toLowerCase() === nomePrincipal.trim().toLowerCase()
+    );
+    if (outraMod) {
+      const pM = todosParticipantes.find(p => p.id === outraMod.participante_id);
+      return pM?.nome_completo || null;
+    }
+    return null;
+  }
+
   const partsDaMod = inscritos.map(i => {
     const p = todosParticipantes.find(p => p.id === i.participante_id);
-    return p ? {
+    if (!p) return null;
+    // Parceiro: usa o campo direto; se vazio e é dupla, faz busca reversa
+    let parceiroNome = i.parceiro_nome || null;
+    if (!parceiroNome && m.dupla) {
+      parceiroNome = inferirParceiro(i.participante_id, p.nome_completo);
+    }
+    return {
       ...p,
       inscricao_id:   i.id,
       presenca:       i.presenca,
-      parceiro_nome:  i.parceiro_nome  || null,
+      parceiro_nome:  parceiroNome,
       membro3_nome:   i.membro3_nome   || null,
       membro4_nome:   i.membro4_nome   || null,
       nome_equipe:    i.nome_equipe    || null,
-    } : null;
+      parceiro_inferido: (!i.parceiro_nome && !!parceiroNome), // flag para UI
+    };
   }).filter(Boolean);
 
   const listaParticipantes = partsDaMod.length === 0
@@ -649,12 +683,20 @@ function renderPainelMod(modId) {
     : partsDaMod.map(p => {
         const jàGanhou = ganhs.some(g => g.participante_id === p.id);
         const extras = [];
-        if (p.parceiro_nome) extras.push('c/ ' + p.parceiro_nome);
+        if (p.parceiro_nome) {
+          const inf = p.parceiro_inferido ? ' (inferido)' : '';
+          extras.push('c/ ' + p.parceiro_nome + inf);
+        }
         if (p.membro3_nome)  extras.push(p.membro3_nome);
         if (p.membro4_nome)  extras.push(p.membro4_nome);
         if (p.nome_equipe)   extras.push('Equipe: ' + p.nome_equipe);
+        // Para duplas sem parceiro identificado, avisa o admin
+        const semParceiro = m.dupla && !p.parceiro_nome;
         const extraHtml = extras.length
-          ? `<div style="font-size:11px;color:#60a5fa;margin-top:2px;">${extras.join(' · ')}</div>` : '';
+          ? `<div style="font-size:11px;color:#60a5fa;margin-top:2px;">${extras.join(' · ')}</div>`
+          : semParceiro
+            ? `<div style="font-size:11px;color:#f59e0b;margin-top:2px;">⚠️ Parceiro não cadastrado</div>`
+            : '';
         return `<div class="part-item">
           <div style="flex:1;min-width:0;">
             <div class="part-nome">${p.nome_completo}</div>
@@ -737,6 +779,20 @@ function abrirModalGanhador(participante, modId) {
   if (participante.membro3_nome)  membrosExtras.push(participante.membro3_nome);
   if (participante.membro4_nome)  membrosExtras.push(participante.membro4_nome);
   document.getElementById('g-parceiro').value = membrosExtras.join(', ');
+
+  // Aviso visual se dupla sem parceiro identificado
+  const avisoParceiroEl = document.getElementById('g-parceiro-aviso');
+  if (avisoParceiroEl) {
+    if (m.dupla && !participante.parceiro_nome && !participante.membro3_nome) {
+      avisoParceiroEl.textContent = '⚠️ Parceiro não cadastrado na inscrição — preencha manualmente.';
+      avisoParceiroEl.style.display = 'block';
+    } else if (participante.parceiro_inferido) {
+      avisoParceiroEl.textContent = 'ℹ️ Parceiro identificado por busca reversa.';
+      avisoParceiroEl.style.display = 'block';
+    } else {
+      avisoParceiroEl.style.display = 'none';
+    }
+  }
 
   // ── Auto-preenche Nome da Equipe (pesca) ──────────────────
   document.getElementById('g-equipe').value = participante.nome_equipe || '';
