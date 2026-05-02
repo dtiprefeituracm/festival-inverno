@@ -1197,6 +1197,8 @@ function imprimirHTML(html) {
 </html>`);
   w.document.close();
   w.focus();
+  // Fecha a aba/janela automaticamente após o diálogo de impressão
+  w.onafterprint = function() { w.close(); };
   setTimeout(() => { w.print(); }, 300);
 }
 
@@ -1324,7 +1326,10 @@ function imprimirLista() {
     const ficha = p.inscricoes[0]?.numero_ficha || '—';
     const mods  = p.inscricoes.map(ins => {
       const m = MODALIDADES[ins.modalidade_id];
-      return m ? `${m.nome} ${m.sub}${ins.parceiro_nome ? ' + ' + ins.parceiro_nome : ''}` : '';
+      let extra = '';
+      if (ins.parceiro_nome) extra = ' c/ ' + ins.parceiro_nome;
+      if (ins.nome_equipe) extra = ' [' + ins.nome_equipe + ']' + extra;
+      return m ? `${m.nome} ${m.sub}${extra}` : '';
     }).filter(Boolean).join(' / ');
 
     const bg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
@@ -1927,17 +1932,25 @@ function imprimirCredenciados() {
   const linhas = credenciados.map((p, idx) => {
     const insc    = p.inscricoes.find(i => i.presenca === true);
     const ficha   = insc?.numero_ficha || '—';
-    const mod     = MODALIDADES[insc?.modalidade_id];
     const horario = insc?.presenca_em
       ? new Date(insc.presenca_em).toLocaleString('pt-BR')
       : '—';
+    // Mostra TODAS as modalidades inscritas com parceiro quando houver
+    const modsTexto = p.inscricoes.map(i => {
+      const m = MODALIDADES[i.modalidade_id];
+      if (!m) return '';
+      let txt = m.nome + ' ' + m.sub;
+      if (i.nome_equipe) txt += ' [' + i.nome_equipe + ']';
+      if (i.parceiro_nome) txt += ' c/ ' + i.parceiro_nome;
+      return txt;
+    }).filter(Boolean).join(' / ');
     const bg = idx % 2 === 0 ? '#fff' : '#f0fdf4';
     return `<tr style="background:${bg}">
       <td style="padding:7px 10px;border:1px solid #dcfce7;">${idx + 1}</td>
       <td style="padding:7px 10px;border:1px solid #dcfce7;font-weight:700;color:#16a34a;">${ficha}</td>
       <td style="padding:7px 10px;border:1px solid #dcfce7;font-weight:600;">${p.nome_completo}</td>
       <td style="padding:7px 10px;border:1px solid #dcfce7;">${p.cpf || '—'}</td>
-      <td style="padding:7px 10px;border:1px solid #dcfce7;">${mod ? mod.nome + ' ' + mod.sub : '—'}</td>
+      <td style="padding:7px 10px;border:1px solid #dcfce7;font-size:11px;">${modsTexto || '—'}</td>
       <td style="padding:7px 10px;border:1px solid #dcfce7;color:#16a34a;font-weight:600;">${horario}</td>
       <td style="padding:7px 10px;border:1px solid #dcfce7;text-align:center;">✅</td>
     </tr>`;
