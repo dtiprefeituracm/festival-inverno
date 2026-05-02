@@ -431,7 +431,15 @@ function renderAlimentos() {
 
   const totalInscritos  = todosParticipantes.length;
   const totalPresentes  = partPresentes.size;
-  const kgArrecadado    = totalPresentes; // 1kg por participante
+  // 1kg por pessoa: participante principal + parceiro/membro3/membro4 de cada inscrição presente
+  let kgArrecadado = totalPresentes;
+  for (const i of todasInscricoes) {
+    if (i.presenca) {
+      if (i.parceiro_nome) kgArrecadado++;
+      if (i.membro3_nome)  kgArrecadado++;
+      if (i.membro4_nome)  kgArrecadado++;
+    }
+  }
   const comFoto         = todosParticipantes.filter(p => partPresentes.has(p.id) && p.foto_alimento).length;
 
   // Stats
@@ -666,7 +674,15 @@ function aplicarFiltro() {
   if (filtroAtual === 'com-foto')  dados = dados.filter(p => p.presente && p.foto_alimento);
   if (filtroAtual === 'sem-foto')  dados = dados.filter(p => p.presente && !p.foto_alimento);
 
-  const totalKg = dados.filter(p => p.presente).length;
+  const totalKg = dados.filter(p => p.presente).reduce((sum, p) => {
+    let kg = 1;
+    for (const i of (p.inscricoes || [])) {
+      if (i.parceiro_nome) kg++;
+      if (i.membro3_nome)  kg++;
+      if (i.membro4_nome)  kg++;
+    }
+    return sum + kg;
+  }, 0);
   document.getElementById('pc-sub').textContent =
     `${dados.length} participante(s) · ${totalKg} kg de alimentos · gerado em ${new Date().toLocaleString('pt-BR')}`;
 
@@ -700,6 +716,9 @@ function aplicarFiltro() {
       ? `<div class="td-foto"><img src="${escHtml(p.foto_alimento)}" alt="Foto" onclick="abrirLightbox('${escHtml(p.foto_alimento)}','${escHtml(p.nome_completo)}')"></div>`
       : `<div class="td-foto"><div class="sem-foto">📷</div></div>`;
 
+    const kgP = !p.presente ? 0 : p.inscricoes.reduce((s, i) =>
+      s + (i.parceiro_nome ? 1 : 0) + (i.membro3_nome ? 1 : 0) + (i.membro4_nome ? 1 : 0), 1);
+
     html += `<tr>
       <td style="color:#94a3b8;">${idx + 1}</td>
       <td><strong>${ficha}</strong></td>
@@ -707,7 +726,7 @@ function aplicarFiltro() {
       <td style="font-size:12px;color:#64748b;">${cpfF}</td>
       <td>${mods}</td>
       <td style="font-size:12px;white-space:nowrap;">${presHora}</td>
-      <td style="text-align:center;font-weight:700;">${p.presente ? '1 kg' : '—'}</td>
+      <td style="text-align:center;font-weight:700;">${p.presente ? `${kgP} kg` : '—'}</td>
       <td>${fotoHtml}</td>
     </tr>`;
   });
@@ -715,9 +734,18 @@ function aplicarFiltro() {
   // Totalizador
   const totalPresentes = dados.filter(p => p.presente).length;
   const totalComFoto   = dados.filter(p => p.foto_alimento).length;
+  const totalKgFinal   = dados.filter(p => p.presente).reduce((sum, p) => {
+    let kg = 1;
+    for (const i of (p.inscricoes || [])) {
+      if (i.parceiro_nome) kg++;
+      if (i.membro3_nome)  kg++;
+      if (i.membro4_nome)  kg++;
+    }
+    return sum + kg;
+  }, 0);
   html += `<tr style="background:#f8faff;font-weight:700;border-top:2px solid #e2e8f0;">
     <td colspan="6" style="text-align:right;padding-right:16px;font-size:13px;color:#475569;">TOTAL ARRECADADO:</td>
-    <td style="font-size:15px;color:#1a56a0;">${totalPresentes} kg</td>
+    <td style="font-size:15px;color:#1a56a0;">${totalKgFinal} kg</td>
     <td style="font-size:12px;color:#64748b;">${totalComFoto} fotos</td>
   </tr>`;
 
