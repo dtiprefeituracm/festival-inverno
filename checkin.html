@@ -1200,8 +1200,8 @@ async function uploadEConfirmar() {
   progBar.style.width   = '20%';
 
   try {
-    // Comprimir imagem via canvas (max 900px, JPEG 75%)
-    const base64Comprimida = await comprimirImagem(file, 900, 0.75);
+    // Comprimir imagem via canvas (max 600px, JPEG 60%)
+    const base64Comprimida = await comprimirImagem(file, 600, 0.60);
     progTexto.textContent = 'Enviando para o servidor...';
     progBar.style.width   = '50%';
 
