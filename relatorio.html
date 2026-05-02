@@ -287,13 +287,13 @@ table tr:hover td { background: #f8faff; }
       <div class="card-titulo">🏅 Relatório por Modalidade</div>
       <div class="relatorio-acoes" style="margin-bottom:10px;">
         <button class="rel-btn rel-btn-print" onclick="imprimirPorModalidade()">🖨️ Imprimir tudo (uma modalidade por página)</button>
-        <select id="filtro-mod-rel" onchange="renderModalidades()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;">
+        <select id="filtro-mod-rel" onchange="atualizarFiltroSexo(); renderModalidades()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;">
           <option value="">Todas as modalidades</option>
           <option value="1">Vôlei de Areia (M)</option>
           <option value="2">Vôlei de Areia (F)</option>
           <option value="3">Futevôlei (M)</option>
-          <option value="4">Canoagem (Dupla)</option>
-          <option value="5">Caiaque (Individual)</option>
+          <option value="4">Canoagem (Dupla) ♂♀</option>
+          <option value="5">Caiaque (Individual) ♂♀</option>
           <option value="6">Pesca (M)</option>
           <option value="7">Pesca (F)</option>
         </select>
@@ -301,6 +301,11 @@ table tr:hover td { background: #f8faff; }
           <option value="">Credenciados e ausentes</option>
           <option value="credenciados">✅ Apenas credenciados</option>
           <option value="ausentes">❌ Apenas ausentes</option>
+        </select>
+        <select id="filtro-sexo-mod" onchange="renderModalidades()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;display:none;">
+          <option value="">Masculino e Feminino</option>
+          <option value="M">♂ Apenas Masculino</option>
+          <option value="F">♀ Apenas Feminino</option>
         </select>
       </div>
       <div id="mod-rel-content"><div class="loading">⏳ Carregando...</div></div>
@@ -512,13 +517,13 @@ const CORES_MOD = {
   5:'#7c3aed',6:'#d97706',7:'#be123c'
 };
 const MODS_INFO = {
-  1:{nome:'Vôlei de Areia',sub:'Masculino', dupla:true, equipe:false,emoji:'🏐'},
-  2:{nome:'Vôlei de Areia',sub:'Feminino',  dupla:true, equipe:false,emoji:'🏐'},
-  3:{nome:'Futevôlei',     sub:'Masculino', dupla:true, equipe:false,emoji:'⚽'},
-  4:{nome:'Canoagem',      sub:'Dupla',     dupla:true, equipe:false,emoji:'🛶'},
-  5:{nome:'Caiaque',       sub:'Individual',dupla:false,equipe:false,emoji:'🚣'},
-  6:{nome:'Pesca',         sub:'Masculino', dupla:false,equipe:true, emoji:'🎣'},
-  7:{nome:'Pesca',         sub:'Feminino',  dupla:false,equipe:true, emoji:'🎣'},
+  1:{nome:'Vôlei de Areia',sub:'Masculino', dupla:true, equipe:false,emoji:'🏐', filtraSexo:false},
+  2:{nome:'Vôlei de Areia',sub:'Feminino',  dupla:true, equipe:false,emoji:'🏐', filtraSexo:false},
+  3:{nome:'Futevôlei',     sub:'Masculino', dupla:true, equipe:false,emoji:'⚽', filtraSexo:false},
+  4:{nome:'Canoagem',      sub:'Dupla',     dupla:true, equipe:false,emoji:'🛶', filtraSexo:true},
+  5:{nome:'Caiaque',       sub:'Individual',dupla:false,equipe:false,emoji:'🚣', filtraSexo:true},
+  6:{nome:'Pesca',         sub:'Masculino', dupla:false,equipe:true, emoji:'🎣', filtraSexo:false},
+  7:{nome:'Pesca',         sub:'Feminino',  dupla:false,equipe:true, emoji:'🎣', filtraSexo:false},
 };
 const MAX_VAGAS = {1:20,2:20,3:20,4:0,5:0,6:0,7:0};
 
@@ -1126,6 +1131,7 @@ function imprimirQuantitativo() {
 function renderModalidades() {
   const filtro     = document.getElementById('filtro-mod-rel')?.value || '';
   const filtroCred = document.getElementById('filtro-cred-mod')?.value || '';
+  const filtroSexo = document.getElementById('filtro-sexo-mod')?.value || '';
   const ids = filtro ? [filtro] : Object.keys(MODS_INFO);
   let html = '';
   let totalFiltrado = 0;
@@ -1136,6 +1142,15 @@ function renderModalidades() {
     const cor = CORES_MOD[id] || '#1a56a0';
     let insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
     const esp  = todasInscricoes.filter(i=>i.modalidade_id==id && i.status==='lista_espera').length;
+
+    // Aplica filtro de sexo (apenas para modalidades com filtraSexo:true)
+    if (m.filtraSexo && filtroSexo) {
+      insc = insc.filter(i => {
+        const p = todosParticipantes.find(p=>p.id===i.participante_id);
+        return p && p.sexo === filtroSexo;
+      });
+    }
+
     const cred = new Set(insc.filter(i=>i.presenca).map(i=>i.participante_id)).size;
 
     // Aplica filtro de credenciamento
@@ -1157,9 +1172,12 @@ function renderModalidades() {
       const credStyle = i.presenca
         ? `color:#166534;font-weight:700;`
         : `color:#dc2626;font-style:italic;`;
+      const sexoBadge = m.filtraSexo
+        ? `<span style="font-size:10px;padding:1px 5px;border-radius:10px;background:${p.sexo==='F'?'#fce7f3':'#dbeafe'};color:${p.sexo==='F'?'#9d174d':'#1e40af'};margin-left:4px;">${p.sexo==='F'?'♀ F':'♂ M'}</span>`
+        : '';
       return `<tr style="${bg}">
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:700;color:${cor};">${i.numero_ficha||'—'}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:600;">${escHtml(p.nome_completo)}${extra}${eqEx}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:600;">${escHtml(p.nome_completo)}${sexoBadge}${extra}${eqEx}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;text-align:center;">
           <span style="${credStyle}">${i.presenca ? `✅ ${hora}` : '❌ Ausente'}</span>
@@ -1168,11 +1186,12 @@ function renderModalidades() {
     }).join('');
 
     // Subtítulo reflete o filtro ativo
+    const sexoLabel = m.filtraSexo && filtroSexo ? (filtroSexo==='M' ? ' · ♂ Masculino' : ' · ♀ Feminino') : '';
     const subtituloFiltro = filtroCred === 'credenciados'
-      ? `${inscFiltradas.length} credenciado${inscFiltradas.length!==1?'s':''}`
+      ? `${inscFiltradas.length} credenciado${inscFiltradas.length!==1?'s':''}${sexoLabel}`
       : filtroCred === 'ausentes'
-        ? `${inscFiltradas.length} ausente${inscFiltradas.length!==1?'s':''}`
-        : `${insc.length} inscritos · ${cred} credenciados · ${insc.length-cred} ausentes · ${esp} na espera`;
+        ? `${inscFiltradas.length} ausente${inscFiltradas.length!==1?'s':''}${sexoLabel}`
+        : `${insc.length} inscritos · ${cred} credenciados · ${insc.length-cred} ausentes · ${esp} na espera${sexoLabel}`;
 
     html += `<div style="margin-bottom:24px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:${cor}11;border-left:4px solid ${cor};border-radius:0 8px 8px 0;">
@@ -1206,27 +1225,54 @@ function renderModalidades() {
   document.getElementById('mod-rel-content').innerHTML = html;
 }
 
-function imprimirPorModalidade() {
+function atualizarFiltroSexo() {
   const filtro = document.getElementById('filtro-mod-rel')?.value || '';
+  const selectSexo = document.getElementById('filtro-sexo-mod');
+  if (!selectSexo) return;
+  // Mostra o filtro de sexo apenas para Canoagem (4) e Caiaque (5), ou quando "Todas" e há modalidades com filtraSexo
+  const modsComSexo = ['4','5'];
+  if (filtro === '' || modsComSexo.includes(filtro)) {
+    selectSexo.style.display = '';
+  } else {
+    selectSexo.style.display = 'none';
+    selectSexo.value = '';
+  }
+}
+
+function imprimirPorModalidade() {
+  const filtro     = document.getElementById('filtro-mod-rel')?.value || '';
+  const filtroSexo = document.getElementById('filtro-sexo-mod')?.value || '';
   const ids = filtro ? [filtro] : Object.keys(MODS_INFO);
   let html = '';
 
   ids.forEach((id, idx) => {
     const m   = MODS_INFO[id];
     if (!m) return;
-    const insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
+    let insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
+
+    // Aplica filtro de sexo para canoagem e caiaque
+    if (m.filtraSexo && filtroSexo) {
+      insc = insc.filter(i => {
+        const p = todosParticipantes.find(p=>p.id===i.participante_id);
+        return p && p.sexo === filtroSexo;
+      });
+    }
+
     if (insc.length === 0) return;
     const parcCol = m.dupla ? '<th style="padding:7px 8px;border:1px solid #1447a0;">Parceiro(a)</th>' : '';
+    const sexoCol = m.filtraSexo ? '<th style="padding:7px 8px;border:1px solid #1447a0;text-align:center;">Sexo</th>' : '';
+    const sexoLabel = m.filtraSexo && filtroSexo ? (filtroSexo==='M' ? ' — Masculino' : ' — Feminino') : '';
 
     const linhas = insc.map((i,n) => {
       const p = todosParticipantes.find(p=>p.id===i.participante_id);
       if (!p) return '';
       const parcTd = m.dupla ? `<td style="padding:6px 8px;border:1px solid #e2e8f0;">${escHtml(i.parceiro_nome||'—')}</td>` : '';
+      const sexoTd = m.filtraSexo ? `<td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">${p.sexo==='F'?'♀ F':'♂ M'}</td>` : '';
       const bg = n%2===0?'#fff':'#f8fafc';
       return `<tr style="background:${bg};">
         <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#1a56a0;">${i.numero_ficha||'—'}</td>
         <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:600;">${escHtml(p.nome_completo)}</td>
-        ${parcTd}
+        ${parcTd}${sexoTd}
         <td style="padding:6px 8px;border:1px solid #e2e8f0;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
         <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">${i.presenca?'✅ Credenciado':''}</td>
         <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
@@ -1235,14 +1281,14 @@ function imprimirPorModalidade() {
 
     html += `<div style="page-break-before:${idx>0?'always':'auto'};padding:20px;font-family:system-ui,sans-serif;">
       <div style="border-bottom:2px solid #1a56a0;padding-bottom:10px;margin-bottom:14px;">
-        <div style="font-size:16px;font-weight:800;color:#1a56a0;">${m.emoji} ${m.nome} — ${m.sub}</div>
+        <div style="font-size:16px;font-weight:800;color:#1a56a0;">${m.emoji} ${m.nome} — ${m.sub}${sexoLabel}</div>
         <div style="font-size:11px;color:#64748b;">Festival de Inverno 2026 · SEMESP · ${insc.length} inscritos · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead><tr style="background:#1a56a0;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
           <th style="padding:7px 8px;border:1px solid #1447a0;text-align:left;">Ficha</th>
           <th style="padding:7px 8px;border:1px solid #1447a0;text-align:left;">Participante</th>
-          ${parcCol}
+          ${parcCol}${sexoCol}
           <th style="padding:7px 8px;border:1px solid #1447a0;text-align:left;">Cidade/UF</th>
           <th style="padding:7px 8px;border:1px solid #1447a0;text-align:center;">Credenciado</th>
           <th style="padding:7px 8px;border:1px solid #1447a0;text-align:center;">✓</th>
@@ -1262,6 +1308,7 @@ function imprimirPorModalidade() {
   w.document.close();w.focus();
   w.onafterprint=function(){w.close();};setTimeout(()=>{w.print();},400);
 }
+
 
 // ================================================================
 // PAINEL: POR CIDADE
