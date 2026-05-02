@@ -1013,21 +1013,33 @@ function mostrarResultado(p, inscricoes) {
   participanteAtual = p;
   inscricoesAtuais  = inscricoes;
 
-  const jaPresente  = inscricoes.some(i => i.presenca === true);
+  // Inscrições confirmadas (não espera)
+  const inscConf    = inscricoes.filter(i => i.status !== 'lista_espera');
   const todasEspera = inscricoes.length > 0 && inscricoes.every(i => i.status === 'lista_espera');
   const temEspera   = inscricoes.some(i => i.status === 'lista_espera');
   const ficha       = inscricoes[0]?.numero_ficha || '—';
+
+  // CORRIGIDO: só bloqueia se TODAS as confirmadas já têm presença
+  const totalConf       = inscConf.length;
+  const totalCredConf   = inscConf.filter(i => i.presenca === true).length;
+  const todasPresentes  = totalConf > 0 && totalCredConf === totalConf;
+  const algumPresente   = totalCredConf > 0;            // parcialmente credenciado
+  const pendentes       = totalConf - totalCredConf;    // quantas ainda faltam
 
   const header = document.getElementById('resultado-header');
   const icone  = document.getElementById('resultado-icone');
   const status = document.getElementById('resultado-status');
 
-  if (jaPresente) {
+  if (todasPresentes) {
     header.className  = 'resultado-header ja-presente';
     icone.textContent = '🔵';
-    status.textContent = 'Já credenciado';
     const hora = inscricoes.find(i=>i.presenca_em)?.presenca_em;
-    if (hora) status.textContent += ' — ' + new Date(hora).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    status.textContent = 'Todas as modalidades credenciadas'
+      + (hora ? ' — ' + new Date(hora).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) : '');
+  } else if (algumPresente) {
+    header.className  = 'resultado-header confirmado';
+    icone.textContent = '🟡';
+    status.textContent = `Parcialmente credenciado — ${pendentes} modalidade${pendentes!==1?'s':''} pendente${pendentes!==1?'s':''}`;
   } else if (todasEspera) {
     header.className  = 'resultado-header espera';
     icone.textContent = '⏳';
@@ -1045,10 +1057,17 @@ function mostrarResultado(p, inscricoes) {
     ? new Date(p.data_nascimento + 'T00:00').toLocaleDateString('pt-BR')
     : '—';
 
+  // Badges com 3 estados: ⏳ espera | ✅ credenciado | 🎫 inscrito pendente
   const badges = inscricoes.map(i => {
     const m = MODALIDADES[i.modalidade_id];
-    const cls = i.status === 'lista_espera' ? 'mod-esp' : 'mod-conf';
-    const pre = i.status === 'lista_espera' ? '⏳ ' : '✅ ';
+    let cls, pre;
+    if (i.status === 'lista_espera') {
+      cls = 'mod-esp'; pre = '⏳ ';
+    } else if (i.presenca === true) {
+      cls = 'mod-conf'; pre = '✅ ';
+    } else {
+      cls = 'mod-conf'; pre = '🎫 ';
+    }
     return `<span class="mod-badge ${cls}">${pre}${m ? m.nome + ' ' + m.sub : '—'}</span>`;
   }).join('');
 
@@ -1064,14 +1083,19 @@ function mostrarResultado(p, inscricoes) {
 
   const btn = document.getElementById('confirmar-btn');
   btn.style.background = '';
-  if (jaPresente) {
-    btn.textContent = '🔵 Já credenciado anteriormente';
+  if (todasPresentes) {
+    btn.textContent = '🔵 Todas as modalidades já credenciadas';
     btn.disabled    = true;
     btn.className   = 'confirmar-btn ja';
   } else if (todasEspera) {
-    btn.textContent    = '⚠️ Lista de espera — não credenciar';
-    btn.disabled       = true;
+    btn.textContent      = '⚠️ Lista de espera — não credenciar';
+    btn.disabled         = true;
     btn.style.background = '#92400e';
+  } else if (algumPresente) {
+    btn.textContent = `🟡 Credenciar modalidades pendentes (${pendentes} restante${pendentes!==1?'s':''})`;
+    btn.disabled    = false;
+    btn.className   = 'confirmar-btn';
+    btn.style.background = '#d97706';
   } else {
     btn.textContent = '✅ Confirmar presença + 1kg recebido';
     btn.disabled    = false;
@@ -1252,7 +1276,8 @@ async function _executarConfirmacao(urlFoto) {
   if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
 
   const agora    = new Date().toISOString();
-  const inscConf = inscricoesAtuais.filter(i => i.status !== 'lista_espera');
+  // Só processa inscrições confirmadas que AINDA NÃO estão credenciadas
+  const inscConf = inscricoesAtuais.filter(i => i.status !== 'lista_espera' && !i.presenca);
   let ok = true;
 
   for (const i of inscConf) {
