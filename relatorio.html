@@ -189,7 +189,10 @@ table tr:hover td { background: #f8faff; }
       <div class="topbar-titulo">📊 Relatórios — Festival de Inverno 2026</div>
       <div class="topbar-sub">Costa Marques / RO · SEMESP</div>
     </div>
-    <button class="sair-btn" onclick="sair()">Sair</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="voltarAdmin()" class="sair-btn" style="background:rgba(255,215,0,0.2);border:1px solid rgba(255,215,0,0.4);color:#fde68a;">← Admin</button>
+      <button class="sair-btn" onclick="sair()">Sair</button>
+    </div>
   </div>
 
   <div class="tabs">
@@ -319,6 +322,8 @@ table tr:hover td { background: #f8faff; }
       </div>
     </div>
 
+  </div><!-- /painel-prestacao -->
+
   <!-- ══════════════════════════════════════ -->
   <!-- PAINEL 4 — Credenciados Por Dia       -->
   <!-- ══════════════════════════════════════ -->
@@ -415,6 +420,14 @@ async function entrar() {
   } catch {
     erro.textContent = 'Erro de conexão.';
     erro.style.display = 'block';
+  }
+}
+
+function voltarAdmin() {
+  if (window.opener && !window.opener.closed) {
+    window.close();
+  } else {
+    window.location.href = 'admin.html';
   }
 }
 
