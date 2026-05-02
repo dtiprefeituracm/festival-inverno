@@ -196,6 +196,7 @@ table tr:hover td { background: #f8faff; }
     <div class="tab ativo" onclick="mudarPainel('alimentos')">📦 Alimentos</div>
     <div class="tab"       onclick="mudarPainel('participante')">🔍 Participante</div>
     <div class="tab"       onclick="mudarPainel('prestacao')">📋 Prestação de Contas</div>
+    <div class="tab"       onclick="mudarPainel('pordia')">📅 Por Dia</div>
   </div>
 
   <!-- ══════════════════════════════════ -->
@@ -318,6 +319,53 @@ table tr:hover td { background: #f8faff; }
       </div>
     </div>
 
+  <!-- ══════════════════════════════════════ -->
+  <!-- PAINEL 4 — Credenciados Por Dia       -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="painel" id="painel-pordia">
+
+    <div class="card">
+      <div class="card-titulo">📅 Credenciados por Dia e Modalidade</div>
+      <div class="card-sub">Visão cronológica do credenciamento durante o festival</div>
+
+      <!-- Seletor de dia -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px;">
+        <button class="rel-btn rel-btn-filtro ativo" id="dia-btn-todos"  onclick="filtrarDia('todos')">📋 Todos os dias</button>
+        <button class="rel-btn rel-btn-filtro"       id="dia-btn-01"     onclick="filtrarDia('2026-05-01')">📅 Dia 1 — Qui 01/05</button>
+        <button class="rel-btn rel-btn-filtro"       id="dia-btn-02"     onclick="filtrarDia('2026-05-02')">📅 Dia 2 — Sex 02/05</button>
+        <button class="rel-btn rel-btn-filtro"       id="dia-btn-03"     onclick="filtrarDia('2026-05-03')">📅 Dia 3 — Sáb 03/05</button>
+      </div>
+
+      <!-- Cards de resumo por dia -->
+      <div id="pordia-resumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+      <!-- Breakdown por modalidade -->
+      <div id="pordia-modalidades" style="margin-bottom:20px;"></div>
+
+      <!-- Tabela de credenciados do dia -->
+      <div class="relatorio-acoes" style="margin-bottom:10px;">
+        <button class="rel-btn rel-btn-print" onclick="window.print()">🖨️ Imprimir</button>
+        <span id="pordia-sub" style="font-size:12px;color:#64748b;margin-left:8px;"></span>
+      </div>
+      <div class="tabela-wrap">
+        <table id="tabela-pordia">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Horário</th>
+              <th>Nome</th>
+              <th>Modalidade(s)</th>
+              <th>Cidade</th>
+              <th>kg</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-pordia-body">
+            <tr><td colspan="6" class="loading">⏳ Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
 </div>
@@ -398,6 +446,7 @@ async function carregarTudo() {
     todasInscricoes    = Array.isArray(rInsc) ? rInsc : [];
     renderAlimentos();
     renderPrestacao();
+    renderPorDia();
   } catch(e) {
     console.error(e);
   }
@@ -835,6 +884,132 @@ async function api(tabela, query) {
 
 function escHtml(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ================================================================
+// PAINEL 4 — CREDENCIADOS POR DIA
+// ================================================================
+let diaAtual = 'todos';
+
+const DIAS_FESTIVAL = [
+  { key: '2026-05-01', label: 'Dia 1 — Qui 01/05', btnId: 'dia-btn-01' },
+  { key: '2026-05-02', label: 'Dia 2 — Sex 02/05', btnId: 'dia-btn-02' },
+  { key: '2026-05-03', label: 'Dia 3 — Sáb 03/05', btnId: 'dia-btn-03' },
+];
+
+function renderPorDia() { filtrarDia('todos'); }
+
+function filtrarDia(dia) {
+  diaAtual = dia;
+
+  // Botões ativos
+  ['todos','01','02','03'].forEach(d => {
+    const b = document.getElementById('dia-btn-' + d);
+    if (b) b.classList.remove('ativo');
+  });
+  const aid = dia === 'todos' ? 'dia-btn-todos' : 'dia-btn-' + dia.slice(-2);
+  const ael = document.getElementById(aid);
+  if (ael) ael.classList.add('ativo');
+
+  // Monta presMap: participante_id → { presenca_em, inscricoes[] }
+  const presMap = {};
+  for (const i of todasInscricoes) {
+    if (!i.presenca) continue;
+    if (!presMap[i.participante_id])
+      presMap[i.participante_id] = { presenca_em: null, inscricoes: [] };
+    presMap[i.participante_id].inscricoes.push(i);
+    if (i.presenca_em && !presMap[i.participante_id].presenca_em)
+      presMap[i.participante_id].presenca_em = i.presenca_em;
+  }
+
+  // Lista de presentes com kg real
+  let lista = todosParticipantes
+    .filter(p => presMap[p.id])
+    .map(p => {
+      const em  = presMap[p.id].presenca_em;
+      const ins = presMap[p.id].inscricoes;
+      const kg  = ins.reduce((s, i) =>
+        s + (i.parceiro_nome?1:0) + (i.membro3_nome?1:0) + (i.membro4_nome?1:0), 1);
+      return { ...p, presenca_em: em, dataDia: em ? em.slice(0,10) : null, inscricoes: ins, kg };
+    });
+
+  if (dia !== 'todos') lista = lista.filter(p => p.dataDia === dia);
+  lista.sort((a, b) => (a.presenca_em || '') < (b.presenca_em || '') ? -1 : 1);
+
+  // ── Cards resumo por dia ──
+  const resumoHtml = DIAS_FESTIVAL.map(d => {
+    const cnt = todosParticipantes.filter(p =>
+      presMap[p.id] && presMap[p.id].presenca_em?.slice(0,10) === d.key).length;
+    const ativo = (dia === 'todos' || dia === d.key);
+    return `<div style="background:${ativo?'#1e3a5f':'#1e293b'};border:1px solid ${ativo?'#3b82f6':'#334155'};border-radius:10px;padding:14px;text-align:center;cursor:pointer;" onclick="filtrarDia('${d.key}')">
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">${d.label}</div>
+      <div style="font-size:28px;font-weight:800;color:${cnt>0?'#60a5fa':'#475569'};">${cnt}</div>
+      <div style="font-size:11px;color:#94a3b8;">credenciados</div>
+    </div>`;
+  }).join('');
+  document.getElementById('pordia-resumo').innerHTML = resumoHtml;
+
+  // ── Breakdown por modalidade ──
+  const modCount = {}, modKg = {};
+  for (const p of lista) {
+    for (const i of p.inscricoes) {
+      const m = i.modalidade_id;
+      modCount[m] = (modCount[m] || 0) + 1;
+      modKg[m]    = (modKg[m]    || 0) + 1
+        + (i.parceiro_nome?1:0) + (i.membro3_nome?1:0) + (i.membro4_nome?1:0);
+    }
+  }
+  const maxMod  = Math.max(...Object.values(modCount), 1);
+  const modHtml = Object.entries(MODALIDADES).map(([id, nome]) => {
+    const cnt = modCount[id] || 0;
+    const kg  = modKg[id]   || 0;
+    if (!cnt) return '';
+    const pct = Math.round(cnt / maxMod * 100);
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+        <span style="color:#1e293b;font-weight:600;">${nome}</span>
+        <span style="color:#64748b;">${cnt} inscr. · <strong style="color:#059669;">${kg} kg</strong></span>
+      </div>
+      <div class="barra-track"><div class="barra-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('pordia-modalidades').innerHTML = modHtml
+    ? `<div class="card" style="margin-bottom:16px;"><div class="card-titulo" style="margin-bottom:12px;">🏅 Por Modalidade</div>${modHtml}</div>` : '';
+
+  // ── Subtítulo e tabela ──
+  const totalKgDia = lista.reduce((s, p) => s + p.kg, 0);
+  document.getElementById('pordia-sub').textContent =
+    `${lista.length} credenciado(s) · ${totalKgDia} kg · ${dia === 'todos' ? 'todos os dias' : dia.split('-').reverse().join('/')}`;
+
+  if (!lista.length) {
+    document.getElementById('tabela-pordia-body').innerHTML =
+      `<tr><td colspan="6" class="msg-vazio"><div class="msg-vazio-icon">📅</div>Nenhum credenciamento neste dia.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  lista.forEach((p, idx) => {
+    const hora = p.presenca_em
+      ? new Date(p.presenca_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    const mods = p.inscricoes.map(i => {
+      const n = MODALIDADES[i.modalidade_id] || `Mod.${i.modalidade_id}`;
+      return `<span style="font-size:11px;padding:2px 6px;border-radius:6px;background:#eff6ff;color:#1a56a0;margin:1px;display:inline-block;">${n}</span>`;
+    }).join('');
+    html += `<tr>
+      <td style="color:#94a3b8;">${idx+1}</td>
+      <td style="font-size:12px;white-space:nowrap;font-weight:600;color:#1a56a0;">${hora}</td>
+      <td><strong>${escHtml(p.nome_completo||'—')}</strong></td>
+      <td>${mods}</td>
+      <td style="font-size:12px;color:#64748b;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
+      <td style="text-align:center;font-weight:700;">${p.kg} kg</td>
+    </tr>`;
+  });
+  html += `<tr style="background:#f8faff;font-weight:700;border-top:2px solid #e2e8f0;">
+    <td colspan="5" style="text-align:right;padding-right:16px;font-size:13px;color:#475569;">TOTAL DO DIA:</td>
+    <td style="font-size:15px;color:#1a56a0;">${totalKgDia} kg</td>
+  </tr>`;
+  document.getElementById('tabela-pordia-body').innerHTML = html;
 }
 </script>
 </body>
