@@ -139,7 +139,8 @@ table tr:hover td { background: #f8faff; }
 @media print {
   @page { size: A4 landscape; margin: 1cm; }
   .topbar, .tabs, .relatorio-acoes, .busca-row, .lightbox, .sair-btn, .login-wrap { display: none !important; }
-  .painel { display: block !important; padding: 0; max-width: none; }
+  .painel { display: none !important; }
+  .painel.ativo { display: block !important; padding: 0; max-width: none; }
   .card { box-shadow: none; border: 1px solid #e2e8f0; page-break-inside: avoid; }
   body { background: white; font-size: 11px; }
   .stat-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -349,7 +350,7 @@ table tr:hover td { background: #f8faff; }
 
       <!-- Tabela de credenciados do dia -->
       <div class="relatorio-acoes" style="margin-bottom:10px;">
-        <button class="rel-btn rel-btn-print" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="rel-btn rel-btn-print" onclick="imprimirPorDia()">🖨️ Imprimir dia filtrado</button>
         <span id="pordia-sub" style="font-size:12px;color:#64748b;margin-left:8px;"></span>
       </div>
       <div class="tabela-wrap">
@@ -812,6 +813,60 @@ function aplicarFiltro() {
   </tr>`;
 
   document.getElementById('tabela-body').innerHTML = html;
+}
+
+function imprimirPorDia() {
+  const sub     = document.getElementById('pordia-sub')?.textContent || '';
+  const tituloD = diaAtual === 'todos' ? 'Todos os Dias'
+    : 'Dia ' + diaAtual.split('-').reverse().join('/');
+
+  // Captura o HTML da tabela já filtrada e os cards de resumo/modalidade
+  const resumoHtml    = document.getElementById('pordia-resumo')?.innerHTML || '';
+  const modalidHtml   = document.getElementById('pordia-modalidades')?.innerHTML || '';
+  const tabelaHtml    = document.getElementById('tabela-pordia')?.outerHTML || '';
+
+  const w = window.open('', '_blank');
+  if (!w) { alert('Popup bloqueado. Permita pop-ups e tente novamente.'); return; }
+
+  w.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Credenciados por Dia — Festival de Inverno 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; padding: 20px; font-size: 12px; color: #1e293b; }
+    h1  { font-size: 18px; font-weight: 800; color: #1a56a0; }
+    p   { font-size: 11px; color: #64748b; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 16px; }
+    th { background: #1a56a0; color: white; padding: 7px 8px; text-align: left; border: 1px solid #1447a0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    td { padding: 6px 8px; border: 1px solid #e2e8f0; vertical-align: middle; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .resumo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+    .resumo-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+    .barra-track { background: #f1f5f9; border-radius: 4px; height: 8px; margin-top: 4px; overflow: hidden; }
+    .barra-fill  { height: 100%; border-radius: 4px; background: #1a56a0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+    @page { size: A4 landscape; margin: 1cm; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div style="border-bottom: 2px solid #1a56a0; padding-bottom: 12px; margin-bottom: 16px;">
+    <h1>Festival de Inverno 2026 — Costa Marques/RO</h1>
+    <p>Credenciados por Dia · <strong>${tituloD}</strong> · ${sub}</p>
+    <p>Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+  </div>
+  <div class="resumo-grid">${resumoHtml}</div>
+  ${modalidHtml ? `<div class="card">${modalidHtml}</div>` : ''}
+  ${tabelaHtml}
+</body>
+</html>`);
+
+  w.document.close();
+  w.focus();
+  w.onafterprint = function() { w.close(); };
+  setTimeout(() => { w.print(); }, 400);
 }
 
 function imprimirRelatorio(comFotos) {
