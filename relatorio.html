@@ -297,6 +297,11 @@ table tr:hover td { background: #f8faff; }
           <option value="6">Pesca (M)</option>
           <option value="7">Pesca (F)</option>
         </select>
+        <select id="filtro-cred-mod" onchange="renderModalidades()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;">
+          <option value="">Credenciados e ausentes</option>
+          <option value="credenciados">✅ Apenas credenciados</option>
+          <option value="ausentes">❌ Apenas ausentes</option>
+        </select>
       </div>
       <div id="mod-rel-content"><div class="loading">⏳ Carregando...</div></div>
     </div>
@@ -407,7 +412,8 @@ table tr:hover td { background: #f8faff; }
         <button class="rel-btn rel-btn-print" onclick="imprimirRelatorio(false)" title="Sem coluna de foto — cabe melhor na página">🖨️ Imprimir (sem fotos)</button>
         <button class="rel-btn rel-btn-print" onclick="imprimirRelatorio(true)" style="background:#7c3aed;" title="Com coluna de foto">📸 Imprimir com fotos</button>
         <button class="rel-btn rel-btn-filtro ativo" id="filtro-todos"      onclick="filtrar('todos')">Todos</button>
-        <button class="rel-btn rel-btn-filtro"       id="filtro-presentes"  onclick="filtrar('presentes')">✅ Presentes</button>
+        <button class="rel-btn rel-btn-filtro"       id="filtro-presentes"  onclick="filtrar('presentes')">✅ Credenciados</button>
+        <button class="rel-btn rel-btn-filtro"       id="filtro-ausentes"   onclick="filtrar('ausentes')" style="background:#fef2f2;color:#dc2626;border-color:#fecaca;">❌ Ausentes</button>
         <button class="rel-btn rel-btn-filtro"       id="filtro-com-foto"   onclick="filtrar('com-foto')">📸 Com foto</button>
         <button class="rel-btn rel-btn-filtro"       id="filtro-sem-foto"   onclick="filtrar('sem-foto')">⚠️ Sem foto</button>
       </div>
@@ -857,6 +863,7 @@ function filtrar(f) {
 function aplicarFiltro() {
   let dados = dadosPrestacao;
   if (filtroAtual === 'presentes') dados = dados.filter(p => p.presente);
+  if (filtroAtual === 'ausentes')  dados = dados.filter(p => !p.presente);
   if (filtroAtual === 'com-foto')  dados = dados.filter(p => p.presente && p.foto_alimento);
   if (filtroAtual === 'sem-foto')  dados = dados.filter(p => p.presente && !p.foto_alimento);
 
@@ -1117,44 +1124,65 @@ function imprimirQuantitativo() {
 // PAINEL: POR MODALIDADE
 // ================================================================
 function renderModalidades() {
-  const filtro = document.getElementById('filtro-mod-rel')?.value || '';
+  const filtro     = document.getElementById('filtro-mod-rel')?.value || '';
+  const filtroCred = document.getElementById('filtro-cred-mod')?.value || '';
   const ids = filtro ? [filtro] : Object.keys(MODS_INFO);
   let html = '';
+  let totalFiltrado = 0;
 
   ids.forEach(id => {
     const m   = MODS_INFO[id];
     if (!m) return;
     const cor = CORES_MOD[id] || '#1a56a0';
-    const insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
+    let insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
     const esp  = todasInscricoes.filter(i=>i.modalidade_id==id && i.status==='lista_espera').length;
     const cred = new Set(insc.filter(i=>i.presenca).map(i=>i.participante_id)).size;
 
-    const linhas = insc.map((i,idx) => {
+    // Aplica filtro de credenciamento
+    let inscFiltradas = insc;
+    if (filtroCred === 'credenciados') inscFiltradas = insc.filter(i => i.presenca);
+    if (filtroCred === 'ausentes')     inscFiltradas = insc.filter(i => !i.presenca);
+
+    // Se filtro ativo e resultado vazio, pula a modalidade
+    if (filtroCred && inscFiltradas.length === 0) return;
+    totalFiltrado += inscFiltradas.length;
+
+    const linhas = inscFiltradas.map((i,idx) => {
       const p = todosParticipantes.find(p=>p.id===i.participante_id);
       if (!p) return '';
       const hora = i.presenca_em ? new Date(i.presenca_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
       const extra = i.parceiro_nome ? `<div style="font-size:10px;color:#64748b;">c/ ${escHtml(i.parceiro_nome)}</div>` : '';
       const eqEx  = i.nome_equipe  ? `<div style="font-size:10px;color:#64748b;">${escHtml(i.nome_equipe)}</div>` : '';
       const bg    = idx%2===0?'':'background:#f8fafc;';
+      const credStyle = i.presenca
+        ? `color:#166534;font-weight:700;`
+        : `color:#dc2626;font-style:italic;`;
       return `<tr style="${bg}">
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:700;color:${cor};">${i.numero_ficha||'—'}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:600;">${escHtml(p.nome_completo)}${extra}${eqEx}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;text-align:center;">
-          ${i.presenca ? `<span style="color:#166534;font-weight:700;">✅ ${hora}</span>` : '<span style="color:#94a3b8;">—</span>'}
+          <span style="${credStyle}">${i.presenca ? `✅ ${hora}` : '❌ Ausente'}</span>
         </td>
       </tr>`;
     }).join('');
+
+    // Subtítulo reflete o filtro ativo
+    const subtituloFiltro = filtroCred === 'credenciados'
+      ? `${inscFiltradas.length} credenciado${inscFiltradas.length!==1?'s':''}`
+      : filtroCred === 'ausentes'
+        ? `${inscFiltradas.length} ausente${inscFiltradas.length!==1?'s':''}`
+        : `${insc.length} inscritos · ${cred} credenciados · ${insc.length-cred} ausentes · ${esp} na espera`;
 
     html += `<div style="margin-bottom:24px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:${cor}11;border-left:4px solid ${cor};border-radius:0 8px 8px 0;">
         <span style="font-size:20px;">${m.emoji}</span>
         <div>
           <div style="font-size:15px;font-weight:800;color:${cor};">${m.nome} — ${m.sub}</div>
-          <div style="font-size:12px;color:#64748b;">${insc.length} inscritos · ${cred} credenciados · ${esp} na espera</div>
+          <div style="font-size:12px;color:#64748b;">${subtituloFiltro}</div>
         </div>
       </div>
-      ${insc.length===0?'<div style="color:#94a3b8;font-size:13px;padding:8px;">Nenhum inscrito.</div>':`
+      ${inscFiltradas.length===0?'<div style="color:#94a3b8;font-size:13px;padding:8px;">Nenhum resultado para este filtro.</div>':`
       <div class="tabela-wrap"><table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr style="background:${cor};color:white;">
           <th style="padding:7px 8px;text-align:left;">Ficha</th>
@@ -1167,7 +1195,15 @@ function renderModalidades() {
     </div>`;
   });
 
-  document.getElementById('mod-rel-content').innerHTML = html || '<div class="msg-vazio">Nenhum dado.</div>';
+  // Mensagem se filtro ativo retornou zero resultados
+  if (!html) {
+    const msg = filtroCred === 'credenciados' ? 'Nenhum credenciado encontrado.'
+              : filtroCred === 'ausentes'     ? 'Todos os inscritos já se credenciaram! 🎉'
+              : 'Nenhum dado.';
+    html = `<div class="msg-vazio"><div class="msg-vazio-icon">${filtroCred==='ausentes'?'🎉':'🔍'}</div>${msg}</div>`;
+  }
+
+  document.getElementById('mod-rel-content').innerHTML = html;
 }
 
 function imprimirPorModalidade() {
