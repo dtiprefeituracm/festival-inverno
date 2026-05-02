@@ -688,21 +688,31 @@ function toggleEditarDadosPessoais() {
 }
 
 async function salvarDadosPessoais(participanteId) {
-  const nome   = document.getElementById('edit-nome')?.value.trim();
-  const tel    = document.getElementById('edit-tel')?.value.trim();
-  const cidade = document.getElementById('edit-cidade')?.value.trim();
-  const email  = document.getElementById('edit-email')?.value.trim();
+  const nome       = document.getElementById('edit-nome')?.value.trim();
+  const cpf        = document.getElementById('edit-cpf')?.value.trim();
+  const tel        = document.getElementById('edit-tel')?.value.trim();
+  const cidade     = document.getElementById('edit-cidade')?.value.trim();
+  const email      = document.getElementById('edit-email')?.value.trim();
+  const sexo       = document.getElementById('edit-sexo')?.value;
+  const nascimento = document.getElementById('edit-nascimento')?.value;
 
   if (!nome) {
     alert('O nome completo é obrigatório.');
     return;
   }
+  if (cpf && cpf.replace(/\D/g,'').length !== 11) {
+    alert('CPF inválido. Informe os 11 dígitos.');
+    return;
+  }
 
   const dados = {
-    nome_completo: nome,
-    telefone:      tel    || null,
-    cidade:        cidade || null,
-    email:         email  || null,
+    nome_completo:   nome,
+    cpf:             cpf        || null,
+    telefone:        tel        || null,
+    cidade:          cidade     || null,
+    email:           email      || null,
+    sexo:            sexo       || null,
+    data_nascimento: nascimento || null,
   };
 
   try {
@@ -716,6 +726,7 @@ async function salvarDadosPessoais(participanteId) {
       alert('✅ Dados atualizados com sucesso!');
       // Atualiza estado local e recarrega a consulta
       participanteConsulta = { ...participanteConsulta, ...dados };
+      if (dados.cpf) document.getElementById('consulta-input').value = dados.cpf;
       buscarInscricao();
     } else {
       alert('Erro ao salvar. Verifique sua conexão e tente novamente.');
@@ -756,18 +767,40 @@ function renderizarConsulta() {
   formEl.style.display = 'none';
   formEl.style.marginTop = '12px';
   formEl.innerHTML = `
-    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Nome completo</div>
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 12px;font-size:11px;color:#856404;margin-bottom:10px;">
+      ✏️ <strong>Atenção:</strong> Ao alterar o CPF, a busca será atualizada automaticamente com o novo número.
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Nome completo <span style="color:#ef4444;">*</span></div>
     <input type="text" id="edit-nome" value="${(p.nome_completo||'').replace(/"/g,'&quot;')}"
-      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
-    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Telefone</div>
-    <input type="tel" id="edit-tel" value="${(p.telefone||'').replace(/"/g,'&quot;')}"
-      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">CPF</div>
+    <input type="text" id="edit-cpf" value="${(p.cpf||'').replace(/"/g,'&quot;')}" maxlength="14"
+      oninput="mascararCPF(this)" placeholder="000.000.000-00"
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Sexo</div>
+        <select id="edit-sexo"
+          style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;box-sizing:border-box;">
+          <option value="M" ${(p.sexo||'M')==='M'?'selected':''}>♂ Masculino</option>
+          <option value="F" ${p.sexo==='F'?'selected':''}>♀ Feminino</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Data de nascimento</div>
+        <input type="date" id="edit-nascimento" value="${p.data_nascimento||p.nascimento||''}"
+          style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Telefone / WhatsApp</div>
+    <input type="tel" id="edit-tel" value="${(p.telefone||'').replace(/"/g,'&quot;')}" placeholder="(69) 9 0000-0000"
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
     <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Cidade</div>
     <input type="text" id="edit-cidade" value="${(p.cidade||'').replace(/"/g,'&quot;')}"
-      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
     <div style="font-size:11px;color:#64748b;margin-bottom:4px;">E-mail</div>
     <input type="email" id="edit-email" value="${(p.email||'').replace(/"/g,'&quot;')}"
-      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;">`;
+      style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;">`;
 
   // Botão salvar
   const btnSalvar = document.createElement('button');
