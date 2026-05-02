@@ -587,10 +587,13 @@ function renderParticipante(p, inscricoes) {
   // Modalidades
   let modHtml = '';
   for (const i of inscricoes) {
-    const nome = MODALIDADES[i.modalidade_id] || `Mod. ${i.modalidade_id}`;
-    const cls  = i.status === 'lista_espera' ? 'chip-esp' : 'chip-conf';
+    const nome  = MODALIDADES[i.modalidade_id] || `Mod. ${i.modalidade_id}`;
+    const cls   = i.status === 'lista_espera' ? 'chip-esp' : 'chip-conf';
     const icone = i.status === 'lista_espera' ? '⏳' : '✅';
-    modHtml += `<div class="evento-chip ${cls}">${icone} ${nome}</div>`;
+    let detalhe = '';
+    if (i.nome_equipe)   detalhe += `<div style="font-size:11px;margin-top:2px;color:#475569;">${i.nome_equipe}</div>`;
+    if (i.parceiro_nome) detalhe += `<div style="font-size:11px;margin-top:2px;color:#475569;">c/ ${i.parceiro_nome}</div>`;
+    modHtml += `<div class="evento-chip ${cls}" style="flex-direction:column;align-items:flex-start;">${icone} ${nome}${detalhe}</div>`;
   }
   document.getElementById('p-modalidades').innerHTML = modHtml || '<span style="color:#94a3b8;font-size:13px;">Nenhuma modalidade.</span>';
 
@@ -681,9 +684,12 @@ function aplicarFiltro() {
       : '—';
     const ficha   = p.inscricoes[0]?.numero_ficha || '—';
     const mods    = p.inscricoes.map(i => {
-      const n = MODALIDADES[i.modalidade_id] || `Mod.${i.modalidade_id}`;
+      const n   = MODALIDADES[i.modalidade_id] || `Mod.${i.modalidade_id}`;
       const cor = CORES_MOD[i.modalidade_id] || '#1a56a0';
-      return `<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${cor}22;color:${cor};font-weight:600;margin:1px;display:inline-block;">${n}</span>`;
+      let extra = '';
+      if (i.nome_equipe)   extra += `<div style="font-size:10px;color:${cor};opacity:.85;">${i.nome_equipe}</div>`;
+      if (i.parceiro_nome) extra += `<div style="font-size:10px;color:#475569;">c/ ${i.parceiro_nome}</div>`;
+      return `<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${cor}22;color:${cor};font-weight:600;margin:1px;display:inline-block;">${n}</span>${extra}`;
     }).join('');
 
     const statusHtml = p.presente
@@ -720,19 +726,59 @@ function aplicarFiltro() {
 
 function imprimirRelatorio(comFotos) {
   document.getElementById('data-print-pc').textContent = new Date().toLocaleString('pt-BR');
-  if (comFotos) {
-    // Remove o display:none temporariamente para colunas de foto no print
-    const styleEl = document.getElementById('print-foto-style');
-    if (styleEl) styleEl.remove();
-    const s = document.createElement('style');
-    s.id = 'print-foto-style';
-    s.textContent = '@media print { #tabela-prestacao th:last-child, #tabela-prestacao td:last-child { display: table-cell !important; } }';
-    document.head.appendChild(s);
-  } else {
-    const styleEl = document.getElementById('print-foto-style');
-    if (styleEl) styleEl.remove();
-  }
-  window.print();
+
+  // Monta o HTML da tabela para abrir numa janela separada (fecha automaticamente após imprimir)
+  const headerHtml = document.getElementById('relatorio-header-print')?.outerHTML || '';
+  const cardHtml   = document.getElementById('painel-prestacao')?.querySelector('.card')?.innerHTML || '';
+  const fotoStyle  = comFotos
+    ? '#tabela-prestacao th:last-child, #tabela-prestacao td:last-child { display: table-cell !important; }'
+    : '#tabela-prestacao th:last-child, #tabela-prestacao td:last-child { display: none; }';
+
+  const w = window.open('', '_blank');
+  if (!w) { alert('Popup bloqueado. Permita pop-ups e tente novamente.'); return; }
+  w.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Prestação de Contas — Festival de Inverno 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; padding: 20px; font-size: 12px; color: #1e293b; }
+    h1 { font-size: 18px; font-weight: 800; color: #1a56a0; }
+    p  { font-size: 11px; color: #64748b; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 16px; }
+    th { background: #1a56a0; color: white; padding: 7px 8px; text-align: left; border: 1px solid #1447a0; }
+    td { padding: 6px 8px; border: 1px solid #e2e8f0; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .status-chip { padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+    .chip-presente { background: #f0fdf4; color: #166534; }
+    .chip-ausente  { background: #fef2f2; color: #dc2626; }
+    .card-titulo { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .card-sub    { font-size: 11px; color: #64748b; margin-bottom: 12px; }
+    .relatorio-acoes, .busca-row { display: none !important; }
+    .td-foto img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; }
+    .sem-foto { width: 50px; height: 50px; background: #f1f5f9; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #cbd5e1; }
+    @page { size: A4 landscape; margin: 1cm; }
+    @media print {
+      body { padding: 0; }
+      .relatorio-acoes { display: none !important; }
+      ${fotoStyle}
+    }
+  </style>
+</head>
+<body>
+  <div style="border-bottom: 2px solid #1a56a0; padding-bottom: 12px; margin-bottom: 16px;">
+    <h1>Festival de Inverno 2026 — Costa Marques/RO</h1>
+    <p>Relatório de Prestação de Contas · gerado em ${new Date().toLocaleString('pt-BR')}</p>
+  </div>
+  <div>${cardHtml}</div>
+</body>
+</html>`);
+  w.document.close();
+  w.focus();
+  // Fecha a aba automaticamente após o diálogo de impressão
+  w.onafterprint = function() { w.close(); };
+  setTimeout(() => { w.print(); }, 400);
 }
 
 // ================================================================
