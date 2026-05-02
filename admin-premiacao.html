@@ -360,7 +360,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     <div class="form-row">
       <div class="form-group">
         <label>Colocação *</label>
-        <select id="g-posicao">
+        <select id="g-posicao" onchange="atualizarPremioPorPosicao()">
           <option value="1">🥇 1º lugar</option>
           <option value="2">🥈 2º lugar</option>
           <option value="3">🥉 3º lugar</option>
@@ -413,13 +413,20 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 // CONFIGURAÇÃO
 // ================================================================
 const MODALIDADES = {
-  1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia', emoji: '🏐' },
-  2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia', emoji: '🏐' },
-  3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia', emoji: '⚽' },
-  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua',  emoji: '🛶' },
-  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua',  emoji: '🚣' },
-  6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca', emoji: '🎣' },
-  7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca', emoji: '🎣' },
+  1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia', emoji: '🏐', dupla: true,  equipe: false,
+       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
+  2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia', emoji: '🏐', dupla: true,  equipe: false,
+       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
+  3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia', emoji: '⚽', dupla: true,  equipe: false,
+       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
+  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua',  emoji: '🛶', dupla: true,  equipe: false,
+       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
+  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua',  emoji: '🚣', dupla: false, equipe: false,
+       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
+  6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca', emoji: '🎣', dupla: false, equipe: true,
+       premio: { 1: '🥇 R$ 2.500,00 + troféu', 2: '🥈 R$ 1.000,00 + troféu', 3: 'Troféu' } },
+  7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca', emoji: '🎣', dupla: false, equipe: true,
+       premio: { 1: '🥇 R$ 2.500,00 + troféu', 2: '🥈 R$ 1.000,00 + troféu', 3: 'Troféu' } },
 };
 
 // ================================================================
@@ -449,11 +456,25 @@ async function fazerLogin() {
 }
 
 function voltarAdmin() {
+  // Salva token no localStorage para que admin.html recupere mesmo em nova navegação
+  const token  = sessionStorage.getItem('adminToken');
+  const perfil = sessionStorage.getItem('adminPerfil');
+  if (token)  localStorage.setItem('adminToken',  token);
+  if (perfil) localStorage.setItem('adminPerfil', perfil);
+
   if (window.opener && !window.opener.closed) {
-    window.close(); // fecha esta aba, retorna à aba do admin.html
+    window.close(); // fecha esta aba, volta para aba do admin.html
   } else {
-    window.location.href = 'admin.html'; // acesso direto: navega normalmente
+    window.location.href = 'admin.html';
   }
+}
+
+function atualizarPremioPorPosicao() {
+  const modId   = parseInt(document.getElementById('g-inscricao-mod-id').value);
+  const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
+  const m = MODALIDADES[modId] || {};
+  const premioEl = document.getElementById('g-premio');
+  if (m.premio?.[posicao]) premioEl.value = m.premio[posicao];
 }
 
 function verificarAuth() {
@@ -699,31 +720,42 @@ function renderPainelMod(modId) {
 // MODAL FORMULÁRIO GANHADOR
 // ================================================================
 function abrirModalGanhador(participante, modId) {
+  const m = MODALIDADES[modId] || {};
   document.getElementById('modal-titulo').textContent =
-    `🏆 Marcar Ganhador — ${MODALIDADES[modId].nome} ${MODALIDADES[modId].sub}`;
-  document.getElementById('g-participante-id').value = participante.id;
+    `🏆 Marcar Ganhador — ${m.nome || ''} ${m.sub || ''}`;
+  document.getElementById('g-participante-id').value = participante.id || '';
   document.getElementById('g-inscricao-mod-id').value = modId;
   document.getElementById('g-edit-id').value = '';
-  document.getElementById('g-nome').value = participante.nome_completo;
+  document.getElementById('g-nome').value = participante.nome_completo || '';
   document.getElementById('g-cidade').value = (participante.cidade || '') + '/' + (participante.uf || 'RO');
 
-  // Auto-preenche parceiro (duplas) ou membros (pesca)
+  // ── Auto-preenche Parceiro(a) ──────────────────────────────
+  // Duplas (Vôlei, Futevôlei, Canoagem): 1 parceiro obrigatório
+  // Pesca: até 3 membros extras (parceiro + membro3 + membro4)
   const membrosExtras = [];
   if (participante.parceiro_nome) membrosExtras.push(participante.parceiro_nome);
   if (participante.membro3_nome)  membrosExtras.push(participante.membro3_nome);
   if (participante.membro4_nome)  membrosExtras.push(participante.membro4_nome);
-  // Para duplas: parceiro vai no campo Parceiro(a)
-  // Para pesca: todos os membros extras vão no campo Parceiro(a), equipe vai no campo Equipe
   document.getElementById('g-parceiro').value = membrosExtras.join(', ');
-  document.getElementById('g-equipe').value   = participante.nome_equipe || '';
 
-  document.getElementById('g-premio').value = '';
+  // ── Auto-preenche Nome da Equipe (pesca) ──────────────────
+  document.getElementById('g-equipe').value = participante.nome_equipe || '';
+
+  // ── Auto-preenche Prêmio pelo regulamento ─────────────────
+  const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
+  const premioDefault = m.premio?.[posicao] || '';
+  // Só preenche se o campo estiver vazio (não sobrescreve o que o usuário digitou)
+  const premioEl = document.getElementById('g-premio');
+  if (!premioEl.value) premioEl.value = premioDefault;
+
   document.getElementById('g-foto').value = '';
-  document.getElementById('g-foto-upload-status').textContent = '';
+  const statusEl = document.getElementById('g-foto-upload-status');
+  if (statusEl) statusEl.textContent = '';
   document.getElementById('g-foto-preview').style.display = 'none';
   document.getElementById('g-publicado').checked = false;
   document.getElementById('modal-ganhador-bg').classList.add('aberto');
 }
+
 
 function editarGanhador(id, modId) {
   const g = todosGanhadores.find(g => g.id === id);
