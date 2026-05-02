@@ -175,6 +175,12 @@
       <p>Festival de Inverno 2026 — SEMESP · Costa Marques / RO</p>
     </div>
     <div class="lgpd-badge">🔒 LGPD compliant</div>
+    <div style="display:flex;gap:8px;margin-left:auto;flex-shrink:0;">
+      <a href="admin-premiacao.html" target="_blank"
+         style="background:rgba(255,215,0,0.2);border:1px solid rgba(255,215,0,0.4);color:#fde68a;padding:7px 13px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600;white-space:nowrap;">🏆 Premiação</a>
+      <button onclick="voltarAdmin()"
+         style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:7px 13px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;">← Admin</button>
+    </div>
   </div>
   <div class="header-nav">
     <button class="nav-btn ativo" onclick="mostrarAba('visao-geral')">📊 Visão Geral</button>
@@ -401,6 +407,17 @@
 <!--  JAVASCRIPT                              -->
 <!-- ══════════════════════════════════════════ -->
 <script>
+// ================================================================
+// NAVEGAÇÃO
+// ================================================================
+function voltarAdmin() {
+  if (window.opener && !window.opener.closed) {
+    window.close();
+  } else {
+    window.location.href = 'admin.html';
+  }
+}
+
 // ================================================================
 // CONFIGURAÇÃO
 // ================================================================
