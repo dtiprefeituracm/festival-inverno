@@ -585,7 +585,7 @@ const LOGO_URL = window.location.origin + '/10.png';
 // COMUNICAÇÃO SEGURA COM O SERVIDOR
 // ================================================================
 let tokenAdmin  = sessionStorage.getItem('adminToken') || null;
-let perfilAdmin = JSON.parse(sessionStorage.getItem('adminPerfil') || 'null');
+let perfilAdmin = (() => { try { return JSON.parse(sessionStorage.getItem('adminPerfil') || 'null'); } catch(e) { return null; } })();
 // perfilAdmin = { perfil, nome, podeExcluir }
 
 async function apiGet(tabela, query = '') {
@@ -675,10 +675,10 @@ let todosInscritos = [];
 (function() {
   // Tenta sessionStorage primeiro; se vier de outra aba usa localStorage como ponte
   let token  = sessionStorage.getItem('adminToken');
-  let perfil = JSON.parse(sessionStorage.getItem('adminPerfil') || 'null');
+  let perfil = (() => { try { return JSON.parse(sessionStorage.getItem('adminPerfil') || 'null'); } catch(e) { return null; } })();
   if (!token) {
     token  = localStorage.getItem('adminToken');
-    perfil = JSON.parse(localStorage.getItem('adminPerfil') || 'null');
+    perfil = (() => { try { return JSON.parse(localStorage.getItem('adminPerfil') || 'null'); } catch(e) { return null; } })();
     if (token) {
       sessionStorage.setItem('adminToken',  token);
       if (perfil) sessionStorage.setItem('adminPerfil', JSON.stringify(perfil));
