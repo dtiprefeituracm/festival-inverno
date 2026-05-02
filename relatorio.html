@@ -198,6 +198,10 @@ table tr:hover td { background: #f8faff; }
 
   <div class="tabs">
     <div class="tab ativo" onclick="mudarPainel('alimentos')">📦 Alimentos</div>
+    <div class="tab"       onclick="mudarPainel('geral')">📊 Painel Geral</div>
+    <div class="tab"       onclick="mudarPainel('modalidades')">🏅 Por Modalidade</div>
+    <div class="tab"       onclick="mudarPainel('cidades')">🌍 Por Cidade</div>
+    <div class="tab"       onclick="mudarPainel('espera')">⏳ Espera & Faltas</div>
     <div class="tab"       onclick="mudarPainel('participante')">🔍 Participante</div>
     <div class="tab"       onclick="mudarPainel('prestacao')">📋 Prestação de Contas</div>
     <div class="tab"       onclick="mudarPainel('pordia')">📅 Por Dia</div>
@@ -236,6 +240,111 @@ table tr:hover td { background: #f8faff; }
   <!-- ══════════════════════════════════ -->
   <!-- PAINEL 2 — Consulta de Participante -->
   <!-- ══════════════════════════════════ -->
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PAINEL: PAINEL GERAL                       -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="painel" id="painel-geral">
+    <!-- Métricas -->
+    <div id="geral-metricas" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;"></div>
+    <!-- Vagas por modalidade -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-titulo">🎯 Vagas por Modalidade</div>
+      <div id="geral-vagas"></div>
+    </div>
+    <!-- Tabela quantitativa -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-titulo">📋 Quantitativo de Inscrições</div>
+      <div class="relatorio-acoes" style="margin-bottom:10px;">
+        <button class="rel-btn rel-btn-print" onclick="imprimirQuantitativo()">🖨️ Imprimir</button>
+      </div>
+      <div class="tabela-wrap"><table id="tabela-quantitativo">
+        <thead><tr>
+          <th>Modalidade</th><th>Categoria</th>
+          <th style="text-align:center">✅ Confirmados</th>
+          <th style="text-align:center">⏳ Espera</th>
+          <th style="text-align:center">👣 Total Inscritos</th>
+          <th style="text-align:center">✔️ Credenciados</th>
+          <th style="text-align:center">🌾 kg</th>
+          <th style="text-align:center">Vagas</th>
+          <th style="text-align:center">Livres</th>
+        </tr></thead>
+        <tbody id="tbody-quantitativo"><tr><td colspan="9" class="loading">⏳ Carregando...</td></tr></tbody>
+      </table></div>
+    </div>
+    <!-- Ranking de cidades top 10 -->
+    <div class="card">
+      <div class="card-titulo">🌍 Top Cidades</div>
+      <div id="geral-cidades-ranking"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PAINEL: POR MODALIDADE                     -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="painel" id="painel-modalidades">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-titulo">🏅 Relatório por Modalidade</div>
+      <div class="relatorio-acoes" style="margin-bottom:10px;">
+        <button class="rel-btn rel-btn-print" onclick="imprimirPorModalidade()">🖨️ Imprimir tudo (uma modalidade por página)</button>
+        <select id="filtro-mod-rel" onchange="renderModalidades()" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;">
+          <option value="">Todas as modalidades</option>
+          <option value="1">Vôlei de Areia (M)</option>
+          <option value="2">Vôlei de Areia (F)</option>
+          <option value="3">Futevôlei (M)</option>
+          <option value="4">Canoagem (Dupla)</option>
+          <option value="5">Caiaque (Individual)</option>
+          <option value="6">Pesca (M)</option>
+          <option value="7">Pesca (F)</option>
+        </select>
+      </div>
+      <div id="mod-rel-content"><div class="loading">⏳ Carregando...</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PAINEL: POR CIDADE                         -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="painel" id="painel-cidades">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-titulo">🌍 Participantes por Cidade</div>
+      <div class="relatorio-acoes" style="margin-bottom:12px;">
+        <button class="rel-btn rel-btn-print" onclick="imprimirCidades()">🖨️ Imprimir</button>
+        <input type="text" id="busca-cidade" placeholder="🔍 Filtrar cidade..." oninput="renderCidades()"
+          style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;outline:none;">
+      </div>
+      <div id="cidades-content"><div class="loading">⏳ Carregando...</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PAINEL: ESPERA & FALTAS                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="painel" id="painel-espera">
+    <!-- Lista de espera -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-titulo">⏳ Lista de Espera por Modalidade</div>
+      <div class="relatorio-acoes" style="margin-bottom:10px;">
+        <button class="rel-btn rel-btn-print" onclick="imprimirEspera()">🖨️ Imprimir lista de espera</button>
+      </div>
+      <div id="espera-content"><div class="loading">⏳ Carregando...</div></div>
+    </div>
+    <!-- Faltas (inscritos não credenciados) -->
+    <div class="card">
+      <div class="card-titulo">❌ Inscritos Não Credenciados (Faltas)</div>
+      <div class="relatorio-acoes" style="margin-bottom:10px;">
+        <button class="rel-btn rel-btn-print" onclick="imprimirFaltas()">🖨️ Imprimir faltas</button>
+        <span id="faltas-sub" style="font-size:12px;color:#64748b;margin-left:8px;"></span>
+      </div>
+      <div class="tabela-wrap"><table id="tabela-faltas">
+        <thead><tr>
+          <th>#</th><th>Ficha</th><th>Nome</th><th>Modalidade(s)</th><th>Cidade/UF</th><th>Inscrição</th>
+        </tr></thead>
+        <tbody id="tbody-faltas"><tr><td colspan="6" class="loading">⏳ Carregando...</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
   <div class="painel" id="painel-participante">
 
     <div class="card">
@@ -396,6 +505,16 @@ const CORES_MOD = {
   1:'#1a56a0',2:'#db2777',3:'#059669',4:'#0284c7',
   5:'#7c3aed',6:'#d97706',7:'#be123c'
 };
+const MODS_INFO = {
+  1:{nome:'Vôlei de Areia',sub:'Masculino', dupla:true, equipe:false,emoji:'🏐'},
+  2:{nome:'Vôlei de Areia',sub:'Feminino',  dupla:true, equipe:false,emoji:'🏐'},
+  3:{nome:'Futevôlei',     sub:'Masculino', dupla:true, equipe:false,emoji:'⚽'},
+  4:{nome:'Canoagem',      sub:'Dupla',     dupla:true, equipe:false,emoji:'🛶'},
+  5:{nome:'Caiaque',       sub:'Individual',dupla:false,equipe:false,emoji:'🚣'},
+  6:{nome:'Pesca',         sub:'Masculino', dupla:false,equipe:true, emoji:'🎣'},
+  7:{nome:'Pesca',         sub:'Feminino',  dupla:false,equipe:true, emoji:'🎣'},
+};
+const MAX_VAGAS = {1:20,2:20,3:20,4:0,5:0,6:0,7:0};
 
 // ── Auth ──────────────────────────────────────────────────────────
 async function entrar() {
@@ -461,6 +580,10 @@ async function carregarTudo() {
     renderAlimentos();
     renderPrestacao();
     renderPorDia();
+    renderGeral();
+    renderModalidades();
+    renderCidades();
+    renderEsperaFaltas();
   } catch(e) {
     console.error(e);
   }
@@ -813,6 +936,542 @@ function aplicarFiltro() {
   </tr>`;
 
   document.getElementById('tabela-body').innerHTML = html;
+}
+
+// ================================================================
+// PAINEL: PAINEL GERAL
+// ================================================================
+function renderGeral() {
+  const presentes = new Set(todasInscricoes.filter(i=>i.presenca).map(i=>i.participante_id));
+  const espera    = todasInscricoes.filter(i=>i.status==='lista_espera');
+  const cidades   = new Set(todosParticipantes.map(p=>(p.cidade||'').trim().toLowerCase()).filter(Boolean));
+
+  // Kg total com duplas/pesca
+  let kgTotal = presentes.size;
+  for (const i of todasInscricoes) {
+    if (i.presenca) {
+      if (i.parceiro_nome) kgTotal++;
+      if (i.membro3_nome)  kgTotal++;
+      if (i.membro4_nome)  kgTotal++;
+    }
+  }
+
+  // Modalidade top
+  const modCount = {};
+  todasInscricoes.forEach(i => { if(i.status!=='lista_espera') modCount[i.modalidade_id]=(modCount[i.modalidade_id]||0)+1; });
+  const topMod = Object.entries(modCount).sort((a,b)=>b[1]-a[1])[0];
+  const topNome = topMod ? (MODALIDADES[topMod[0]]||'—') : '—';
+
+  document.getElementById('geral-metricas').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-num">${todosParticipantes.length}</div>
+      <div class="stat-label">Total inscritos</div>
+    </div>
+    <div class="stat-box verde">
+      <div class="stat-num">${presentes.size}</div>
+      <div class="stat-label">Credenciados</div>
+    </div>
+    <div class="stat-box laranja">
+      <div class="stat-num">${kgTotal}</div>
+      <div class="stat-label">kg arrecadados</div>
+    </div>
+    <div class="stat-box" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6)">
+      <div class="stat-num">${espera.length}</div>
+      <div class="stat-label">Na lista de espera</div>
+    </div>
+    <div class="stat-box" style="background:linear-gradient(135deg,#0284c7,#38bdf8)">
+      <div class="stat-num">${cidades.size}</div>
+      <div class="stat-label">Cidades participantes</div>
+    </div>
+    <div class="stat-box" style="background:linear-gradient(135deg,#059669,#34d399)">
+      <div class="stat-num">${todosParticipantes.length - presentes.size}</div>
+      <div class="stat-label">Não compareceram</div>
+    </div>`;
+
+  // Vagas por modalidade
+  const vagasHtml = Object.entries(MODS_INFO).map(([id,m]) => {
+    const conf = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera').length;
+    const lim  = MAX_VAGAS[id] || 0;
+    const pct  = lim > 0 ? Math.round(conf/lim*100) : 0;
+    const cor  = CORES_MOD[id] || '#1a56a0';
+    const bCor = pct>=100?'#dc2626':pct>=80?'#f59e0b':cor;
+    return `<div class="barra-modalidade">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+        <span style="font-weight:600;">${m.emoji} ${m.nome} — ${m.sub}</span>
+        <span style="color:#64748b;">${conf}${lim>0?' / '+lim:' inscr.'} ${lim>0?'('+pct+'%)':''}</span>
+      </div>
+      <div class="barra-track"><div class="barra-fill" style="width:${lim>0?Math.min(pct,100):50}%;background:${bCor};"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('geral-vagas').innerHTML = vagasHtml;
+
+  // Tabela quantitativa
+  let tRows = '', tConf=0, tEsp=0, tCred=0, tKg=0;
+  Object.entries(MODS_INFO).forEach(([id,m]) => {
+    const conf = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera').length;
+    const esp  = todasInscricoes.filter(i=>i.modalidade_id==id && i.status==='lista_espera').length;
+    const cred = new Set(todasInscricoes.filter(i=>i.modalidade_id==id && i.presenca).map(i=>i.participante_id)).size;
+    // kg: count all people in present inscricoes of this modality
+    const kgMod = todasInscricoes.filter(i=>i.modalidade_id==id&&i.presenca).reduce((s,i)=>
+      s+1+(i.parceiro_nome?1:0)+(i.membro3_nome?1:0)+(i.membro4_nome?1:0),0);
+    const lim  = MAX_VAGAS[id];
+    tConf+=conf; tEsp+=esp; tCred+=cred; tKg+=kgMod;
+    tRows+=`<tr>
+      <td><strong>${m.emoji} ${m.nome}</strong></td>
+      <td style="color:#64748b;">${m.sub}</td>
+      <td style="text-align:center;"><span style="background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:8px;font-weight:700;">${conf}</span></td>
+      <td style="text-align:center;"><span style="background:#fffbeb;color:#92400e;padding:2px 8px;border-radius:8px;font-weight:700;">${esp}</span></td>
+      <td style="text-align:center;font-weight:700;">${conf+esp}</td>
+      <td style="text-align:center;"><span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:8px;font-weight:700;">${cred}</span></td>
+      <td style="text-align:center;font-weight:700;color:#059669;">${kgMod}</td>
+      <td style="text-align:center;color:#94a3b8;">${lim>0?lim:'∞'}</td>
+      <td style="text-align:center;color:#94a3b8;">${lim>0?Math.max(0,lim-conf):'∞'}</td>
+    </tr>`;
+  });
+  tRows+=`<tr style="background:#f8faff;font-weight:700;border-top:2px solid #e2e8f0;">
+    <td colspan="2">TOTAL GERAL</td>
+    <td style="text-align:center;">${tConf}</td>
+    <td style="text-align:center;">${tEsp}</td>
+    <td style="text-align:center;">${tConf+tEsp}</td>
+    <td style="text-align:center;color:#1a56a0;">${tCred}</td>
+    <td style="text-align:center;color:#059669;">${tKg}</td>
+    <td colspan="2" style="text-align:center;">—</td>
+  </tr>`;
+  document.getElementById('tbody-quantitativo').innerHTML = tRows;
+
+  // Top cidades
+  const contCidade = {};
+  todosParticipantes.forEach(p=>{
+    const c=(p.cidade||'—').trim();
+    contCidade[c]=(contCidade[c]||0)+1;
+  });
+  const sorted = Object.entries(contCidade).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const max = sorted[0]?.[1]||1;
+  document.getElementById('geral-cidades-ranking').innerHTML = sorted.map(([c,n])=>`
+    <div class="barra-modalidade">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+        <span style="font-weight:600;">${escHtml(c)}</span>
+        <span style="color:#64748b;">${n} inscrito${n!==1?'s':''}</span>
+      </div>
+      <div class="barra-track"><div class="barra-fill" style="width:${Math.round(n/max*100)}%;"></div></div>
+    </div>`).join('');
+}
+
+function imprimirQuantitativo() {
+  const presentes = new Set(todasInscricoes.filter(i=>i.presenca).map(i=>i.participante_id));
+  let kgTotal = presentes.size;
+  for (const i of todasInscricoes) if(i.presenca){if(i.parceiro_nome)kgTotal++;if(i.membro3_nome)kgTotal++;if(i.membro4_nome)kgTotal++;}
+
+  let rows='',tConf=0,tEsp=0,tCred=0,tKg=0;
+  Object.entries(MODS_INFO).forEach(([id,m])=>{
+    const conf=todasInscricoes.filter(i=>i.modalidade_id==id&&i.status!=='lista_espera').length;
+    const esp =todasInscricoes.filter(i=>i.modalidade_id==id&&i.status==='lista_espera').length;
+    const cred=new Set(todasInscricoes.filter(i=>i.modalidade_id==id&&i.presenca).map(i=>i.participante_id)).size;
+    const kgMod=todasInscricoes.filter(i=>i.modalidade_id==id&&i.presenca).reduce((s,i)=>s+1+(i.parceiro_nome?1:0)+(i.membro3_nome?1:0)+(i.membro4_nome?1:0),0);
+    const lim=MAX_VAGAS[id];
+    tConf+=conf;tEsp+=esp;tCred+=cred;tKg+=kgMod;
+    rows+=`<tr style="background:${parseInt(id)%2===0?'#f8fafc':'#fff'}">
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:600;">${m.emoji} ${m.nome}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;">${m.sub}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#166534;">${conf}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;color:#92400e;">${esp}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;">${conf+esp}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;">${cred}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#059669;">${kgMod} kg</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">${lim>0?lim:'∞'}</td>
+    </tr>`;
+  });
+  rows+=`<tr style="background:#1a56a0;color:white;font-weight:700;">
+    <td colspan="2" style="padding:8px;border:1px solid #1447a0;">TOTAL GERAL</td>
+    <td style="padding:8px;border:1px solid #1447a0;text-align:center;">${tConf}</td>
+    <td style="padding:8px;border:1px solid #1447a0;text-align:center;">${tEsp}</td>
+    <td style="padding:8px;border:1px solid #1447a0;text-align:center;">${tConf+tEsp}</td>
+    <td style="padding:8px;border:1px solid #1447a0;text-align:center;">${tCred}</td>
+    <td style="padding:8px;border:1px solid #1447a0;text-align:center;">${tKg} kg</td>
+    <td style="padding:8px;border:1px solid #1447a0;text-align:center;">—</td>
+  </tr>`;
+
+  const w=window.open('','_blank');
+  if(!w){alert('Popup bloqueado.');return;}
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Relatório Quantitativo — Festival de Inverno 2026</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:system-ui,sans-serif;padding:20px;font-size:12px;}
+  h1{font-size:18px;font-weight:800;color:#1a56a0;}p{color:#64748b;margin-top:4px;font-size:11px;}
+  table{width:100%;border-collapse:collapse;margin-top:16px;}
+  th{background:#1a56a0;color:white;padding:8px;text-align:left;border:1px solid #1447a0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  @page{size:A4 landscape;margin:1cm;}</style></head><body>
+  <div style="border-bottom:2px solid #1a56a0;padding-bottom:12px;margin-bottom:16px;">
+    <h1>Festival de Inverno 2026 — Costa Marques/RO</h1>
+    <p>Relatório Quantitativo de Inscrições · Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+  </div>
+  <table><thead><tr>
+    <th>Modalidade</th><th>Categoria</th><th>Confirmados</th><th>Espera</th>
+    <th>Total</th><th>Credenciados</th><th>Alimentos</th><th>Vagas</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  </body></html>`);
+  w.document.close();w.focus();
+  w.onafterprint=function(){w.close();};setTimeout(()=>{w.print();},400);
+}
+
+// ================================================================
+// PAINEL: POR MODALIDADE
+// ================================================================
+function renderModalidades() {
+  const filtro = document.getElementById('filtro-mod-rel')?.value || '';
+  const ids = filtro ? [filtro] : Object.keys(MODS_INFO);
+  let html = '';
+
+  ids.forEach(id => {
+    const m   = MODS_INFO[id];
+    if (!m) return;
+    const cor = CORES_MOD[id] || '#1a56a0';
+    const insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
+    const esp  = todasInscricoes.filter(i=>i.modalidade_id==id && i.status==='lista_espera').length;
+    const cred = new Set(insc.filter(i=>i.presenca).map(i=>i.participante_id)).size;
+
+    const linhas = insc.map((i,idx) => {
+      const p = todosParticipantes.find(p=>p.id===i.participante_id);
+      if (!p) return '';
+      const hora = i.presenca_em ? new Date(i.presenca_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      const extra = i.parceiro_nome ? `<div style="font-size:10px;color:#64748b;">c/ ${escHtml(i.parceiro_nome)}</div>` : '';
+      const eqEx  = i.nome_equipe  ? `<div style="font-size:10px;color:#64748b;">${escHtml(i.nome_equipe)}</div>` : '';
+      const bg    = idx%2===0?'':'background:#f8fafc;';
+      return `<tr style="${bg}">
+        <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:700;color:${cor};">${i.numero_ficha||'—'}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-weight:600;">${escHtml(p.nome_completo)}${extra}${eqEx}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;text-align:center;">
+          ${i.presenca ? `<span style="color:#166534;font-weight:700;">✅ ${hora}</span>` : '<span style="color:#94a3b8;">—</span>'}
+        </td>
+      </tr>`;
+    }).join('');
+
+    html += `<div style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:10px 14px;background:${cor}11;border-left:4px solid ${cor};border-radius:0 8px 8px 0;">
+        <span style="font-size:20px;">${m.emoji}</span>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:${cor};">${m.nome} — ${m.sub}</div>
+          <div style="font-size:12px;color:#64748b;">${insc.length} inscritos · ${cred} credenciados · ${esp} na espera</div>
+        </div>
+      </div>
+      ${insc.length===0?'<div style="color:#94a3b8;font-size:13px;padding:8px;">Nenhum inscrito.</div>':`
+      <div class="tabela-wrap"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:${cor};color:white;">
+          <th style="padding:7px 8px;text-align:left;">Ficha</th>
+          <th style="padding:7px 8px;text-align:left;">Participante</th>
+          <th style="padding:7px 8px;text-align:left;">Cidade/UF</th>
+          <th style="padding:7px 8px;text-align:center;">Credenciamento</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+      </table></div>`}
+    </div>`;
+  });
+
+  document.getElementById('mod-rel-content').innerHTML = html || '<div class="msg-vazio">Nenhum dado.</div>';
+}
+
+function imprimirPorModalidade() {
+  const filtro = document.getElementById('filtro-mod-rel')?.value || '';
+  const ids = filtro ? [filtro] : Object.keys(MODS_INFO);
+  let html = '';
+
+  ids.forEach((id, idx) => {
+    const m   = MODS_INFO[id];
+    if (!m) return;
+    const insc = todasInscricoes.filter(i=>i.modalidade_id==id && i.status!=='lista_espera');
+    if (insc.length === 0) return;
+    const parcCol = m.dupla ? '<th style="padding:7px 8px;border:1px solid #1447a0;">Parceiro(a)</th>' : '';
+
+    const linhas = insc.map((i,n) => {
+      const p = todosParticipantes.find(p=>p.id===i.participante_id);
+      if (!p) return '';
+      const parcTd = m.dupla ? `<td style="padding:6px 8px;border:1px solid #e2e8f0;">${escHtml(i.parceiro_nome||'—')}</td>` : '';
+      const bg = n%2===0?'#fff':'#f8fafc';
+      return `<tr style="background:${bg};">
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;color:#1a56a0;">${i.numero_ficha||'—'}</td>
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:600;">${escHtml(p.nome_completo)}</td>
+        ${parcTd}
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">${i.presenca?'✅ Credenciado':''}</td>
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">[ ]</td>
+      </tr>`;
+    }).join('');
+
+    html += `<div style="page-break-before:${idx>0?'always':'auto'};padding:20px;font-family:system-ui,sans-serif;">
+      <div style="border-bottom:2px solid #1a56a0;padding-bottom:10px;margin-bottom:14px;">
+        <div style="font-size:16px;font-weight:800;color:#1a56a0;">${m.emoji} ${m.nome} — ${m.sub}</div>
+        <div style="font-size:11px;color:#64748b;">Festival de Inverno 2026 · SEMESP · ${insc.length} inscritos · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="background:#1a56a0;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <th style="padding:7px 8px;border:1px solid #1447a0;text-align:left;">Ficha</th>
+          <th style="padding:7px 8px;border:1px solid #1447a0;text-align:left;">Participante</th>
+          ${parcCol}
+          <th style="padding:7px 8px;border:1px solid #1447a0;text-align:left;">Cidade/UF</th>
+          <th style="padding:7px 8px;border:1px solid #1447a0;text-align:center;">Credenciado</th>
+          <th style="padding:7px 8px;border:1px solid #1447a0;text-align:center;">✓</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>`;
+  });
+
+  const w=window.open('','_blank');
+  if(!w){alert('Popup bloqueado.');return;}
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Lista por Modalidade — Festival de Inverno 2026</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-size:12px;}
+  @page{size:A4 landscape;margin:1cm;}@media print{body{padding:0;}}</style>
+  </head><body>${html}</body></html>`);
+  w.document.close();w.focus();
+  w.onafterprint=function(){w.close();};setTimeout(()=>{w.print();},400);
+}
+
+// ================================================================
+// PAINEL: POR CIDADE
+// ================================================================
+function renderCidades() {
+  const busca = (document.getElementById('busca-cidade')?.value||'').toLowerCase();
+
+  const contCidade = {};
+  todosParticipantes.forEach(p => {
+    const c = (p.cidade||'—').trim();
+    if (!contCidade[c]) contCidade[c] = { total:0, cred:0, mods:new Set(), participantes:[] };
+    contCidade[c].total++;
+    const inscP = todasInscricoes.filter(i=>i.participante_id===p.id);
+    if (inscP.some(i=>i.presenca)) contCidade[c].cred++;
+    inscP.forEach(i=>contCidade[c].mods.add(i.modalidade_id));
+    contCidade[c].participantes.push(p);
+  });
+
+  let entries = Object.entries(contCidade).sort((a,b)=>b[1].total-a[1].total);
+  if (busca) entries = entries.filter(([c])=>c.toLowerCase().includes(busca));
+
+  if (!entries.length) {
+    document.getElementById('cidades-content').innerHTML = '<div class="msg-vazio">Nenhuma cidade encontrada.</div>';
+    return;
+  }
+
+  let html = `<div style="font-size:13px;color:#64748b;margin-bottom:14px;">${entries.length} cidade${entries.length!==1?'s':''} encontrada${entries.length!==1?'s':''}</div>`;
+  html += '<div class="tabela-wrap"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  html += `<thead><tr>
+    <th>#</th><th>Cidade/UF</th><th style="text-align:center">Inscritos</th>
+    <th style="text-align:center">Credenciados</th><th style="text-align:center">%</th><th>Modalidades</th>
+  </tr></thead><tbody>`;
+
+  entries.forEach(([c,d],idx)=>{
+    const pct = d.total>0?Math.round(d.cred/d.total*100):0;
+    const mods = [...d.mods].map(id=>MODALIDADES[id]||`Mod.${id}`).join(', ');
+    const bg = idx%2===0?'':'background:#f8fafc;';
+    html+=`<tr style="${bg}">
+      <td style="padding:6px 8px;color:#94a3b8;">${idx+1}</td>
+      <td style="padding:6px 8px;font-weight:600;">${escHtml(c)}</td>
+      <td style="padding:6px 8px;text-align:center;font-weight:700;">${d.total}</td>
+      <td style="padding:6px 8px;text-align:center;font-weight:700;color:#166534;">${d.cred}</td>
+      <td style="padding:6px 8px;text-align:center;">
+        <span style="font-size:11px;padding:2px 8px;border-radius:8px;background:${pct>=80?'#f0fdf4':'#f8fafc'};color:${pct>=80?'#166534':'#64748b'};">${pct}%</span>
+      </td>
+      <td style="padding:6px 8px;font-size:11px;color:#64748b;">${escHtml(mods)}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  document.getElementById('cidades-content').innerHTML = html;
+}
+
+function imprimirCidades() {
+  const contCidade = {};
+  todosParticipantes.forEach(p=>{
+    const c=(p.cidade||'—').trim();
+    if(!contCidade[c])contCidade[c]={total:0,cred:0};
+    contCidade[c].total++;
+    if(todasInscricoes.some(i=>i.participante_id===p.id&&i.presenca))contCidade[c].cred++;
+  });
+  const entries=Object.entries(contCidade).sort((a,b)=>b[1].total-a[1].total);
+  const linhas=entries.map(([c,d],i)=>{
+    const bg=i%2===0?'#fff':'#f8fafc';
+    const pct=d.total>0?Math.round(d.cred/d.total*100):0;
+    return`<tr style="background:${bg}"><td style="padding:6px 8px;border:1px solid #e2e8f0;">${i+1}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:600;">${escHtml(c)}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;">${d.total}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#166534;">${d.cred}</td>
+      <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:center;">${pct}%</td></tr>`;
+  }).join('');
+  const w=window.open('','_blank');if(!w){alert('Popup bloqueado.');return;}
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Por Cidade — Festival de Inverno 2026</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:system-ui,sans-serif;padding:20px;font-size:12px;}
+  h1{font-size:18px;font-weight:800;color:#1a56a0;}p{color:#64748b;margin-top:4px;font-size:11px;}
+  table{width:100%;border-collapse:collapse;margin-top:14px;}
+  th{background:#1a56a0;color:white;padding:8px;border:1px solid #1447a0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  @page{size:A4;margin:1cm;}</style></head><body>
+  <div style="border-bottom:2px solid #1a56a0;padding-bottom:10px;margin-bottom:14px;">
+    <h1>Festival de Inverno 2026 — Costa Marques/RO</h1>
+    <p>Participantes por Cidade · ${entries.length} cidades · Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+  </div>
+  <table><thead><tr>
+    <th>#</th><th>Cidade</th><th>Inscritos</th><th>Credenciados</th><th>%</th>
+  </tr></thead><tbody>${linhas}</tbody></table>
+  </body></html>`);
+  w.document.close();w.focus();
+  w.onafterprint=function(){w.close();};setTimeout(()=>{w.print();},400);
+}
+
+// ================================================================
+// PAINEL: ESPERA & FALTAS
+// ================================================================
+function renderEsperaFaltas() {
+  // Lista de espera
+  const espPorMod = {};
+  todasInscricoes.filter(i=>i.status==='lista_espera').forEach(i=>{
+    if(!espPorMod[i.modalidade_id])espPorMod[i.modalidade_id]=[];
+    const p=todosParticipantes.find(p=>p.id===i.participante_id);
+    if(p)espPorMod[i.modalidade_id].push({p,i});
+  });
+
+  const esperaHtml = Object.entries(espPorMod).length === 0
+    ? '<div class="msg-vazio"><div class="msg-vazio-icon">✅</div>Nenhum participante na lista de espera.</div>'
+    : Object.entries(espPorMod).map(([id,itens])=>{
+        const m=MODS_INFO[id]||{nome:'Mod '+id,sub:'',emoji:'🏅'};
+        const cor=CORES_MOD[id]||'#1a56a0';
+        const linhas=itens.map((it,n)=>{
+          const bg=n%2===0?'':'background:#fffbeb;';
+          return`<tr style="${bg}">
+            <td style="padding:6px 8px;border-bottom:1px solid #fef3c7;font-weight:700;color:#92400e;">${n+1}º</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #fef3c7;font-weight:600;">${escHtml(it.p.nome_completo)}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #fef3c7;font-size:11px;">${escHtml(it.p.telefone||'—')}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #fef3c7;font-size:11px;">${escHtml(it.p.cidade||'—')}/${escHtml(it.p.uf||'RO')}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #fef3c7;">${it.i.numero_ficha||'—'}</td>
+          </tr>`;
+        }).join('');
+        return`<div style="margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:${cor};margin-bottom:8px;padding:6px 10px;background:${cor}11;border-radius:6px;">
+            ${m.emoji} ${m.nome} — ${m.sub} <span style="font-weight:400;color:#64748b;">(${itens.length} na espera)</span>
+          </div>
+          <div class="tabela-wrap"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="background:#f59e0b;color:white;">
+              <th style="padding:7px 8px;">Pos.</th><th style="padding:7px 8px;">Participante</th>
+              <th style="padding:7px 8px;">Telefone</th><th style="padding:7px 8px;">Cidade/UF</th>
+              <th style="padding:7px 8px;">Ficha</th>
+            </tr></thead><tbody>${linhas}</tbody>
+          </table></div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('espera-content').innerHTML = esperaHtml;
+
+  // Faltas (inscritos não credenciados)
+  const presMap = new Set(todasInscricoes.filter(i=>i.presenca).map(i=>i.participante_id));
+  const faltas = todosParticipantes.filter(p=>
+    !presMap.has(p.id) &&
+    todasInscricoes.some(i=>i.participante_id===p.id && i.status!=='lista_espera')
+  );
+
+  document.getElementById('faltas-sub').textContent =
+    `${faltas.length} inscrito${faltas.length!==1?'s':''} não compareceram`;
+
+  const faltasLinhas = faltas.map((p,idx)=>{
+    const inscP = todasInscricoes.filter(i=>i.participante_id===p.id);
+    const ficha = inscP[0]?.numero_ficha||'—';
+    const mods  = inscP.map(i=>MODALIDADES[i.modalidade_id]||`Mod.${i.modalidade_id}`).join(' / ');
+    const data  = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
+    const bg    = idx%2===0?'':'background:#fef2f2;';
+    return`<tr style="${bg}">
+      <td style="padding:6px 8px;color:#94a3b8;">${idx+1}</td>
+      <td style="padding:6px 8px;font-weight:700;color:#dc2626;">${escHtml(ficha)}</td>
+      <td style="padding:6px 8px;font-weight:600;">${escHtml(p.nome_completo)}</td>
+      <td style="padding:6px 8px;font-size:11px;">${escHtml(mods)}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#64748b;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#94a3b8;">${data}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tbody-faltas').innerHTML = faltasLinhas ||
+    `<tr><td colspan="6" class="msg-vazio"><div class="msg-vazio-icon">🎉</div>Todos os inscritos se credenciaram!</td></tr>`;
+}
+
+function imprimirEspera() {
+  const espPorMod = {};
+  todasInscricoes.filter(i=>i.status==='lista_espera').forEach(i=>{
+    if(!espPorMod[i.modalidade_id])espPorMod[i.modalidade_id]=[];
+    const p=todosParticipantes.find(p=>p.id===i.participante_id);
+    if(p)espPorMod[i.modalidade_id].push({p,i});
+  });
+  if(!Object.keys(espPorMod).length){alert('Não há participantes na lista de espera.');return;}
+
+  let blocos=Object.entries(espPorMod).map(([id,itens],idx)=>{
+    const m=MODS_INFO[id]||{nome:'Mod '+id,sub:'',emoji:'🏅'};
+    const linhas=itens.map((it,n)=>`<tr style="background:${n%2===0?'#fff':'#fffbeb'}">
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${n+1}º</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;font-weight:600;">${escHtml(it.p.nome_completo)}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${escHtml(it.p.telefone||'—')}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${escHtml(it.p.cidade||'—')}/${escHtml(it.p.uf||'RO')}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;">${it.i.numero_ficha||'—'}</td>
+      <td style="padding:6px 10px;border:1px solid #fde68a;text-align:center;">[ ]</td>
+    </tr>`).join('');
+    return`<div style="page-break-before:${idx>0?'always':'auto'};padding:20px;font-family:system-ui,sans-serif;">
+      <div style="border-bottom:2px solid #f59e0b;padding-bottom:10px;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:700;color:#92400e;">⏳ ${m.emoji} ${m.nome} — ${m.sub}</div>
+        <div style="font-size:11px;color:#64748b;">Lista de Espera · Festival de Inverno 2026 · ${itens.length} na espera · ${new Date().toLocaleString('pt-BR')}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#f59e0b;color:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <th style="padding:7px 10px;">Pos.</th><th style="padding:7px 10px;">Participante</th>
+          <th style="padding:7px 10px;">Telefone</th><th style="padding:7px 10px;">Cidade/UF</th>
+          <th style="padding:7px 10px;">Ficha</th><th style="padding:7px 10px;">Chamado</th>
+        </tr></thead><tbody>${linhas}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const w=window.open('','_blank');if(!w){alert('Popup bloqueado.');return;}
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Lista de Espera — Festival de Inverno 2026</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-size:12px;}@page{size:A4;margin:1cm;}</style>
+  </head><body>${blocos}</body></html>`);
+  w.document.close();w.focus();
+  w.onafterprint=function(){w.close();};setTimeout(()=>{w.print();},400);
+}
+
+function imprimirFaltas() {
+  const presMap=new Set(todasInscricoes.filter(i=>i.presenca).map(i=>i.participante_id));
+  const faltas=todosParticipantes.filter(p=>
+    !presMap.has(p.id)&&todasInscricoes.some(i=>i.participante_id===p.id&&i.status!=='lista_espera')
+  );
+  if(!faltas.length){alert('Todos os inscritos se credenciaram!');return;}
+
+  const linhas=faltas.map((p,i)=>{
+    const inscP=todasInscricoes.filter(i=>i.participante_id===p.id);
+    const ficha=inscP[0]?.numero_ficha||'—';
+    const mods=inscP.map(i=>MODALIDADES[i.modalidade_id]||`Mod.${i.modalidade_id}`).join(' / ');
+    const bg=i%2===0?'#fff':'#fef2f2';
+    return`<tr style="background:${bg}">
+      <td style="padding:6px 8px;border:1px solid #fee2e2;font-weight:700;color:#dc2626;">${ficha}</td>
+      <td style="padding:6px 8px;border:1px solid #fee2e2;font-weight:600;">${escHtml(p.nome_completo)}</td>
+      <td style="padding:6px 8px;border:1px solid #fee2e2;">${escHtml(mods)}</td>
+      <td style="padding:6px 8px;border:1px solid #fee2e2;">${escHtml(p.cidade||'—')}/${escHtml(p.uf||'RO')}</td>
+      <td style="padding:6px 8px;border:1px solid #fee2e2;">${escHtml(p.telefone||'—')}</td>
+    </tr>`;
+  }).join('');
+
+  const w=window.open('','_blank');if(!w){alert('Popup bloqueado.');return;}
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Faltas — Festival de Inverno 2026</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:system-ui,sans-serif;padding:20px;font-size:12px;}
+  h1{font-size:18px;font-weight:800;color:#dc2626;}p{color:#64748b;margin-top:4px;font-size:11px;}
+  table{width:100%;border-collapse:collapse;margin-top:14px;}
+  th{background:#dc2626;color:white;padding:8px;border:1px solid #b91c1c;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  @page{size:A4;margin:1cm;}</style></head><body>
+  <div style="border-bottom:2px solid #dc2626;padding-bottom:10px;margin-bottom:14px;">
+    <h1>Inscritos Não Credenciados — Faltas</h1>
+    <p>Festival de Inverno 2026 · SEMESP · ${faltas.length} falta${faltas.length!==1?'s':''} · ${new Date().toLocaleString('pt-BR')}</p>
+  </div>
+  <table><thead><tr>
+    <th>Ficha</th><th>Participante</th><th>Modalidade(s)</th><th>Cidade/UF</th><th>Telefone</th>
+  </tr></thead><tbody>${linhas}</tbody></table>
+  </body></html>`);
+  w.document.close();w.focus();
+  w.onafterprint=function(){w.close();};setTimeout(()=>{w.print();},400);
 }
 
 function imprimirPorDia() {
