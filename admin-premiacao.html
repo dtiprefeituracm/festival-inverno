@@ -266,7 +266,14 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   <div class="galeria-add">
     <div class="galeria-add-titulo">➕ Adicionar foto</div>
     <div class="form-group">
-      <label>URL da Foto *</label>
+      <label>📤 Upload direto</label>
+      <input type="file" id="gal-file" accept="image/*"
+        style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;"
+        onchange="uploadGaleriaArquivo()">
+      <div id="gal-upload-status" style="font-size:12px;color:#94a3b8;margin-top:4px;"></div>
+    </div>
+    <div class="form-group">
+      <label>🔗 Ou cole uma URL</label>
       <input type="url" id="gal-url" placeholder="https://..." oninput="previewGaleriaFoto()">
     </div>
     <img id="gal-preview" class="foto-preview" alt="Preview">
@@ -301,10 +308,14 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 <!-- ═══════════════════════════════════════ -->
 <div class="tab-content" id="tab-alimentos">
   <div class="aviso">
-    <strong>🥦 Fotos dos Alimentos do Credenciamento</strong>
-    Cada participante credenciado entregou 1kg de alimento. Aqui você cadastra a URL da foto da doação de cada um. Essas fotos aparecem no Portal de Transparência ao lado do nome do participante credenciado.
+    <strong>🥦 Alimentos Arrecadados no Credenciamento</strong>
+    Fotos capturadas automaticamente durante o check-in. Cada participante entregou 1 kg por pessoa inscrita. Esta tela é somente leitura — para adicionar foto, acesse o <a href="checkin.html" target="_blank" style="color:#60a5fa;">Credenciamento</a>.
   </div>
 
+  <!-- Stats -->
+  <div id="alim-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+  <!-- Filtros -->
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
     <input type="text" id="busca-cred" placeholder="🔍 Buscar credenciado..."
       style="padding:9px 12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;flex:1;min-width:200px;"
@@ -319,6 +330,12 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <option value="5">Caiaque</option>
       <option value="6">Pesca — Masc.</option>
       <option value="7">Pesca — Fem.</option>
+    </select>
+    <select id="filtro-foto-cred" onchange="filtrarCredenciados()"
+      style="padding:9px 12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;">
+      <option value="">Com e sem foto</option>
+      <option value="com">✅ Com foto</option>
+      <option value="sem">⚠️ Sem foto</option>
     </select>
   </div>
 
@@ -367,7 +384,12 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <textarea id="g-premio" rows="2" placeholder="Ex: Troféu + R$ 500,00 em dinheiro"></textarea>
     </div>
     <div class="form-group">
-      <label>URL da Foto com o Troféu</label>
+      <label>📤 Upload da Foto com o Troféu</label>
+      <input type="file" id="g-foto-file" accept="image/*"
+        style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;margin-bottom:6px;"
+        onchange="uploadFotoGanhador()">
+      <div id="g-foto-upload-status" style="font-size:12px;color:#94a3b8;margin-bottom:6px;"></div>
+      <label style="margin-top:6px;">🔗 Ou cole uma URL</label>
       <input type="url" id="g-foto" placeholder="https://..." oninput="previewFotoGanhador()">
       <img id="g-foto-preview" class="foto-preview" alt="Preview da foto">
     </div>
@@ -482,7 +504,7 @@ let modAtiva           = null;
 async function inicializar() {
   try {
     const [participantes, inscricoes, ganhadores, fotos] = await Promise.all([
-      apiGet('participantes', 'select=id,nome_completo,cidade,uf'),
+      apiGet('participantes', 'select=id,nome_completo,cidade,uf,foto_alimento,foto_alimento_em'),
       apiGet('inscricoes', 'select=*'),
       apiGet('ganhadores', 'select=*').catch(() => []),
       apiGet('galeria_fotos', 'select=*').catch(() => []),
@@ -900,39 +922,64 @@ async function excluirFoto(id) {
 let credenciadosFiltrados = [];
 
 function renderCredenciados() {
-  const credenciados = todasInscricoes
-    .filter(i => i.presenca)
-    .map(i => {
-      const p = todosParticipantes.find(p => p.id === i.participante_id);
-      return p ? { ...p, inscricao_id: i.id, modalidade_id: i.modalidade_id, foto_alimento_url: i.foto_alimento_url } : null;
-    })
-    .filter(Boolean);
+  // Pega participantes presentes com foto do alimento já capturada no check-in
+  const presentes = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
 
-  // Deduplicar por participante_id
-  const dedup = [];
+  // Monta lista com kg por participante (conta parceiro/membro3/membro4)
+  const lista = [];
   const visto = new Set();
-  credenciados.forEach(c => {
-    if (!visto.has(c.id)) { visto.add(c.id); dedup.push(c); }
-  });
-  credenciadosFiltrados = dedup;
-  renderListaCredenciados(dedup);
+  for (const p of todosParticipantes) {
+    if (!presentes.has(p.id) || visto.has(p.id)) continue;
+    visto.add(p.id);
+    const inscsPart = todasInscricoes.filter(i => i.participante_id === p.id);
+    const modalidade_id = inscsPart[0]?.modalidade_id;
+    const kg = inscsPart.reduce((s, i) =>
+      s + (i.parceiro_nome ? 1 : 0) + (i.membro3_nome ? 1 : 0) + (i.membro4_nome ? 1 : 0), 1);
+    lista.push({ ...p, modalidade_id, kg, inscricoes: inscsPart });
+  }
+
+  credenciadosFiltrados = lista;
+
+  // Stats
+  const totalKg  = lista.reduce((s, c) => s + c.kg, 0);
+  const comFoto  = lista.filter(c => c.foto_alimento).length;
+  document.getElementById('alim-stats').innerHTML = `
+    <div style="background:#1e293b;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:26px;font-weight:800;color:#60a5fa;">${lista.length}</div>
+      <div style="font-size:11px;color:#94a3b8;">Credenciados</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:26px;font-weight:800;color:#34d399;">${totalKg}</div>
+      <div style="font-size:11px;color:#94a3b8;">kg arrecadados</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:26px;font-weight:800;color:#f59e0b;">${comFoto}</div>
+      <div style="font-size:11px;color:#94a3b8;">fotos registradas</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:26px;font-weight:800;color:#f87171;">${lista.length - comFoto}</div>
+      <div style="font-size:11px;color:#94a3b8;">sem foto</div>
+    </div>`;
+
+  renderListaCredenciados(lista);
 }
 
 function filtrarCredenciados() {
-  const busca = document.getElementById('busca-cred').value.toLowerCase();
-  const mod   = document.getElementById('filtro-mod-cred').value;
+  const busca    = document.getElementById('busca-cred').value.toLowerCase();
+  const mod      = document.getElementById('filtro-mod-cred').value;
+  const foto     = document.getElementById('filtro-foto-cred').value;
 
   const filtrado = credenciadosFiltrados.filter(c => {
-    const nomeBate = !busca || c.nome_completo.toLowerCase().includes(busca);
-    const modBate  = !mod || c.modalidade_id == mod;
-    return nomeBate && modBate;
+    const nomeBate  = !busca || c.nome_completo.toLowerCase().includes(busca);
+    const modBate   = !mod  || c.modalidade_id == mod;
+    const fotoBate  = !foto || (foto === 'com' ? !!c.foto_alimento : !c.foto_alimento);
+    return nomeBate && modBate && fotoBate;
   });
   renderListaCredenciados(filtrado);
 }
 
 function renderListaCredenciados(lista) {
-  const cont = document.getElementById('cont-credenciados');
-  cont.textContent = `(${lista.length})`;
+  document.getElementById('cont-credenciados').textContent = `(${lista.length})`;
 
   const div = document.getElementById('lista-credenciados');
   if (lista.length === 0) {
@@ -941,45 +988,78 @@ function renderListaCredenciados(lista) {
   }
 
   div.innerHTML = lista.map(c => {
-    const mod = MODALIDADES[c.modalidade_id];
+    const mod     = MODALIDADES[c.modalidade_id];
+    const modNome = mod ? mod.nome + ' — ' + mod.sub : '—';
+    const hora    = c.foto_alimento_em
+      ? new Date(c.foto_alimento_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : null;
+
     return `<div class="credenciado-item">
       <div class="credenciado-dados">
         <div class="credenciado-nome">${c.nome_completo}</div>
-        <div class="credenciado-mod">${mod ? mod.nome + ' ' + mod.sub : '—'} · ${c.cidade || '—'}/${c.uf || 'RO'}</div>
+        <div class="credenciado-mod">${modNome} · ${c.cidade || '—'}/${c.uf || 'RO'} · <strong>${c.kg} kg</strong></div>
+        ${hora ? `<div style="font-size:11px;color:#64748b;margin-top:2px;">📷 Foto registrada em ${hora}</div>` : ''}
       </div>
-      ${c.foto_alimento_url
-        ? `<img src="${c.foto_alimento_url}" class="foto-alimento-thumb" id="thumb-${c.inscricao_id}" style="display:block;" alt="Alimento">`
-        : `<img class="foto-alimento-thumb" id="thumb-${c.inscricao_id}" alt="Alimento">`}
-      <input type="url" class="credenciado-foto-input" id="fa-${c.inscricao_id}"
-        placeholder="URL da foto do alimento..." value="${c.foto_alimento_url || ''}"
-        oninput="previewAlimento('${c.inscricao_id}')">
-      <button class="btn-salvar-foto" id="btn-fa-${c.inscricao_id}"
-        onclick="salvarFotoAlimento('${c.inscricao_id}', '${c.id}')">💾 Salvar</button>
+      ${c.foto_alimento
+        ? `<img src="${c.foto_alimento}" class="foto-alimento-thumb" style="display:block;cursor:zoom-in;"
+             alt="Alimento" onclick="window.open('${c.foto_alimento}','_blank')">`
+        : `<div style="width:80px;height:80px;background:#0f172a;border:2px dashed #334155;border-radius:8px;
+             display:flex;align-items:center;justify-content:center;font-size:24px;color:#475569;flex-shrink:0;">📷</div>`}
     </div>`;
   }).join('');
 }
 
-function previewAlimento(inscricaoId) {
-  const url = document.getElementById('fa-' + inscricaoId).value;
-  const thumb = document.getElementById('thumb-' + inscricaoId);
-  if (url) { thumb.src = url; thumb.style.display = 'block'; }
-  else thumb.style.display = 'none';
+// ================================================================
+// UPLOAD DE ARQUIVOS — Supabase Storage
+// ================================================================
+async function uploadArquivo(file, bucket) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const nome = `${bucket}_${Date.now()}.${ext}`;
+  const b64  = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const resp = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + localStorage.getItem('premiacao_token') },
+    body: JSON.stringify({ base64: b64, nome, tipo: file.type, bucket })
+  });
+  const d = await resp.json();
+  if (!d.ok) throw new Error(d.erro || 'Falha no upload');
+  return d.url;
 }
 
-async function salvarFotoAlimento(inscricaoId, participanteId) {
-  const btn = document.getElementById('btn-fa-' + inscricaoId);
-  const url = document.getElementById('fa-' + inscricaoId).value.trim();
-  btn.textContent = '⏳'; btn.classList.add('salvando');
+async function uploadFotoGanhador() {
+  const file = document.getElementById('g-foto-file').files[0];
+  if (!file) return;
+  const status = document.getElementById('g-foto-upload-status');
+  status.textContent = '⏳ Enviando...';
   try {
-    await apiPost('inscricoes', { foto_alimento_url: url || null }, 'atualizar', inscricaoId);
-    // Atualiza estado local
-    const insc = todasInscricoes.find(i => i.id === inscricaoId);
-    if (insc) insc.foto_alimento_url = url || null;
-    toast('✅ Foto do alimento salva!');
+    const url = await uploadArquivo(file, 'trofeus');
+    document.getElementById('g-foto').value = url;
+    previewFotoGanhador();
+    status.textContent = '✅ Upload concluído!';
   } catch(e) {
-    toast('Erro ao salvar foto.', 'erro');
+    status.textContent = '❌ Erro: ' + e.message;
   }
-  btn.textContent = '💾 Salvar'; btn.classList.remove('salvando');
+}
+
+async function uploadGaleriaArquivo() {
+  const file = document.getElementById('gal-file').files[0];
+  if (!file) return;
+  const status = document.getElementById('gal-upload-status');
+  status.textContent = '⏳ Enviando...';
+  try {
+    const url = await uploadArquivo(file, 'galeria');
+    document.getElementById('gal-url').value = url;
+    previewGaleriaFoto();
+    status.textContent = '✅ Upload concluído! Preencha a legenda e clique em "Adicionar à Galeria".';
+  } catch(e) {
+    status.textContent = '❌ Erro: ' + e.message;
+  }
 }
 
 // ================================================================
