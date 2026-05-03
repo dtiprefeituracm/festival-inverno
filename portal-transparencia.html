@@ -216,7 +216,7 @@
     </div>
     <div class="card">
       <div class="card-label">Modalidades</div>
-      <div class="card-val">7</div>
+      <div class="card-val">9</div>
       <div class="card-sub">esportes</div>
     </div>
     <div class="card">
@@ -270,10 +270,12 @@
       <option value="1">Vôlei de Areia — Masculino</option>
       <option value="2">Vôlei de Areia — Feminino</option>
       <option value="3">Futevôlei</option>
-      <option value="4">Canoagem</option>
-      <option value="5">Caiaque</option>
+      <option value="4">Canoagem — Masculino</option>
+      <option value="5">Caiaque — Masculino</option>
       <option value="6">Pesca — Masculino</option>
       <option value="7">Pesca — Feminino</option>
+      <option value="8">Canoagem — Feminino</option>
+      <option value="9">Caiaque — Feminino</option>
     </select>
     <select id="filtro-cred" onchange="filtrarParticipantes()">
       <option value="">Todos</option>
@@ -425,10 +427,12 @@ const MODALIDADES = {
   1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia' },
   2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia' },
   3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia' },
-  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua'  },
-  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua'  },
+  4: { nome: 'Canoagem',       sub: 'Masculino',  tipo: 'agua'  },
+  5: { nome: 'Caiaque',        sub: 'Masculino',  tipo: 'agua'  },
   6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca' },
   7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca' },
+  8: { nome: 'Canoagem',       sub: 'Feminino',   tipo: 'agua'  },
+  9: { nome: 'Caiaque',        sub: 'Feminino',   tipo: 'agua'  },
 };
 
 // ================================================================
@@ -746,7 +750,7 @@ function renderGanhadores() {
           ${g.parceiro ? `<div class="ganhador-detalhe">Parceiro(a): ${g.parceiro}</div>` : ''}
           ${g.equipe ? `<div class="ganhador-detalhe">🎣 Equipe: ${g.equipe}</div>` : ''}
           <div class="ganhador-detalhe">${g.cidade || '—'}</div>
-          <div class="ganhador-mod">${g.posicao === 1 ? '🥇 1º lugar' : g.posicao === 2 ? '🥈 2º lugar' : '🥉 3º lugar'}</div>
+          <div class="ganhador-mod">${g.posicao === 1 ? '🥇 1º lugar' : g.posicao === 2 ? '🥈 2º lugar' : g.posicao + 'º lugar'}</div>
         </div>
         ${fotoHtml}
       </div>`;
@@ -763,7 +767,8 @@ function abrirGanhador(g) {
   const medalEmoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
   const mod = MODALIDADES[g.modalidade_id];
 
-  document.getElementById('mg-titulo').textContent = `${mod?.nome || ''} — ${mod?.sub || ''} · ${g.posicao === 1 ? '1º lugar' : g.posicao === 2 ? '2º lugar' : '3º lugar'}`;
+  const posLabel = g.posicao === 1 ? '1º lugar' : g.posicao === 2 ? '2º lugar' : g.posicao + 'º lugar';
+  document.getElementById('mg-titulo').textContent = `${mod?.nome || ''} — ${mod?.sub || ''} · ${posLabel}`;
   document.getElementById('mg-medal').textContent = medalEmoji;
 
   const foto = document.getElementById('mg-foto');
