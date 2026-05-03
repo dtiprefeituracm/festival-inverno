@@ -1677,7 +1677,7 @@ async function publicarGanhadoresAquaticas(modId) {
         parceiro:          '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
+        ...(getPatrocinadorMod(modId, posicao) ? { patrocinador: getPatrocinadorMod(modId, posicao) } : {}),
         resultado_tecnico: `Tempo: ${formatTempo(r.tempo_segundos)}`,
         publicado:         true,
       };
@@ -1693,11 +1693,10 @@ async function publicarGanhadoresAquaticas(modId) {
     }
     toast(`✅ Resultado de ${m.nome} publicado no portal!`);
     renderGridModalidades();
-  } catch(e) { toast('Erro ao publicar. Verifique o console.', 'erro'); console.error(e); }
+    atualizarPainelMod(modId);
+  } catch(e) { toast(`Erro ao publicar: ${e?.message || 'verifique o console.'}`, 'erro'); console.error('[publicarAquaticas]', e); }
   if (btn) { btn.disabled = false; btn.textContent = '🌐 Publicar Resultado Final no Portal da Transparência'; }
 }
-
-// ================================================================
 // PESCA — Render
 // ================================================================
 function selecionarPesca(modId, btn) {
@@ -2043,7 +2042,7 @@ async function sincronizarPescaPremiacao(modId) {
         cidade:            '',
         parceiro:          '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
+        ...(getPatrocinadorMod(modId, posicao) ? { patrocinador: getPatrocinadorMod(modId, posicao) } : {}),
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
@@ -2138,7 +2137,7 @@ async function sincronizarAguaPremiacao(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
+        ...(getPatrocinadorMod(modId, posicao) ? { patrocinador: getPatrocinadorMod(modId, posicao) } : {}),
         resultado_tecnico: 'Tempo ' + (usarFinal ? 'Final' : 'Classificatoria') + ': ' + formatTempo(r.tempo_segundos),
         foto_url:          null,
         publicado:         true,
@@ -2221,7 +2220,7 @@ async function publicarGanhadoresPesca(modId) {
         cidade:            '',
         parceiro:          '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
+        ...(getPatrocinadorMod(modId, posicao) ? { patrocinador: getPatrocinadorMod(modId, posicao) } : {}),
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
@@ -2237,7 +2236,8 @@ async function publicarGanhadoresPesca(modId) {
     }
     toast(`✅ Resultado da Pesca publicado no portal!`);
     renderGridModalidades();
-  } catch(e) { toast('Erro ao publicar.', 'erro'); console.error(e); }
+    atualizarPainelMod(modId);
+  } catch(e) { toast(`Erro ao publicar: ${e?.message || 'verifique o console.'}`, 'erro'); console.error('[publicarPesca]', e); }
   if (btn) { btn.disabled = false; btn.textContent = '🌐 Publicar Resultado Final no Portal da Transparência'; }
 }
 
@@ -2409,6 +2409,27 @@ function renderVolei() {
     if (pElim.length > 0) {
       const faseLabels = { semi:'Semi-Final', quartas:'Quartas de Final', final:'Final' };
       const fasesOrdem = ['quartas', 'semi', 'final'];
+
+      // ── Detecta duplicatas (mais semis/finais do que deveria ter) ──
+      const countSemis  = pElim.filter(p => p.fase === 'semi').length;
+      const countFinais = pElim.filter(p => p.fase === 'final').length;
+      const temDuplicata = countSemis > 2 || countFinais > 1;
+      if (temDuplicata) {
+        html += `<div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.5);border-radius:10px;
+                             padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#f87171;">⚠️ Partidas duplicadas detectadas!</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">
+              ${countSemis} semi-finals · ${countFinais} final(is) no banco. Clique em "Limpar e Regenerar" para corrigir.
+            </div>
+          </div>
+          <button onclick="limparERegenar(${modId})"
+            style="padding:9px 18px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#f87171;
+                   border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+            🗑️ Limpar e Regenerar
+          </button>
+        </div>`;
+      }
 
       // ── Detecta: ambas semis encerradas mas Final ainda "A definir" ──
       const semisFeitas = pElim.filter(p => p.fase === 'semi' && p.encerrada && p.vencedor_nome);
@@ -2768,48 +2789,73 @@ async function gerarEliminatorias(modId) {
     toast('Registre ao menos algumas partidas classificatórias para gerar as eliminatórias.', 'erro'); return;
   }
 
-  // Remove eliminatórias existentes
+  // Verifica se já existem eliminatórias
   const exElim = todasPartidas.filter(p => p.modalidade_id == modId && p.fase !== 'classificatoria');
-  for (const ep of exElim) await apiPost('partidas_volei', null, 'deletar', ep.id).catch(() => {});
-  todasPartidas = todasPartidas.filter(p => !(p.modalidade_id == modId && p.fase !== 'classificatoria'));
+  if (exElim.length > 0) {
+    const temPlacares = exElim.some(p => p.encerrada);
+    const msg = temPlacares
+      ? `⚠️ Já existem ${exElim.length} partida(s) de eliminatória — incluindo placares já registrados.\n\nRegerar irá APAGAR tudo e recomeçar do zero.\n\nTem certeza?`
+      : `Já existe chaveamento gerado (${exElim.length} partida(s)).\n\nDeseja apagar e regenerar?`;
+    if (!confirm(msg)) return;
+  }
+
+  // Remove eliminatórias existentes do banco — com verificação de erro
+  const btn = document.querySelector('.btn-gerar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+
+  try {
+    for (const ep of exElim) {
+      await apiPost('partidas_volei', null, 'deletar', ep.id);
+    }
+    todasPartidas = todasPartidas.filter(p => !(p.modalidade_id == modId && p.fase !== 'classificatoria'));
+  } catch(eDel) {
+    toast(`Erro ao limpar chaveamento anterior: ${eDel?.message || 'verifique o console.'} — Recarregue a página.`, 'erro');
+    console.error('[gerarEliminatorias] delete falhou:', eDel);
+    if (btn) { btn.disabled = false; btn.textContent = '⚙️ Gerar Chaveamento'; }
+    return; // ABORT — não criar novas partidas se delete falhou
+  }
 
   const novas = [];
-  // Com 2 classificados: direto para a final
-  // Com 4 classificados: semi-finais cruzadas (1A vs 2B, 1B vs 2A)
   let fases = [];
   if (classificados.length >= 4) {
-    // Semis cruzadas
     fases = [
-      { a: classificados[0], b: classificados[3], fase: 'semi' }, // 1A vs 2B (ou último)
-      { a: classificados[1], b: classificados[2], fase: 'semi' }, // 2A vs 1B
+      { a: classificados[0], b: classificados[3], fase: 'semi' },
+      { a: classificados[1], b: classificados[2], fase: 'semi' },
     ];
   } else {
     fases = [{ a: classificados[0], b: classificados[1], fase: 'final' }];
   }
 
-  for (const f of fases) {
-    const dados = { modalidade_id: modId, fase: f.fase,
-      inscricao_a_id: f.a.inscricao_id, nome_a: f.a.nome,
-      inscricao_b_id: f.b.inscricao_id, nome_b: f.b.nome,
-      encerrada: false };
-    const res = await apiPost('partidas_volei', dados, 'inserir');
-    const newId = res?.id || (Array.isArray(res) && res[0]?.id);
-    if (newId) novas.push({ ...dados, id: newId });
+  try {
+    for (const f of fases) {
+      const dados = { modalidade_id: modId, fase: f.fase,
+        inscricao_a_id: f.a.inscricao_id, nome_a: f.a.nome,
+        inscricao_b_id: f.b.inscricao_id, nome_b: f.b.nome,
+        encerrada: false };
+      const res = await apiPost('partidas_volei', dados, 'inserir');
+      const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+      if (newId) novas.push({ ...dados, id: newId });
+    }
+
+    // Cria espaço para a Final (sem 3º lugar — regulamento premia apenas 1º e 2º)
+    if (classificados.length >= 4) {
+      const dados = { modalidade_id: modId, fase: 'final',
+        inscricao_a_id: null, nome_a: 'A definir',
+        inscricao_b_id: null, nome_b: 'A definir',
+        encerrada: false };
+      const res = await apiPost('partidas_volei', dados, 'inserir');
+      const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+      if (newId) novas.push({ ...dados, id: newId });
+    }
+
+    todasPartidas.push(...novas);
+    toast(`✅ Chaveamento eliminatório gerado! ${novas.length} partida(s) criada(s).`);
+  } catch(eIns) {
+    toast(`Erro ao criar partidas: ${eIns?.message || 'verifique o console.'}`, 'erro');
+    console.error('[gerarEliminatorias] insert falhou:', eIns);
   }
 
-  // Se houver semis, cria espaço para a Final (sem 3º lugar — regulamento premia apenas 1º e 2º)
-  if (classificados.length >= 4) {
-    const dados = { modalidade_id: modId, fase: 'final',
-      inscricao_a_id: null, nome_a: 'A definir',
-      inscricao_b_id: null, nome_b: 'A definir',
-      encerrada: false };
-    const res = await apiPost('partidas_volei', dados, 'inserir');
-    const newId = res?.id || (Array.isArray(res) && res[0]?.id);
-    if (newId) novas.push({ ...dados, id: newId });
-  }
-
-  todasPartidas.push(...novas);
-  toast(`✅ Chaveamento eliminatório gerado!`);
+  if (btn) { btn.disabled = false; btn.textContent = '⚙️ Gerar Chaveamento'; }
   renderVolei();
 }
 
@@ -2990,6 +3036,30 @@ async function preencherFinalManual(modId) {
   if (btn) { btn.disabled = false; }
 }
 
+// Limpa TODAS as partidas eliminatórias do banco e regenera do zero
+async function limparERegenar(modId) {
+  if (!confirm('🗑️ Isso vai APAGAR todas as partidas de eliminatória (semi-finais e final) e regenerar.\n\nPlacares já registrados serão perdidos.\n\nConfirmar?')) return;
+  const elimExist = todasPartidas.filter(p => p.modalidade_id == modId && p.fase !== 'classificatoria');
+  if (elimExist.length === 0) { toast('Nenhuma partida eliminatória encontrada.', 'erro'); return; }
+  toast('🗑️ Limpando duplicatas...', 'sucesso');
+  let erros = 0;
+  for (const ep of elimExist) {
+    try {
+      await apiPost('partidas_volei', null, 'deletar', ep.id);
+    } catch(e) {
+      erros++;
+      console.warn('Erro ao deletar partida', ep.id, e.message);
+    }
+  }
+  todasPartidas = todasPartidas.filter(p => !(p.modalidade_id == modId && p.fase !== 'classificatoria'));
+  if (erros > 0) {
+    toast(`⚠️ ${erros} partida(s) não puderam ser removidas do banco. Recarregue a página.`, 'erro');
+  } else {
+    toast('✅ Limpo! Clique em "Gerar Chaveamento" para regenerar.', 'sucesso');
+  }
+  renderVolei();
+}
+
 async function publicarGanhadoresVolei(modId) {
   const m       = MODALIDADES[modId];
   const final3  = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'final' && p.encerrada);
@@ -3029,23 +3099,42 @@ async function publicarGanhadoresVolei(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[r.posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId, r.posicao) || null,
+        ...(getPatrocinadorMod(modId, r.posicao) ? { patrocinador: getPatrocinadorMod(modId, r.posicao) } : {}),
         resultado_tecnico: r.placar ? `Placar final: ${r.placar}` : '',
         publicado:         true,
       };
       const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == r.posicao);
-      if (existente) {
-        await apiPost('ganhadores', dados, 'atualizar', existente.id);
-        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
-      } else {
-        const res = await apiPost('ganhadores', dados, 'inserir');
-        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
-        if (newId) todosGanhadores.push({ ...dados, id: newId });
+      try {
+        if (existente) {
+          await apiPost('ganhadores', dados, 'atualizar', existente.id);
+          todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+        } else {
+          const res = await apiPost('ganhadores', dados, 'inserir');
+          const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+          if (newId) todosGanhadores.push({ ...dados, id: newId });
+        }
+      } catch(eInner) {
+        // Fallback: tenta sem patrocinador (coluna pode ainda não existir no banco)
+        console.warn('[Vôlei] Retry sem patrocinador:', eInner.message);
+        const { patrocinador: _p, ...dadosSemPatroc } = dados;
+        if (existente) {
+          await apiPost('ganhadores', dadosSemPatroc, 'atualizar', existente.id);
+          todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dadosSemPatroc } : g);
+        } else {
+          const res2 = await apiPost('ganhadores', dadosSemPatroc, 'inserir');
+          const newId2 = res2?.id || (Array.isArray(res2) && res2[0]?.id);
+          if (newId2) todosGanhadores.push({ ...dadosSemPatroc, id: newId2 });
+        }
       }
     }
     toast(`✅ Resultado de ${m.nome} publicado no portal!`);
     renderGridModalidades();
-  } catch(e) { toast('Erro ao publicar.', 'erro'); console.error(e); }
+    // Atualiza o painel se estiver aberto
+    atualizarPainelMod(modId);
+  } catch(e) {
+    toast(`Erro ao publicar: ${e?.message || 'verifique o console.'}`, 'erro');
+    console.error('[publicarGanhadoresVolei]', e);
+  }
   if (btn) { btn.disabled = false; btn.textContent = '🌐 Publicar Resultado Final no Portal da Transparência'; }
 }
 
@@ -3492,7 +3581,7 @@ async function salvarGanhador() {
   const dados = { participante_id: participante_id || null, modalidade_id, posicao,
     nome_exibicao: nome, cidade, parceiro: parceiro || null, equipe: equipe || null,
     resultado_tecnico: resultado_tecnico || null, premio_descricao: premio_descricao || null,
-    patrocinador: patrocinador || null,
+    ...(patrocinador ? { patrocinador } : {}),
     foto_url: foto_url || null, publicado };
   try {
     if (editId) {
@@ -3558,7 +3647,9 @@ async function salvarPatrocinadorMod(modId) {
   try {
     for (const g of ganhs) {
       const valor = g.posicao === 1 ? val1 : val2;
-      await apiPost('ganhadores', { patrocinador: valor || null }, 'atualizar', g.id);
+      // Envia apenas se tiver valor (evita erro se coluna ainda não existe no banco)
+      const payload = valor ? { patrocinador: valor } : { patrocinador: null };
+      await apiPost('ganhadores', payload, 'atualizar', g.id);
       todosGanhadores = todosGanhadores.map(gg => gg.id === g.id ? { ...gg, patrocinador: valor || null } : gg);
     }
     toast(`✅ Patrocinadores salvos para ${ganhs.length} ganhador(es)!`, 'sucesso');
