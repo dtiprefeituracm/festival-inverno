@@ -2555,27 +2555,111 @@ O acesso será bloqueado.`)) return;
   }
 }
 
-async function promoverParaConfirmado(inscricaoId, nomeParticipante) {
-  if (!confirm(`Promover "${nomeParticipante}" para CONFIRMADO?
+// ================================================================
+// LISTA DE ESPERA — Render por modalidade
+// ================================================================
+function renderEspera(participantes) {
+  const section = document.getElementById('section-espera');
+  const grid    = document.getElementById('espera-grid');
+  if (!section || !grid) return;
 
-Esta ação liberará a vaga e o participante será confirmado.`)) return;
+  // Coleta todos que estão na lista de espera, agrupados por modalidade
+  const porMod = {};
+  participantes.forEach(p => {
+    p.inscricoes
+      .filter(i => i.status === 'lista_espera')
+      .forEach(i => {
+        if (!porMod[i.modalidade_id]) porMod[i.modalidade_id] = [];
+        porMod[i.modalidade_id].push({ p, i });
+      });
+  });
+
+  const totalEspera = Object.values(porMod).reduce((s, arr) => s + arr.length, 0);
+
+  if (totalEspera === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+
+  let html = `
+    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#92400e;line-height:1.6;">
+      <strong>⏳ ${totalEspera} participante${totalEspera !== 1 ? 's' : ''} aguardando confirmação.</strong><br>
+      O secretário autorizou incluir quem aparecer — use o botão <strong>✅ Ativar</strong> para confirmar a participação.
+      O participante ativado entra imediatamente na lista de inscritos e pode ser credenciado.
+    </div>`;
+
+  Object.entries(porMod).forEach(([modId, itens]) => {
+    const mod = MODALIDADES[modId];
+    const nomeMod = mod ? mod.nome + ' — ' + mod.sub : 'Modalidade ' + modId;
+
+    html += '<div class="espera-mod-bloco">';
+    html += '<div class="espera-mod-titulo">⏳ ' + nomeMod;
+    html += ' <span style="font-size:11px;background:#fef3c7;border-radius:10px;padding:2px 8px;font-weight:600;">' + itens.length + ' na espera</span></div>';
+
+    itens.forEach(function({ p, i }, idx) {
+      const ficha    = i.numero_ficha || '—';
+      const telefone = p.telefone || '—';
+      const cidade   = (p.cidade || '—') + '/' + (p.uf || 'RO');
+      const data     = p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : '—';
+
+      let extra = '';
+      if (i.nome_equipe)   extra += '<span style="color:#92400e;font-weight:600;">🎣 ' + i.nome_equipe + '</span> · ';
+      if (i.parceiro_nome) extra += 'c/ ' + i.parceiro_nome + ' · ';
+      if (extra) extra = extra.slice(0, -3);
+
+      const nomeEsc = p.nome_completo.replace(/'/g, "\'");
+
+      html += '<div class="espera-item">';
+      html += '<div class="espera-pos">' + (idx + 1) + '</div>';
+      html += '<div class="espera-nome">' + p.nome_completo;
+      if (extra) html += '<div style="font-size:11px;color:#92400e;margin-top:1px;">' + extra + '</div>';
+      html += '</div>';
+      html += '<div class="espera-detalhe">📋 ' + ficha + ' · 📞 ' + telefone + '<br>📍 ' + cidade + ' · 📅 ' + data + '</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">';
+      html += '<button class="promover-btn" onclick="ativarDaEspera(\'' + i.id + '\',\'' + nomeEsc + '\',' + modId + ')">✅ Ativar</button>';
+      html += '<button onclick="abrirModal(\'' + p.id + '\')" style="padding:4px 10px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;">👁 Ver ficha</button>';
+      html += '</div></div>';
+    });
+
+    html += '</div>';
+  });
+
+  grid.innerHTML = html;
+}
+
+// Ativa participante da lista de espera → status confirmado
+async function ativarDaEspera(inscricaoId, nomeParticipante, modId) {
+  const mod = MODALIDADES[modId];
+  const nomeMod = mod ? mod.nome + ' — ' + mod.sub : 'esta modalidade';
+
+  if (!confirm('Ativar "' + nomeParticipante + '" em ' + nomeMod + '?\n\nO participante passará de Lista de Espera → Confirmado e poderá ser credenciado normalmente.')) return;
 
   try {
     const r = await fetch('/api/supabase', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'atualizar', tabela: 'inscricoes', id: inscricaoId, dados: { status: 'confirmado' } })
+      body: JSON.stringify({
+        acao: 'atualizar',
+        tabela: 'inscricoes',
+        id: inscricaoId,
+        dados: { status: 'confirmado' }
+      })
     });
     const data = await r.json();
     if (Array.isArray(data) && data.length > 0) {
-      alert(`✅ ${nomeParticipante} foi promovido(a) para CONFIRMADO com sucesso!`);
-      carregarDados(); // Recarrega tudo
+      carregarDados();
     } else {
-      alert('Erro ao promover. Tente novamente.');
+      alert('Erro ao ativar. Tente novamente.');
     }
   } catch (e) {
     alert('Erro de conexão: ' + e.message);
   }
+}
+
+async function promoverParaConfirmado(inscricaoId, nomeParticipante) {
+  await ativarDaEspera(inscricaoId, nomeParticipante, 0);
 }
 
 // ================================================================
