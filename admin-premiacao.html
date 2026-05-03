@@ -390,8 +390,10 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       Formato: <strong>MM:SS.CC</strong> (ex: 05:42.30 = 5 minutos, 42 segundos e 30 centésimos)
     </div>
     <div class="mod-sel-row">
-      <button class="mod-sel-btn ativo" id="aqbtn-4" onclick="selecionarAquatica(4, this)">🛶 Canoagem (Dupla)</button>
-      <button class="mod-sel-btn" id="aqbtn-5" onclick="selecionarAquatica(5, this)">🚣 Caiaque</button>
+      <button class="mod-sel-btn ativo" id="aqbtn-4" onclick="selecionarAquatica(4, this)">🛶 Canoagem ♂ Masc.</button>
+      <button class="mod-sel-btn" id="aqbtn-8" onclick="selecionarAquatica(8, this)">🛶 Canoagem ♀ Fem.</button>
+      <button class="mod-sel-btn" id="aqbtn-5" onclick="selecionarAquatica(5, this)">🚣 Caiaque ♂ Masc.</button>
+      <button class="mod-sel-btn" id="aqbtn-9" onclick="selecionarAquatica(9, this)">🚣 Caiaque ♀ Fem.</button>
     </div>
     <div class="fase-row">
       <button class="fase-btn ativo" id="fasebtn-classificatoria" onclick="selecionarFaseAquatica('classificatoria', this)">📋 Classificatória (todos)</button>
@@ -518,8 +520,10 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <option value="1">Vôlei Areia — Masc.</option>
       <option value="2">Vôlei Areia — Fem.</option>
       <option value="3">Futevôlei</option>
-      <option value="4">Canoagem</option>
-      <option value="5">Caiaque</option>
+      <option value="4">Canoagem — Masc.</option>
+      <option value="8">Canoagem — Fem.</option>
+      <option value="5">Caiaque — Masc.</option>
+      <option value="9">Caiaque — Fem.</option>
       <option value="6">Pesca — Masc.</option>
       <option value="7">Pesca — Fem.</option>
     </select>
@@ -736,9 +740,13 @@ const MODALIDADES = {
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
   3: { nome:'Futevôlei',      sub:'Masculino',  tipo:'areia', emoji:'⚽', dupla:true,  equipe:false,
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  4: { nome:'Canoagem',       sub:'Dupla',      tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false,
+  4: { nome:'Canoagem',       sub:'Masculino',  tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false,
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  5: { nome:'Caiaque',        sub:'Individual', tipo:'agua',  emoji:'🚣', dupla:false, equipe:false,
+  5: { nome:'Caiaque',        sub:'Masculino',  tipo:'agua',  emoji:'🚣', dupla:false, equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  8: { nome:'Canoagem',       sub:'Feminino',   tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  9: { nome:'Caiaque',        sub:'Feminino',   tipo:'agua',  emoji:'🚣', dupla:false, equipe:false,
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
   6: { nome:'Pesca',          sub:'Masculino',  tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
        premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu', 3:'Troféu' } },
@@ -897,6 +905,14 @@ function abrirSubTab(id, btn) {
 function parseTempo(str) {
   if (!str) return null;
   str = str.trim().replace(',', '.');
+  // Aceita dígitos brutos: 023322 → 02:33.22
+  const raw = str.replace(/[^\d]/g, '');
+  if (/^\d{6}$/.test(raw) && !/[:.]/.test(str)) {
+    const min = parseInt(raw.substring(0,2));
+    const seg = parseInt(raw.substring(2,4));
+    const cs  = parseInt(raw.substring(4,6));
+    return min * 60 + seg + cs / 100;
+  }
   // Aceita: MM:SS.CC, MM:SS, SS.CC, SS
   const m1 = str.match(/^(\d+):(\d+)(?:[.](\d+))?$/);
   if (m1) {
@@ -912,6 +928,32 @@ function parseTempo(str) {
     return seg + cs;
   }
   return null;
+}
+
+// Máscara automática: digitar 023322 → 02:33.22
+function mascaraTempo(input) {
+  const pos    = input.selectionStart;
+  const antes  = input.value;
+  // Extrai só dígitos
+  let digitos  = antes.replace(/[^\d]/g, '');
+  if (digitos.length > 6) digitos = digitos.substring(0, 6);
+
+  let mascara = '';
+  if (digitos.length <= 2) {
+    mascara = digitos;
+  } else if (digitos.length <= 4) {
+    mascara = digitos.substring(0, 2) + ':' + digitos.substring(2);
+  } else {
+    mascara = digitos.substring(0, 2) + ':' + digitos.substring(2, 4) + '.' + digitos.substring(4);
+  }
+
+  input.value = mascara;
+
+  // Restaura cursor corretamente após inserção de separadores
+  try {
+    const extra = mascara.length - antes.replace(/[^\d]/g,'').substring(0, digitos.length).length;
+    input.setSelectionRange(mascara.length, mascara.length);
+  } catch(e) {}
 }
 
 function formatTempo(sec) {
@@ -1035,7 +1077,8 @@ function renderAquatica() {
       </div>
       <div class="tempo-input-wrap">
         <input class="tempo-input" id="tempo-${insc.id}" placeholder="MM:SS.CC"
-          value="${tempoAtual}" title="Formato: minutos:segundos.centésimos — ex: 05:42.30">
+          value="${tempoAtual}" title="Formato: minutos:segundos.centésimos — ex: 05:42.30"
+          oninput="mascaraTempo(this)" inputmode="numeric">
         <button class="btn-salvar-tempo" onclick="salvarTempo('${insc.id}','${insc.participante_id}','${nome.replace(/'/g,"\\'")}','${fase}')">
           ✅ Salvar
         </button>
