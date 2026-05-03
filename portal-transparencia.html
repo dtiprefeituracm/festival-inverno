@@ -520,6 +520,7 @@ async function carregarDados() {
         equipe:         g.equipe  || null,
         foto_url:       g.foto_url || null,
         premio:         g.premio_descricao || null,
+        patrocinador:   g.patrocinador || null,
         participante_id: g.participante_id || null,
       }));
 
@@ -688,10 +689,30 @@ function exportarCSVPublico() {
     linhas.push(`${idx+1},"${p.nome_completo}","${p.cidade || ''}/${p.uf || 'RO'}","${mods}","${credenciado}"`);
   });
 
+  // Seção de ganhadores e patrocinadores
+  if (GANHADORES.length > 0) {
+    linhas.push('');
+    linhas.push('=== GANHADORES POR MODALIDADE ===');
+    linhas.push('Modalidade,Categoria,Colocação,Nome,Cidade/UF,Prêmio,Patrocinador');
+    const porMod = {};
+    GANHADORES.forEach(g => {
+      if (!porMod[g.modalidade_id]) porMod[g.modalidade_id] = [];
+      porMod[g.modalidade_id].push(g);
+    });
+    Object.entries(porMod).forEach(([modId, lista]) => {
+      const mod = MODALIDADES[modId];
+      if (!mod) return;
+      lista.sort((a, b) => a.posicao - b.posicao).forEach(g => {
+        const posLabel = g.posicao === 1 ? '1º Lugar' : '2º Lugar';
+        linhas.push(`"${mod.nome}","${mod.sub}","${posLabel}","${g.nome}","${g.cidade || '—'}","${g.premio || '—'}","${g.patrocinador || '—'}"`);
+      });
+    });
+  }
+
   const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Participantes_FestivalInverno2026_Publico.csv`;
+  a.download = `FestivalInverno2026_Transparencia.csv`;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
 }
@@ -735,12 +756,16 @@ function renderGanhadores() {
     if (!mod) return;
     lista.sort((a, b) => a.posicao - b.posicao);
 
-    html += `<div class="secao" style="margin-top:${html ? '16px' : '16px'};">
+    // Patrocinador da modalidade (todos os ganhadores da mesma modalidade têm o mesmo)
+    const patrocinadorMod = lista.find(g => g.patrocinador)?.patrocinador || null;
+
+    html += `<div class="secao" style="margin-top:16px;">
       <div class="secao-header">
         <div>
           <div class="secao-titulo">🏆 ${mod.nome} — ${mod.sub}</div>
           <div class="secao-sub">Clique no ganhador para ver a ficha completa</div>
         </div>
+        ${patrocinadorMod ? `<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:6px 12px;font-size:12px;color:#92400e;font-weight:600;">🤝 Patrocinador: ${patrocinadorMod}</div>` : ''}
       </div>
       <div class="secao-body">`;
 
@@ -760,6 +785,7 @@ function renderGanhadores() {
           ${g.equipe ? `<div class="ganhador-detalhe">🎣 Equipe: ${g.equipe}</div>` : ''}
           <div class="ganhador-detalhe">📍 ${g.cidade || '—'}</div>
           ${g.premio ? `<div class="ganhador-detalhe" style="color:#b45309;font-weight:700;margin-top:3px;">🎁 ${g.premio}</div>` : ''}
+          ${g.patrocinador ? `<div class="ganhador-detalhe" style="color:#7c3aed;font-size:11px;margin-top:2px;">🤝 ${g.patrocinador}</div>` : ''}
           <div class="ganhador-mod">${medalEmoji} ${posLabel}</div>
         </div>
         ${fotoHtml}
@@ -796,7 +822,8 @@ function abrirGanhador(g) {
     <div class="modal-row"><span class="modal-label">Cidade/UF</span><span class="modal-val">${g.cidade || '—'}</span></div>
     <div class="modal-row"><span class="modal-label">Colocação</span><span class="modal-val">${g.posicao === 1 ? '🥇 1º lugar' : '🥈 2º lugar'}</span></div>
     <div class="modal-row"><span class="modal-label">Modalidade</span><span class="modal-val">${mod?.nome || '—'} — ${mod?.sub || ''}</span></div>
-    ${g.premio ? `<div class="modal-row"><span class="modal-label">Prêmio</span><span class="modal-val" style="color:#b45309;font-weight:700;">${g.premio}</span></div>` : ''}`;
+    ${g.premio ? `<div class="modal-row"><span class="modal-label">Prêmio</span><span class="modal-val" style="color:#b45309;font-weight:700;">${g.premio}</span></div>` : ''}
+    ${g.patrocinador ? `<div class="modal-row"><span class="modal-label">Patrocinador</span><span class="modal-val" style="color:#7c3aed;font-weight:600;">🤝 ${g.patrocinador}</span></div>` : ''}`;
 
   // Tenta buscar ficha de inscrição se tiver participante_id
   const inscTitulo = document.getElementById('mg-inscricao-titulo');
