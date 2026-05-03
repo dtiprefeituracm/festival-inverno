@@ -1486,8 +1486,9 @@ function renderPesca() {
       html += `<div class="ranking-row">
         <div class="pos-badge ${pos===1?'pos-1':pos===2?'pos-2':pos===3?'pos-3':'pos-n'}">${pos}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${r.nome_exibicao}</div>
-          <div style="font-size:11px;color:#64748b;">${r.nome_equipe || ''} ${r.especie ? '· ' + r.especie : ''}</div>
+          ${r.nome_equipe ? `<div style="font-size:14px;font-weight:800;color:#fbbf24;">🏷️ ${r.nome_equipe}</div>` : ''}
+          <div style="font-size:12px;font-weight:600;color:#94a3b8;">Capitão: ${r.nome_exibicao}</div>
+          ${r.especie ? `<div style="font-size:11px;color:#64748b;">🐟 ${r.especie}</div>` : ''}
           </div>
         <div style="text-align:right;">
           <div style="font-size:20px;font-weight:800;color:#34d399;">${r.tamanho_cm ? r.tamanho_cm.toFixed(1) + ' cm' : '—'}</div>
@@ -1507,11 +1508,14 @@ function renderPesca() {
     const membros = [insc.parceiro_nome, insc.membro3_nome, insc.membro4_nome].filter(Boolean);
     const res    = todosResultadosPesca.find(r => r.inscricao_id === insc.id);
 
+    // Nome da equipe: prioriza o salvo no resultado, depois o da inscrição
+    const nomeEquipeExibir = res?.nome_equipe || insc.nome_equipe || '';
+
     html += `<div class="pesca-card">
       <div class="pesca-card-header">
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${nome}</div>
-          ${res?.nome_equipe ? `<div style="font-size:11px;color:#60a5fa;margin-top:1px;">🏷️ ${res.nome_equipe}</div>` : ''}
+          ${nomeEquipeExibir ? `<div style="font-size:15px;font-weight:800;color:#fbbf24;letter-spacing:0.3px;">🏷️ ${nomeEquipeExibir}</div>` : '<div style="font-size:11px;color:#ef4444;">⚠️ Sem nome de equipe</div>'}
+          <div style="font-size:12px;font-weight:600;color:#94a3b8;margin-top:3px;">Capitão: ${nome}</div>
           ${membros.length ? `<div style="font-size:11px;color:#64748b;margin-top:2px;">👥 ${membros.join(', ')}</div>` : ''}
           <div style="font-size:11px;color:#22c55e;margin-top:2px;">✅ Credenciada</div>
         </div>
