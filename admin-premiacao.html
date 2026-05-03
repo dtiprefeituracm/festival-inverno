@@ -2397,21 +2397,18 @@ function renderVolei() {
 
     // ── PASSO 3: Eliminatórias ──
     const pElim = partidasMod.filter(p => p.fase !== 'classificatoria');
-    const ptElimMin = modId == 3 ? 21 : 15;
-    const ptElimMax = modId == 3 ? 21 : 15;
-    const ptElimVirada = modId == 3 ? 11 : 8;
     html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>
           <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🏁 Passo 3 — Eliminatórias (Mata-Mata)</div>
-          <div style="font-size:11px;color:#64748b;">${modId == 3 ? 'Futevôlei: set único de <strong style="color:#fbbf24;">18 pontos</strong> — virada de quadra aos 9 pontos' : 'Vôlei: set único de <strong style="color:#fbbf24;">12 pontos</strong> — virada de quadra aos 6 pontos'}</div>
+          <div style="font-size:11px;color:#64748b;">${modId == 3 ? 'Futevôlei: set único de <strong style="color:#fbbf24;">18 pontos</strong> — virada de quadra aos 9 pontos' : 'Vôlei: set único de <strong style="color:#fbbf24;">18 pontos</strong> — virada de quadra aos 9 pontos'} &nbsp;·&nbsp; <span style="color:#475569;">Classificatória: 12 pts</span></div>
         </div>
         <button class="btn-gerar" onclick="gerarEliminatorias(${modId})">⚙️ Gerar Chaveamento</button>
       </div>`;
 
     if (pElim.length > 0) {
-      const faseLabels = { semi:'Semi-Final', quartas:'Quartas de Final', final:'Final', terceiro:'3º Lugar' };
-      const fasesOrdem = ['quartas', 'semi', 'terceiro', 'final'];
+      const faseLabels = { semi:'Semi-Final', quartas:'Quartas de Final', final:'Final' };
+      const fasesOrdem = ['quartas', 'semi', 'final'];
 
       fasesOrdem.forEach(fase => {
         const pFase = pElim.filter(p => p.fase === fase);
@@ -2777,17 +2774,15 @@ async function gerarEliminatorias(modId) {
     if (newId) novas.push({ ...dados, id: newId });
   }
 
-  // Se houver semis, cria espaços para final e terceiro lugar
+  // Se houver semis, cria espaço para a Final (sem 3º lugar — regulamento premia apenas 1º e 2º)
   if (classificados.length >= 4) {
-    for (const fase of ['final', 'terceiro']) {
-      const dados = { modalidade_id: modId, fase,
-        inscricao_a_id: null, nome_a: 'A definir',
-        inscricao_b_id: null, nome_b: 'A definir',
-        encerrada: false };
-      const res = await apiPost('partidas_volei', dados, 'inserir');
-      const newId = res?.id || (Array.isArray(res) && res[0]?.id);
-      if (newId) novas.push({ ...dados, id: newId });
-    }
+    const dados = { modalidade_id: modId, fase: 'final',
+      inscricao_a_id: null, nome_a: 'A definir',
+      inscricao_b_id: null, nome_b: 'A definir',
+      encerrada: false };
+    const res = await apiPost('partidas_volei', dados, 'inserir');
+    const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+    if (newId) novas.push({ ...dados, id: newId });
   }
 
   todasPartidas.push(...novas);
@@ -2798,27 +2793,23 @@ async function gerarEliminatorias(modId) {
 // Modal Placar
 function abrirModalPlacar(partidaId, modId, nomeA, nomeB, inscA, inscB, fase) {
   const partida  = todasPartidas.find(p => p.id === partidaId);
-  // Futevôlei (modId==3): classificatória=18, eliminatórias=18
-  // Vôlei (modId==1 ou 2): classificatória=12, eliminatórias=12
-  const isFutvolei = modId == 3;
-  const ptClass  = isFutvolei ? 18 : 12;
-  const ptElim   = isFutvolei ? 18 : 12;
-  const viradaClass = isFutvolei ? 9 : 6;
-  const viradaElim  = isFutvolei ? 9 : 6;
-  const maxPts   = fase === 'classificatoria' ? ptClass : ptElim;
+  // Regulamento Art.3º: Classificatória=12pts, Eliminatória/Final=18pts (virada 9) — para Vôlei e Futevôlei
+  const ptClass    = 12;
+  const ptElim     = 18;
+  const viradaClass = 6;  // classificatória sem exigência de 2 de diferença
+  const viradaElim  = 9;  // eliminatória vira quadra aos 9
+  const maxPts = fase === 'classificatoria' ? ptClass : ptElim;
   const faseDesc = {
     classificatoria: 'Classificatória',
     semi:   'Semi-Final',
     quartas:'Quartas de Final',
     final:  'Final',
-    terceiro:'3º Lugar',
   };
   const regraDesc = {
     classificatoria: `Vence quem atingir ${ptClass} pts primeiro · Sem necessidade de 2 de diferença`,
     semi:    `Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
     quartas: `Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
     final:   `Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
-    terceiro:`Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
   };
 
   document.getElementById('pl-partida-id').value   = partidaId;
@@ -2916,16 +2907,59 @@ async function salvarPlacar() {
     todasPartidas = todasPartidas.map(p => p.id === partidaId ? { ...p, ...dados } : p);
     fecharModalPlacar();
     toast('✅ Placar salvo!');
+
+    // Auto-avanço: se a partida encerrada era uma semi, tenta preencher a Final automaticamente
+    if (encerrada) {
+      const partidaSalva = todasPartidas.find(p => p.id === partidaId);
+      if (partidaSalva?.fase === 'semi') {
+        await avancarVencedoresParaFinal(modId);
+      }
+    }
+
     renderVolei();
   } catch(e) { toast('Erro ao salvar placar.', 'erro'); console.error(e); }
 
   btn.disabled = false; btn.textContent = '💾 Registrar Placar';
 }
 
+// ================================================================
+// AUTO-AVANÇO: vencedores das semis → Final
+// ================================================================
+async function avancarVencedoresParaFinal(modId) {
+  const semis = todasPartidas.filter(p => p.modalidade_id == modId && p.fase === 'semi');
+  const semisEncerradas = semis.filter(p => p.encerrada && p.vencedor_nome);
+
+  // Só avança quando AMBAS as semis estiverem encerradas
+  if (semisEncerradas.length < 2) return;
+
+  const final = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'final');
+  if (!final) return;
+
+  // Já foi preenchida? Não sobrescrever se já tiver times definidos
+  if (final.nome_a !== 'A definir' && final.nome_b !== 'A definir') return;
+
+  const v1 = semisEncerradas[0];
+  const v2 = semisEncerradas[1];
+
+  const dados = {
+    nome_a:         v1.vencedor_nome,
+    inscricao_a_id: v1.vencedor_inscricao_id || null,
+    nome_b:         v2.vencedor_nome,
+    inscricao_b_id: v2.vencedor_inscricao_id || null,
+  };
+
+  try {
+    await apiPost('partidas_volei', dados, 'atualizar', final.id);
+    todasPartidas = todasPartidas.map(p => p.id === final.id ? { ...p, ...dados } : p);
+    toast('🏆 Final preenchida automaticamente com os vencedores das semis!', 'sucesso');
+  } catch(e) {
+    console.warn('[Auto-avanço] Erro ao preencher Final:', e.message);
+  }
+}
+
 async function publicarGanhadoresVolei(modId) {
   const m       = MODALIDADES[modId];
   const final3  = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'final' && p.encerrada);
-  const terceiro = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'terceiro' && p.encerrada);
 
   if (!final3) { toast('A partida final ainda não foi registrada.', 'erro'); return; }
 
