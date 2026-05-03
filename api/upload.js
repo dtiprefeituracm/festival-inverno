@@ -1,8 +1,8 @@
 // ================================================================
 // api/upload.js
-// Upload genérico para Supabase Storage (trofeus / galeria / credenciamento)
+// Upload genérico para Supabase Storage
+// Buckets: alimentos | galeria | trofeus | videos-pesca
 // Festival de Inverno 2026 — Costa Marques/RO
-// Adicione este arquivo em /api/ e faça um novo deploy na Vercel
 // ================================================================
 
 export default async function handler(req, res) {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   }
 
   // Buckets permitidos por segurança
-  const BUCKETS_OK = ['alimentos', 'galeria', 'trofeus'];
+  const BUCKETS_OK = ['alimentos', 'galeria', 'trofeus', 'videos-pesca'];
   const bucketFinal = BUCKETS_OK.includes(bucket) ? bucket : 'alimentos';
 
   try {
