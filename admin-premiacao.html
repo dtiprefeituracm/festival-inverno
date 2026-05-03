@@ -1392,16 +1392,18 @@ function renderVolei() {
 
   let html = '';
 
-  // ── PASSO 1: Sorteio ──
+  // ── PASSO 1: Sorteio / Montagem ──
   html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
       <div>
-        <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🎲 Passo 1 — Sorteio de Grupos</div>
+        <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🎲 Passo 1 — Definir Grupos</div>
         <div style="font-size:11px;color:#64748b;margin-top:3px;">${cred.length} dupla(s) credenciada(s)</div>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${gruposMod.length > 0 ? `<button class="btn-gerar" onclick="sortearGrupos(${modId},true)">🔄 Ressortear</button>` : ''}
-        <button class="btn-sortear" onclick="sortearGrupos(${modId},false)">🎲 ${gruposMod.length > 0 ? 'Re' : ''}Sortear Grupos</button>
+        <button class="btn-sortear" onclick="sortearGrupos(${modId},false)">🎲 ${gruposMod.length > 0 ? 'Re' : ''}Sortear</button>
+        <button class="btn-gerar" style="background:#1e3a5f;border-color:#a78bfa;color:#a78bfa;"
+          onclick="toggleManual(${modId})">✏️ Montar Manual</button>
       </div>
     </div>
   `;
@@ -1427,6 +1429,9 @@ function renderVolei() {
     });
     html += `</div>`;
   }
+
+  // Painel de montagem manual (toggle)
+  html += `<div id="painel-manual-${modId}" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid #334155;"></div>`;
   html += `</div>`;
 
   // ── PASSO 2: Fase Classificatória ──
@@ -1609,6 +1614,194 @@ async function sortearGrupos(modId, resorteio = false) {
   }
   todosGruposVolei.push(...novos);
   toast(`🎲 ${shuffled.length} duplas sorteadas em ${numGrupos} grupo(s)!`);
+  renderVolei();
+}
+
+// ================================================================
+// MONTAGEM MANUAL DE GRUPOS — Vôlei / Futevôlei
+// ================================================================
+let voleiManualState = {}; // { modId: { numGrupos, atrib: { inscricaoId: 'A' } } }
+
+function toggleManual(modId) {
+  const div = document.getElementById('painel-manual-' + modId);
+  if (!div) return;
+  const aberto = div.style.display !== 'none' && div.innerHTML.trim() !== '';
+  if (aberto) {
+    div.style.display = 'none';
+    return;
+  }
+  // Inicializa o estado com grupos já existentes (se houver)
+  if (!voleiManualState[modId]) {
+    const exist = todosGruposVolei.filter(g => g.modalidade_id == modId);
+    const letrasExist = [...new Set(exist.map(g => g.grupo))];
+    const numGrupos = Math.max(2, letrasExist.length);
+    const atrib = {};
+    exist.forEach(g => { if (g.inscricao_id) atrib[g.inscricao_id] = g.grupo; });
+    voleiManualState[modId] = { numGrupos, atrib };
+  }
+  div.innerHTML = htmlPainelManual(modId);
+  div.style.display = 'block';
+  setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function htmlPainelManual(modId) {
+  const state = voleiManualState[modId] || { numGrupos: 2, atrib: {} };
+  const cred  = todasInscricoes.filter(i => i.modalidade_id == modId && i.presenca);
+  const letras = 'ABCDEFGH'.slice(0, state.numGrupos).split('');
+
+  // Botões de seleção de número de grupos
+  const btnNums = [1,2,3,4,5,6].map(n => {
+    const ativo = state.numGrupos === n;
+    return `<button onclick="setNumGruposManual(${modId},${n})"
+      style="padding:6px 14px;border-radius:8px;border:1px solid ${ativo ? '#a78bfa' : '#334155'};
+             background:${ativo ? 'rgba(167,139,250,0.15)' : '#0f172a'};
+             color:${ativo ? '#a78bfa' : '#64748b'};font-size:12px;font-weight:700;cursor:pointer;">
+      ${n}G
+    </button>`;
+  }).join('');
+
+  // Linha por dupla credenciada
+  const rows = cred.map(insc => {
+    const part = todosParticipantes.find(p => p.id === insc.participante_id);
+    const nome = nomeDupla(insc, part);
+    const grupoAtual = state.atrib[insc.id] || '';
+
+    const opts = `<option value="" ${!grupoAtual ? 'selected' : ''}>— Sem grupo —</option>` +
+      letras.map(l => `<option value="${l}" ${grupoAtual === l ? 'selected' : ''}>${l}</option>`).join('');
+
+    const corGrupo = grupoAtual
+      ? ['#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa','#fb923c'][letras.indexOf(grupoAtual) % 6]
+      : '#334155';
+
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                  background:#0f172a;border-radius:8px;margin-bottom:6px;border-left:3px solid ${corGrupo};">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nome}</div>
+      </div>
+      <select onchange="setGrupoManual(${modId},'${insc.id}',this.value)"
+        style="padding:7px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;
+               color:#e2e8f0;font-size:13px;outline:none;min-width:110px;cursor:pointer;">
+        ${opts}
+      </select>
+    </div>`;
+  }).join('');
+
+  // Contador de atribuídos por grupo
+  const contadores = letras.map(l => {
+    const qt = Object.values(state.atrib).filter(v => v === l).length;
+    return `<span style="font-size:11px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);
+      border-radius:6px;padding:2px 8px;color:#a78bfa;font-weight:700;">Grupo ${l}: ${qt}</span>`;
+  }).join('');
+
+  const semGrupo = cred.filter(i => !state.atrib[i.id]).length;
+  const aviso = semGrupo > 0
+    ? `<div style="font-size:11px;color:#fbbf24;margin-top:8px;">⚠️ ${semGrupo} dupla(s) sem grupo atribuído.</div>`
+    : `<div style="font-size:11px;color:#22c55e;margin-top:8px;">✅ Todas as duplas atribuídas.</div>`;
+
+  return `
+    <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      ✏️ Montagem Manual de Grupos
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">
+        Número de grupos
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">${btnNums}</div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">
+        Atribuir cada dupla a um grupo
+      </div>
+      ${rows}
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">${contadores}</div>
+    ${aviso}
+
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button onclick="toggleManual(${modId})"
+        style="padding:11px 16px;background:transparent;color:#64748b;border:1px solid #334155;
+               border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap;">
+        ✕ Cancelar
+      </button>
+      <button onclick="salvarGruposManual(${modId})"
+        style="flex:1;padding:11px;background:linear-gradient(135deg,#4c1d95,#6d28d9);
+               color:#ede9fe;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+        💾 Salvar Grupos Manualmente
+      </button>
+    </div>`;
+}
+
+function setNumGruposManual(modId, num) {
+  if (!voleiManualState[modId]) voleiManualState[modId] = { numGrupos: num, atrib: {} };
+  else voleiManualState[modId].numGrupos = num;
+  // Remove atribuições de grupos que deixaram de existir
+  const letrasValidas = new Set('ABCDEFGH'.slice(0, num).split(''));
+  const atrib = voleiManualState[modId].atrib;
+  Object.keys(atrib).forEach(k => { if (!letrasValidas.has(atrib[k])) delete atrib[k]; });
+  // Re-renderiza o painel
+  const div = document.getElementById('painel-manual-' + modId);
+  if (div) div.innerHTML = htmlPainelManual(modId);
+}
+
+function setGrupoManual(modId, inscricaoId, grupo) {
+  if (!voleiManualState[modId]) voleiManualState[modId] = { numGrupos: 2, atrib: {} };
+  if (grupo) voleiManualState[modId].atrib[inscricaoId] = grupo;
+  else delete voleiManualState[modId].atrib[inscricaoId];
+  // Atualiza apenas os contadores e aviso sem re-render completo
+  const div = document.getElementById('painel-manual-' + modId);
+  if (div) div.innerHTML = htmlPainelManual(modId);
+}
+
+async function salvarGruposManual(modId) {
+  const state = voleiManualState[modId];
+  if (!state) return;
+
+  const cred = todasInscricoes.filter(i => i.modalidade_id == modId && i.presenca);
+  const semGrupo = cred.filter(i => !state.atrib[i.id]);
+
+  if (semGrupo.length > 0) {
+    if (!confirm(`${semGrupo.length} dupla(s) estão sem grupo:\n${semGrupo.map(i => {
+      const p = todosParticipantes.find(p => p.id === i.participante_id);
+      return '• ' + (p?.nome_completo || '?');
+    }).join('\n')}\n\nSalvar assim mesmo? (elas não entrarão em nenhum grupo)`)) return;
+  }
+
+  const existentes = todosGruposVolei.filter(g => g.modalidade_id == modId);
+  if (existentes.length > 0) {
+    if (!confirm('Isso vai substituir os grupos existentes e apagar todas as partidas geradas. Confirmar?')) return;
+  }
+
+  // Mostra loading no botão
+  const btn = document.querySelector(`#painel-manual-${modId} button:last-child`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+
+  // Apaga grupos e partidas existentes
+  for (const eg of existentes) await apiPost('grupos_volei', null, 'deletar', eg.id).catch(() => {});
+  const exPartidas = todasPartidas.filter(p => p.modalidade_id == modId);
+  for (const ep of exPartidas) await apiPost('partidas_volei', null, 'deletar', ep.id).catch(() => {});
+  todosGruposVolei = todosGruposVolei.filter(g => g.modalidade_id != modId);
+  todasPartidas    = todasPartidas.filter(p => p.modalidade_id != modId);
+
+  // Insere novos grupos
+  const novos = [];
+  for (const insc of cred) {
+    const grupo = state.atrib[insc.id];
+    if (!grupo) continue;
+    const part = todosParticipantes.find(p => p.id === insc.participante_id);
+    const nome = nomeDupla(insc, part);
+    const dados = { modalidade_id: modId, grupo, inscricao_id: insc.id,
+      participante_id: insc.participante_id, nome_exibicao: nome };
+    const res = await apiPost('grupos_volei', dados, 'inserir');
+    const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+    if (newId) novos.push({ ...dados, id: newId });
+  }
+
+  todosGruposVolei.push(...novos);
+  delete voleiManualState[modId];
+  toast(`✅ ${novos.length} dupla(s) salvas em grupos manualmente!`);
   renderVolei();
 }
 
