@@ -861,7 +861,24 @@ async function apiPost(tabela, dados, metodo = 'inserir', id = null) {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ acao: metodo, tabela, dados, id, token: sessionStorage.getItem('adminToken') })
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  if (!r.ok) {
+    let detalhe = 'HTTP ' + r.status;
+    try { const e = await r.json(); detalhe = e?.message || e?.erro || JSON.stringify(e) || detalhe; } catch {}
+    throw new Error(detalhe);
+  }
+  return r.json();
+}
+
+async function apiUpsert(tabela, dados, conflito) {
+  const r = await fetch('/api/supabase', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'upsert', tabela, dados, conflito, token: sessionStorage.getItem('adminToken') })
+  });
+  if (!r.ok) {
+    let detalhe = 'HTTP ' + r.status;
+    try { const e = await r.json(); detalhe = e?.message || e?.erro || JSON.stringify(e) || detalhe; } catch {}
+    throw new Error(detalhe);
+  }
   return r.json();
 }
 
@@ -1918,12 +1935,14 @@ async function sincronizarPescaPremiacao(modId) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
 
   try {
-    for (let i = 0; i < Math.min(3, ranking.length); i++) {
-      const r = ranking[i];
+    const maxLugaresPesca = m.maxLugares || 3;
+    const payload = ranking.slice(0, maxLugaresPesca).map((r, i) => {
       const posicao = i + 1;
-      const dados = {
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
+      return {
+        ...(existente?.id ? { id: existente.id } : {}),
         participante_id:   r.participante_id || null,
-        modalidade_id:     modId,
+        modalidade_id:     parseInt(modId),
         posicao,
         nome_exibicao:     r.nome_exibicao,
         equipe:            r.nome_equipe || '',
@@ -1933,23 +1952,46 @@ async function sincronizarPescaPremiacao(modId) {
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
-      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
-      if (existente) {
-        await apiPost('ganhadores', dados, 'atualizar', existente.id);
-        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
-      } else {
-        const res = await apiPost('ganhadores', dados, 'inserir');
-        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
-        if (newId) todosGanhadores.push({ ...dados, id: newId });
+    });
+
+    let salvou = false;
+    try {
+      const res = await apiUpsert('ganhadores', payload, 'modalidade_id,posicao');
+      const rows = Array.isArray(res) ? res : (res ? [res] : []);
+      rows.forEach(row => {
+        if (!row?.id) return;
+        const idx = todosGanhadores.findIndex(g => g.id === row.id);
+        if (idx >= 0) todosGanhadores[idx] = { ...todosGanhadores[idx], ...row };
+        else todosGanhadores.push(row);
+      });
+      salvou = true;
+    } catch(upsertErr) {
+      console.warn('Upsert pesca falhou, tentando individual:', upsertErr.message);
+    }
+
+    if (!salvou) {
+      for (const dados of payload) {
+        const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == dados.posicao);
+        if (existente) {
+          await apiPost('ganhadores', dados, 'atualizar', existente.id);
+          todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+        } else {
+          const r2 = await apiPost('ganhadores', dados, 'inserir');
+          const newId = r2?.id || (Array.isArray(r2) && r2[0]?.id);
+          if (newId) todosGanhadores.push({ ...dados, id: newId });
+        }
       }
     }
-    toast(`✅ Premiação da Pesca sincronizada! ${Math.min(3, ranking.length)} lugar(es) publicados.`);
-    // Fecha e reabre o painel para refletir os novos dados
+
+    toast(`✅ Premiação da Pesca sincronizada! ${payload.length} lugar(es) publicados.`);
     const painel = document.getElementById('painel-mod-' + modId);
     if (painel) painel.remove();
     renderGridModalidades();
     setTimeout(() => togglePainelMod(modId), 100);
-  } catch(e) { toast('Erro ao sincronizar.', 'erro'); console.error(e); }
+  } catch(e) {
+    console.error('Erro em sincronizarPescaPremiacao:', e);
+    toast('Erro ao sincronizar: ' + (e?.message || 'verifique o console.'), 'erro');
+  }
 }
 
 // ================================================================
@@ -1974,14 +2016,17 @@ async function sincronizarAguaPremiacao(modId) {
 
   try {
     const maxLugares = m.maxLugares || 3;
-    const top3 = ranking.slice(0, maxLugares);
-    for (let i = 0; i < top3.length; i++) {
-      const r       = top3[i];
+    const topN = ranking.slice(0, maxLugares);
+
+    // Monta payload para upsert em lote usando modalidade_id+posicao como chave única
+    const payload = topN.map((r, i) => {
       const posicao = i + 1;
-      // Usa == (loose equality) para evitar falha por tipos string/número
       const insc = todasInscricoes.find(ins => ins.id == r.inscricao_id);
       const part = insc ? todosParticipantes.find(p => p.id == insc.participante_id) : null;
-      const dados = {
+      // Preserva id existente para o upsert resolver corretamente
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
+      return {
+        ...(existente?.id ? { id: existente.id } : {}),
         participante_id:   part?.id || r.participante_id || null,
         modalidade_id:     parseInt(modId),
         posicao:           posicao,
@@ -1994,18 +2039,41 @@ async function sincronizarAguaPremiacao(modId) {
         foto_url:          null,
         publicado:         true,
       };
-      // Verifica existente com == para evitar tipo mismatch
-      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
-      if (existente) {
-        await apiPost('ganhadores', dados, 'atualizar', existente.id);
-        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
-      } else {
-        const res = await apiPost('ganhadores', dados, 'inserir');
-        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
-        if (newId) todosGanhadores.push({ ...dados, id: newId });
+    });
+
+    // Tenta upsert em lote primeiro; se falhar, faz insert/update individual
+    let salvou = false;
+    try {
+      const res = await apiUpsert('ganhadores', payload, 'modalidade_id,posicao');
+      const rows = Array.isArray(res) ? res : (res ? [res] : []);
+      // Atualiza cache local
+      rows.forEach(row => {
+        if (!row?.id) return;
+        const idx = todosGanhadores.findIndex(g => g.id === row.id);
+        if (idx >= 0) todosGanhadores[idx] = { ...todosGanhadores[idx], ...row };
+        else todosGanhadores.push(row);
+      });
+      salvou = true;
+    } catch(upsertErr) {
+      console.warn('Upsert em lote falhou, tentando individual:', upsertErr.message);
+    }
+
+    // Fallback: insert/update individual se upsert falhou
+    if (!salvou) {
+      for (const dados of payload) {
+        const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == dados.posicao);
+        if (existente) {
+          await apiPost('ganhadores', dados, 'atualizar', existente.id);
+          todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+        } else {
+          const r2 = await apiPost('ganhadores', dados, 'inserir');
+          const newId = r2?.id || (Array.isArray(r2) && r2[0]?.id);
+          if (newId) todosGanhadores.push({ ...dados, id: newId });
+        }
       }
     }
-    toast('✅ Premiação de ' + m.nome + ' (' + m.sub + ') sincronizada! ' + top3.length + ' lugar(es) publicados.');
+
+    toast('✅ Premiação de ' + m.nome + ' (' + m.sub + ') sincronizada! ' + topN.length + ' lugar(es) publicados.');
     const painel = document.getElementById('painel-mod-' + modId);
     if (painel) painel.remove();
     renderGridModalidades();
