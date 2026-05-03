@@ -2973,20 +2973,21 @@ async function salvarPlacar() {
 
   try {
     await apiPost('partidas_volei', dados, 'atualizar', partidaId);
-    todasPartidas = todasPartidas.map(p => p.id === partidaId ? { ...p, ...dados } : p);
+    // Usa == (loose) para evitar mismatch de tipo entre string DOM e number DB
+    todasPartidas = todasPartidas.map(p => p.id == partidaId ? { ...p, ...dados } : p);
     fecharModalPlacar();
     toast('✅ Placar salvo!');
 
     // Auto-avanço: se a partida encerrada era uma semi, tenta preencher a Final automaticamente
     if (encerrada) {
-      const partidaSalva = todasPartidas.find(p => p.id === partidaId);
+      const partidaSalva = todasPartidas.find(p => p.id == partidaId);
       if (partidaSalva?.fase === 'semi') {
         await avancarVencedoresParaFinal(modId);
       }
     }
 
     renderVolei();
-  } catch(e) { toast('Erro ao salvar placar.', 'erro'); console.error(e); }
+  } catch(e) { toast(`Erro ao salvar placar: ${e?.message || ''}`, 'erro'); console.error('[salvarPlacar]', e); }
 
   btn.disabled = false; btn.textContent = '💾 Registrar Placar';
 }
@@ -3004,8 +3005,13 @@ async function avancarVencedoresParaFinal(modId) {
   const final = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'final');
   if (!final) return;
 
-  // Já foi preenchida? Não sobrescrever se já tiver times definidos
-  if (final.nome_a !== 'A definir' && final.nome_b !== 'A definir') return;
+  // Não sobrescrever se a final já foi encerrada (placar registrado)
+  if (final.encerrada) return;
+
+  // Não sobrescrever se já tem times reais definidos (não 'A definir' e não vazio)
+  const jaTemA = final.nome_a && final.nome_a !== 'A definir';
+  const jaTemB = final.nome_b && final.nome_b !== 'A definir';
+  if (jaTemA && jaTemB) return;
 
   const v1 = semisEncerradas[0];
   const v2 = semisEncerradas[1];
@@ -3019,7 +3025,7 @@ async function avancarVencedoresParaFinal(modId) {
 
   try {
     await apiPost('partidas_volei', dados, 'atualizar', final.id);
-    todasPartidas = todasPartidas.map(p => p.id === final.id ? { ...p, ...dados } : p);
+    todasPartidas = todasPartidas.map(p => p.id == final.id ? { ...p, ...dados } : p);
     toast('🏆 Final preenchida com os vencedores das semis!', 'sucesso');
   } catch(e) {
     console.warn('[Auto-avanço] Erro ao preencher Final:', e.message);
@@ -3031,6 +3037,13 @@ async function avancarVencedoresParaFinal(modId) {
 async function preencherFinalManual(modId) {
   const btn = event?.target;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Preenchendo...'; }
+
+  // Debug: mostra estado atual das semis e da final
+  const semis = todasPartidas.filter(p => p.modalidade_id == modId && p.fase === 'semi');
+  const finalP = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'final');
+  console.log('[preencherFinalManual] Semis:', semis.length, semis.map(s => ({id:s.id, enc:s.encerrada, venc:s.vencedor_nome})));
+  console.log('[preencherFinalManual] Final:', finalP ? {id:finalP.id, nomeA:finalP.nome_a, nomeB:finalP.nome_b, enc:finalP.encerrada} : 'não encontrada');
+
   await avancarVencedoresParaFinal(modId);
   renderVolei();
   if (btn) { btn.disabled = false; }
