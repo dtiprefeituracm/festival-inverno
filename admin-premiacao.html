@@ -790,14 +790,14 @@ const MODALIDADES = {
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
   3: { nome:'Futevôlei',      sub:'Masculino',  tipo:'areia', emoji:'⚽', dupla:true,  equipe:false,
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  4: { nome:'Canoagem',       sub:'Masculino',  tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  5: { nome:'Caiaque',        sub:'Masculino',  tipo:'agua',  emoji:'🚣', dupla:false, equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  8: { nome:'Canoagem',       sub:'Feminino',   tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  9: { nome:'Caiaque',        sub:'Feminino',   tipo:'agua',  emoji:'🚣', dupla:false, equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  4: { nome:'Canoagem',       sub:'Masculino',  tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
+  5: { nome:'Caiaque',        sub:'Masculino',  tipo:'agua',  emoji:'🚣', dupla:false, equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
+  8: { nome:'Canoagem',       sub:'Feminino',   tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
+  9: { nome:'Caiaque',        sub:'Feminino',   tipo:'agua',  emoji:'🚣', dupla:false, equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
   6: { nome:'Pesca',          sub:'Masculino',  tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
        premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu', 3:'Troféu' } },
   7: { nome:'Pesca',          sub:'Feminino',   tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
@@ -1122,16 +1122,17 @@ function imprimirAquatica(modId, fase) {
       posLabel = 'DNS'; rowClass = 'dns'; situacao = r.observacao || 'Não registrado'; premioCell = '—';
     } else {
       posLabel = medals[posValida-1] || posValida+'º';
-      rowClass = (isTop4 || fase === 'final') && posValida <= 3 ? 'destaque' : '';
+      rowClass = (isTop4 || fase === 'final') && posValida <= (m.maxLugares || 3) ? 'destaque' : '';
       // Situação: na classificatória marca TOP 4; na final marca lugar conquistado
       if (fase === 'classificatoria') {
         situacao = isTop4 ? '✅ → Final' : '';
       } else {
-        // Fase final: mostra o lugar como título
-        situacao = posValida === 1 ? '🥇 Campeão' : posValida === 2 ? '🥈 Vice' : posValida === 3 ? '🥉 3º Lugar' : '';
+        // Fase final: mostra o lugar — aquáticas só têm 1º e 2º
+        const maxL = m.maxLugares || 3;
+        situacao = posValida === 1 ? '🥇 Campeão' : posValida === 2 ? '🥈 Vice' : (maxL >= 3 && posValida === 3) ? '🥉 3º Lugar' : '';
       }
-      // Prêmio: só para top 3 conforme regulamento
-      premioCell = posValida <= 3 ? (m.premio?.[posValida] || '—') : '—';
+      // Prêmio: só para os lugares conforme regulamento de cada modalidade
+      premioCell = posValida <= (m.maxLugares || 3) ? (m.premio?.[posValida] || '—') : '—';
     }
 
     linhas += `<tr class="${rowClass}">
@@ -1972,7 +1973,8 @@ async function sincronizarAguaPremiacao(modId) {
   if (btnSel) { btnSel.disabled = true; btnSel.textContent = '⏳ Sincronizando...'; }
 
   try {
-    const top3 = ranking.slice(0, 3);
+    const maxLugares = m.maxLugares || 3;
+    const top3 = ranking.slice(0, maxLugares);
     for (let i = 0; i < top3.length; i++) {
       const r       = top3[i];
       const posicao = i + 1;
@@ -2818,7 +2820,7 @@ function renderGridModalidades() {
       </div>
       <div class="modal-card-stats">
         <div class="mod-stat"><div class="mod-stat-val">${inscritos}</div><div class="mod-stat-label">credenciados</div></div>
-        <div class="mod-stat"><div class="mod-stat-val">${ganhs.length}/3</div><div class="mod-stat-label">ganhadores</div></div>
+        <div class="mod-stat"><div class="mod-stat-val">${ganhs.length}/${m.maxLugares || 3}</div><div class="mod-stat-label">ganhadores</div></div>
         <div class="mod-stat"><div class="mod-stat-val" style="color:${pubCount>0?'#22c55e':'#475569'};">${pubCount}</div><div class="mod-stat-label">publicados</div></div>
       </div>
     </div>`;
@@ -2974,8 +2976,9 @@ function renderPainelMod(modId) {
     const medals     = ['🥇','🥈','🥉'];
     const faseLabel  = usarFinal ? 'Final' : 'Classificatória';
 
+    const maxLugaresAgua = m.maxLugares || 3;
     if (rankAgua.length > 0) {
-      let rows = rankAgua.slice(0, 3).map((r, idx) => {
+      let rows = rankAgua.slice(0, maxLugaresAgua).map((r, idx) => {
         const pos    = idx + 1;
         const medal  = medals[idx] || pos + 'º';
         const premio = m.premio?.[pos] || '';
@@ -2996,21 +2999,7 @@ function renderPainelMod(modId) {
         </div>`;
       }).join('');
 
-      // Também mostra 4º lugar se houver (classificatória)
-      if (rankAgua.length > 3) {
-        const r4 = rankAgua[3];
-        rows += `<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;
-                    background:#0f172a;border-radius:8px;margin-bottom:6px;opacity:0.7;
-                    border-left:4px solid #334155;">
-          <div style="font-size:13px;flex-shrink:0;">4º</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#94a3b8;">${r4.nome_exibicao}</div>
-          </div>
-          <div style="font-size:14px;font-weight:700;color:#64748b;font-family:monospace;">${formatTempo(r4.tempo_segundos)}</div>
-        </div>`;
-      }
-
-      const todosSynced = ganhs.filter(g => g.posicao <= 3).length >= Math.min(rankAgua.length, 3);
+      const todosSynced = ganhs.filter(g => g.posicao <= maxLugaresAgua).length >= Math.min(rankAgua.length, maxLugaresAgua);
       blocoRankingAgua = `
         <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);
                     border-radius:10px;padding:14px;margin-bottom:16px;">
@@ -3070,7 +3059,7 @@ function renderPainelMod(modId) {
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-        <div class="secao-titulo" style="margin-bottom:0;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/3)</span></div>
+        <div class="secao-titulo" style="margin-bottom:0;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/${m.maxLugares || 3})</span></div>
       </div>
       <div id="lista-ganhs-${modId}">${listaGanhadores}</div>
       ${btnImprimirPremiacao}
@@ -3115,7 +3104,12 @@ function abrirModalGanhador(participante, modId) {
   document.getElementById('g-parceiro').value = membros.join(', ');
   document.getElementById('g-equipe').value   = participante.nome_equipe || '';
   document.getElementById('g-resultado-tecnico').value = '';
-  const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
+  const maxLugares = m.maxLugares || 3;
+  const selPosicao = document.getElementById('g-posicao');
+  const opt3 = selPosicao.querySelector('option[value="3"]');
+  if (opt3) opt3.style.display = maxLugares < 3 ? 'none' : '';
+  if (parseInt(selPosicao.value) > maxLugares) selPosicao.value = '1';
+  const posicao = parseInt(selPosicao.value) || 1;
   document.getElementById('g-premio').value   = m.premio?.[posicao] || '';
   document.getElementById('g-foto').value     = '';
   const statusEl = document.getElementById('g-foto-upload-status');
@@ -3133,12 +3127,17 @@ function abrirModalGanhador(participante, modId) {
 function editarGanhador(id, modId) {
   const g = todosGanhadores.find(g => g.id === id);
   if (!g) return;
-  document.getElementById('modal-titulo').textContent = `✏️ Editar Ganhador — ${MODALIDADES[modId].nome}`;
+  const m = MODALIDADES[modId] || {};
+  document.getElementById('modal-titulo').textContent = `✏️ Editar Ganhador — ${m.nome}`;
   document.getElementById('g-participante-id').value = g.participante_id || '';
   document.getElementById('g-inscricao-mod-id').value = modId;
   document.getElementById('g-edit-id').value = id;
   document.getElementById('g-nome').value    = g.nome_exibicao || '';
-  document.getElementById('g-posicao').value = g.posicao;
+  const maxLugares = m.maxLugares || 3;
+  const selPosicao = document.getElementById('g-posicao');
+  const opt3 = selPosicao.querySelector('option[value="3"]');
+  if (opt3) opt3.style.display = maxLugares < 3 ? 'none' : '';
+  selPosicao.value = g.posicao;
   document.getElementById('g-cidade').value  = g.cidade || '';
   document.getElementById('g-parceiro').value = g.parceiro || '';
   document.getElementById('g-equipe').value   = g.equipe || '';
