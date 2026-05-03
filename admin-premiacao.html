@@ -593,6 +593,11 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <textarea id="g-premio" rows="2" placeholder="Ex: Troféu + R$ 750,00"></textarea>
     </div>
     <div class="form-group">
+      <label>🤝 Patrocinador do Prêmio</label>
+      <input type="text" id="g-patrocinador" placeholder="Ex: Supermercado Bom Preço, Empresa XYZ...">
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">Empresa ou pessoa que custeou este prêmio. Aparece no Portal da Transparência.</div>
+    </div>
+    <div class="form-group">
       <label>📤 Upload da Foto com o Troféu</label>
       <input type="file" id="g-foto-file" accept="image/*"
         style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;margin-bottom:6px;"
@@ -1325,14 +1330,13 @@ function imprimirPesca(modId) {
 
 function imprimirPremiacao(modId) {
   const m     = MODALIDADES[modId];
-  // Imprime todos os ganhadores (publicados e rascunho), ordenados por posição
   const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId).sort((a,b) => a.posicao - b.posicao);
   const medals = ['🥇','🥈','🥉'];
+  const patrocinador = getPatrocinadorMod(modId);
 
   let linhas = '';
   ganhs.forEach(g => {
     const medal  = medals[g.posicao - 1] || g.posicao + 'º';
-    // Prêmio: usa o cadastrado ou, se vazio, puxa do regulamento (MODALIDADES)
     const premioFinal = g.premio_descricao || m.premio?.[g.posicao] || '—';
     const res    = g.resultado_tecnico ? `<br><small style="color:#555;">${g.resultado_tecnico}</small>` : '';
     const eq     = [g.parceiro, g.equipe].filter(Boolean).join(' · ');
@@ -1345,9 +1349,15 @@ function imprimirPremiacao(modId) {
     </tr>`;
   });
 
-  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum ganhador cadastrado. Use "Sincronizar com Premiação" primeiro.</td></tr>`;
+  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum ganhador cadastrado.</td></tr>`;
 
-  const win = window.open('', '_blank', 'width=800,height=550');
+  const patrocinadorHtml = patrocinador
+    ? `<div style="margin-top:20px;padding:10px 14px;background:#fefce8;border:1px solid #fcd34d;border-radius:6px;font-size:13px;">
+        🤝 <strong>Patrocinador do Prêmio:</strong> ${patrocinador}
+       </div>`
+    : '';
+
+  const win = window.open('', '_blank', 'width=800,height=580');
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
   <title>Premiação — ${m.emoji} ${m.nome} ${m.sub}</title>
   <style>
@@ -1360,7 +1370,6 @@ function imprimirPremiacao(modId) {
     td { padding: 12px; border-bottom: 1px solid #ddd; font-size: 14px; vertical-align: middle; }
     tr:nth-child(1) td { background: #fffde7; }
     tr:nth-child(2) td { background: #f8f8f8; }
-    tr:nth-child(3) td { background: #fdf6ee; }
     .rodape { margin-top: 24px; font-size: 11px; color: #999; text-align: right; }
     @media print { body { padding: 16px; } }
   </style></head><body>
@@ -1371,6 +1380,7 @@ function imprimirPremiacao(modId) {
     <thead><tr><th>Lugar</th><th>Atleta / Equipe</th><th>Cidade</th><th>Prêmio</th></tr></thead>
     <tbody>${linhas}</tbody>
   </table>
+  ${patrocinadorHtml}
   <div class="rodape">Gerado por admin-premiacao · Festival de Inverno 2026</div>
   <script>window.onload=()=>{ window.print(); }<\/script>
   </body></html>`);
@@ -1646,7 +1656,14 @@ async function publicarGanhadoresAquaticas(modId) {
   if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
 
   try {
-    for (let i = 0; i < Math.min(3, ranking.length); i++) {
+    const maxL = m.maxLugares || 2;
+    // Limpar orphans antes de publicar
+    const orphans = todosGanhadores.filter(g => g.modalidade_id == modId && g.posicao > maxL);
+    for (const o of orphans) {
+      await apiPost('ganhadores', null, 'deletar', o.id).catch(() => {});
+      todosGanhadores = todosGanhadores.filter(g => g.id !== o.id);
+    }
+    for (let i = 0; i < Math.min(maxL, ranking.length); i++) {
       const r = ranking[i];
       const posicao = i + 1;
       const dados = {
@@ -1658,6 +1675,7 @@ async function publicarGanhadoresAquaticas(modId) {
         parceiro:          '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
+        patrocinador:      getPatrocinadorMod(modId) || null,
         resultado_tecnico: `Tempo: ${formatTempo(r.tempo_segundos)}`,
         publicado:         true,
       };
@@ -2023,6 +2041,7 @@ async function sincronizarPescaPremiacao(modId) {
         cidade:            '',
         parceiro:          '',
         premio_descricao:  m.premio?.[posicao] || '',
+        patrocinador:      getPatrocinadorMod(modId) || null,
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
@@ -2117,6 +2136,7 @@ async function sincronizarAguaPremiacao(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
+        patrocinador:      getPatrocinadorMod(modId) || null,
         resultado_tecnico: 'Tempo ' + (usarFinal ? 'Final' : 'Classificatoria') + ': ' + formatTempo(r.tempo_segundos),
         foto_url:          null,
         publicado:         true,
@@ -2181,7 +2201,13 @@ async function publicarGanhadoresPesca(modId) {
   if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
 
   try {
-    for (let i = 0; i < Math.min(3, ranking.length); i++) {
+    const maxL = m.maxLugares || 2;
+    const orphans = todosGanhadores.filter(g => g.modalidade_id == modId && g.posicao > maxL);
+    for (const o of orphans) {
+      await apiPost('ganhadores', null, 'deletar', o.id).catch(() => {});
+      todosGanhadores = todosGanhadores.filter(g => g.id !== o.id);
+    }
+    for (let i = 0; i < Math.min(maxL, ranking.length); i++) {
       const r = ranking[i];
       const posicao = i + 1;
       const dados = {
@@ -2193,6 +2219,7 @@ async function publicarGanhadoresPesca(modId) {
         cidade:            '',
         parceiro:          '',
         premio_descricao:  m.premio?.[posicao] || '',
+        patrocinador:      getPatrocinadorMod(modId) || null,
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
@@ -2933,6 +2960,7 @@ async function publicarGanhadoresVolei(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[r.posicao] || '',
+        patrocinador:      getPatrocinadorMod(modId) || null,
         resultado_tecnico: r.placar ? `Placar final: ${r.placar}` : '',
         publicado:         true,
       };
@@ -3047,6 +3075,10 @@ function renderPainelMod(modId) {
             : `<button class="btn-ganhar" onclick="abrirModalGanhador(${JSON.stringify(p).replace(/"/g,'&quot;')},${modId})">🏆 Marcar</button>`}
         </div>`;
       }).join('');
+
+  // Lê patrocinador atual: da memória dos ganhadores ou do cache local
+  const patrocinadorAtual = ganhs.find(g => g.patrocinador)?.patrocinador
+    || localStorage.getItem('patrocinador_mod_' + modId) || '';
 
   const listaGanhadores = ganhs.length === 0
     ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado.</div>'
@@ -3215,6 +3247,24 @@ function renderPainelMod(modId) {
       <div class="secao-titulo" style="margin-bottom:10px;">✅ Credenciados presentes</div>
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
+      <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:14px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:700;color:#fbbf24;">🤝 Patrocinador do Prêmio</span>
+          ${patrocinadorAtual ? `<span style="font-size:10px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:2px 8px;font-weight:700;">✅ Definido</span>` : `<span style="font-size:10px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:2px 8px;font-weight:700;">⚠️ Não informado</span>`}
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:10px;">Empresa ou pessoa que custeou o prêmio desta modalidade. Aparece no Portal da Transparência.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="patrocinador-input-${modId}"
+            value="${patrocinadorAtual.replace(/"/g,'&quot;')}"
+            placeholder="Ex: Supermercado Bom Preço, Madeireira XYZ..."
+            style="flex:1;min-width:200px;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;"
+            onkeydown="if(event.key==='Enter') salvarPatrocinadorMod(${modId})">
+          <button onclick="salvarPatrocinadorMod(${modId})"
+            style="padding:9px 16px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+            💾 Salvar
+          </button>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
         <div class="secao-titulo" style="margin-bottom:0;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/${m.maxLugares || 2})</span></div>
       </div>
@@ -3233,6 +3283,7 @@ function renderGanhadorItem(g, modId) {
       <div class="ganhador-detalhe">${g.cidade||'—'} ${g.parceiro?'· '+g.parceiro:''} ${g.equipe?'· '+g.equipe:''}</div>
       ${g.resultado_tecnico ? `<div class="resultado-tecnico">📊 ${g.resultado_tecnico}</div>` : ''}
       ${g.premio_descricao ? `<div class="ganhador-detalhe" style="color:#fbbf24;">🎁 ${g.premio_descricao}</div>` : ''}
+      ${g.patrocinador ? `<div class="ganhador-detalhe" style="color:#a78bfa;font-size:11px;">🤝 ${g.patrocinador}</div>` : ''}
       <div style="margin-top:4px;">
         <span class="pub-dot ${g.publicado?'verde':'cinza'}"></span>
         <span style="font-size:10px;color:${g.publicado?'#22c55e':'#64748b'};">${g.publicado?'Publicado':'Rascunho'}</span>
@@ -3261,6 +3312,7 @@ function abrirModalGanhador(participante, modId) {
   document.getElementById('g-parceiro').value = membros.join(', ');
   document.getElementById('g-equipe').value   = participante.nome_equipe || '';
   document.getElementById('g-resultado-tecnico').value = '';
+  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId);
   const maxLugares = m.maxLugares || 2;
   const selPosicao = document.getElementById('g-posicao');
   const opt3 = selPosicao.querySelector('option[value="3"]');
@@ -3300,6 +3352,7 @@ function editarGanhador(id, modId) {
   document.getElementById('g-equipe').value   = g.equipe || '';
   document.getElementById('g-resultado-tecnico').value = g.resultado_tecnico || '';
   document.getElementById('g-premio').value   = g.premio_descricao || '';
+  document.getElementById('g-patrocinador').value = g.patrocinador || getPatrocinadorMod(modId);
   document.getElementById('g-foto').value     = g.foto_url || '';
   document.getElementById('g-publicado').checked = !!g.publicado;
   const prev = document.getElementById('g-foto-preview');
@@ -3328,9 +3381,12 @@ async function salvarGanhador() {
   const equipe           = document.getElementById('g-equipe').value.trim();
   const resultado_tecnico = document.getElementById('g-resultado-tecnico').value.trim();
   const premio_descricao = document.getElementById('g-premio').value.trim();
+  const patrocinador     = document.getElementById('g-patrocinador').value.trim();
   const foto_url         = document.getElementById('g-foto').value.trim();
   const publicado        = document.getElementById('g-publicado').checked;
   if (!nome) { toast('Informe o nome.', 'erro'); btn.disabled = false; btn.textContent = '💾 Salvar Ganhador'; return; }
+  // Persiste patrocinador no cache local da modalidade
+  if (patrocinador) localStorage.setItem('patrocinador_mod_' + modalidade_id, patrocinador);
   const conflito = todosGanhadores.find(g => g.modalidade_id == modalidade_id && g.posicao == posicao && g.id !== editId);
   if (conflito) {
     if (!confirm(`Já existe ${posicao}º lugar (${conflito.nome_exibicao}). Substituir?`)) {
@@ -3342,6 +3398,7 @@ async function salvarGanhador() {
   const dados = { participante_id: participante_id || null, modalidade_id, posicao,
     nome_exibicao: nome, cidade, parceiro: parceiro || null, equipe: equipe || null,
     resultado_tecnico: resultado_tecnico || null, premio_descricao: premio_descricao || null,
+    patrocinador: patrocinador || null,
     foto_url: foto_url || null, publicado };
   try {
     if (editId) {
@@ -3376,6 +3433,67 @@ async function excluirGanhador(id, nome, modId) {
     todosGanhadores = todosGanhadores.filter(g => g.id !== id);
     toast('🗑️ Excluído.'); atualizarPainelMod(modId); renderGridModalidades();
   } catch(e) { toast('Erro.', 'erro'); }
+}
+
+// ================================================================
+// PATROCINADOR — helper functions
+// ================================================================
+function getPatrocinadorMod(modId) {
+  const input = document.getElementById('patrocinador-input-' + modId);
+  if (input && input.value.trim()) return input.value.trim();
+  const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.patrocinador);
+  if (existente) return existente.patrocinador;
+  return localStorage.getItem('patrocinador_mod_' + modId) || '';
+}
+
+async function salvarPatrocinadorMod(modId) {
+  const input = document.getElementById('patrocinador-input-' + modId);
+  const valor = input?.value.trim() || '';
+  if (valor) localStorage.setItem('patrocinador_mod_' + modId, valor);
+  else localStorage.removeItem('patrocinador_mod_' + modId);
+
+  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
+  if (ganhs.length === 0) {
+    toast('✅ Patrocinador salvo! Será aplicado ao sincronizar os ganhadores.', 'sucesso');
+    return;
+  }
+  toast('💾 Salvando patrocinador...', 'sucesso');
+  try {
+    for (const g of ganhs) {
+      await apiPost('ganhadores', { patrocinador: valor || null }, 'atualizar', g.id);
+      todosGanhadores = todosGanhadores.map(gg => gg.id === g.id ? { ...gg, patrocinador: valor || null } : gg);
+    }
+    toast(`✅ Patrocinador salvo em ${ganhs.length} ganhador(es)!`, 'sucesso');
+    renderGridModalidades();
+  } catch(e) {
+    console.warn('[Patrocinador] Erro ao salvar no banco:', e.message);
+    toast('⚠️ Salvo localmente. Execute a migração SQL para persistir no banco.', 'erro');
+    mostrarMigracaoPatrocinador();
+  }
+}
+
+function mostrarMigracaoPatrocinador() {
+  const sql = 'ALTER TABLE ganhadores ADD COLUMN IF NOT EXISTS patrocinador TEXT DEFAULT NULL;';
+  const win = window.open('', '_blank', 'width=680,height=360');
+  if (!win) return;
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Migration — Patrocinador</title>
+  <style>
+    body{background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;padding:28px;}
+    h2{color:#fbbf24;font-size:16px;margin-bottom:6px;}
+    p{font-size:12px;color:#94a3b8;margin-bottom:16px;}
+    pre{background:#1e293b;padding:16px;border-radius:8px;border:1px solid rgba(251,191,36,0.4);
+        font-family:monospace;font-size:14px;color:#fbbf24;white-space:pre-wrap;}
+    .btn{background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;
+         border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-weight:700;margin-top:14px;}
+  </style></head><body>
+  <h2>🤝 Migration — Coluna Patrocinador</h2>
+  <p>Execute este SQL no <strong>Supabase → SQL Editor</strong> para habilitar o campo patrocinador:</p>
+  <pre id="sql">${sql}</pre>
+  <button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('sql').textContent).then(()=>this.textContent='✅ Copiado!')">📋 Copiar SQL</button>
+  <p style="margin-top:16px;font-size:11px;color:#475569;">Após executar, atualize a página do admin e tente salvar o patrocinador novamente.</p>
+  </body></html>`);
+  win.document.close();
 }
 
 function atualizarPainelMod(modId) {
