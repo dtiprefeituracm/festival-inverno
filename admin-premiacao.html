@@ -1331,8 +1331,7 @@ function imprimirPesca(modId) {
 function imprimirPremiacao(modId) {
   const m     = MODALIDADES[modId];
   const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId).sort((a,b) => a.posicao - b.posicao);
-  const medals = ['🥇','🥈','🥉'];
-  const patrocinador = getPatrocinadorMod(modId);
+  const medals = ['🥇','🥈'];
 
   let linhas = '';
   ganhs.forEach(g => {
@@ -1341,19 +1340,22 @@ function imprimirPremiacao(modId) {
     const res    = g.resultado_tecnico ? `<br><small style="color:#555;">${g.resultado_tecnico}</small>` : '';
     const eq     = [g.parceiro, g.equipe].filter(Boolean).join(' · ');
     const pubTag = g.publicado ? '' : `<br><small style="color:#999;font-style:italic;">(rascunho)</small>`;
+    const patrTag = g.patrocinador ? `<br><small style="color:#7c3aed;font-weight:600;">🤝 ${g.patrocinador}</small>` : '';
     linhas += `<tr>
       <td style="text-align:center;font-size:24px;">${medal}</td>
       <td><strong>${g.nome_exibicao || '—'}</strong>${res}${eq ? '<br><small>' + eq + '</small>' : ''}${pubTag}</td>
       <td>${g.cidade || '—'}</td>
-      <td style="color:#b45309;font-weight:700;">${premioFinal}</td>
+      <td style="color:#b45309;font-weight:700;">${premioFinal}${patrTag}</td>
     </tr>`;
   });
 
   if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum ganhador cadastrado.</td></tr>`;
 
-  const patrocinadorHtml = patrocinador
+  // Rodapé com todos os patrocinadores distintos
+  const patrocs = [...new Set(ganhs.map(g => g.patrocinador).filter(Boolean))];
+  const patrocinadorHtml = patrocs.length > 0
     ? `<div style="margin-top:20px;padding:10px 14px;background:#fefce8;border:1px solid #fcd34d;border-radius:6px;font-size:13px;">
-        🤝 <strong>Patrocinador do Prêmio:</strong> ${patrocinador}
+        🤝 <strong>Patrocinador(es):</strong> ${patrocs.join(' &amp; ')}
        </div>`
     : '';
 
@@ -1675,7 +1677,7 @@ async function publicarGanhadoresAquaticas(modId) {
         parceiro:          '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId) || null,
+        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
         resultado_tecnico: `Tempo: ${formatTempo(r.tempo_segundos)}`,
         publicado:         true,
       };
@@ -2041,7 +2043,7 @@ async function sincronizarPescaPremiacao(modId) {
         cidade:            '',
         parceiro:          '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId) || null,
+        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
@@ -2136,7 +2138,7 @@ async function sincronizarAguaPremiacao(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId) || null,
+        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
         resultado_tecnico: 'Tempo ' + (usarFinal ? 'Final' : 'Classificatoria') + ': ' + formatTempo(r.tempo_segundos),
         foto_url:          null,
         publicado:         true,
@@ -2219,7 +2221,7 @@ async function publicarGanhadoresPesca(modId) {
         cidade:            '',
         parceiro:          '',
         premio_descricao:  m.premio?.[posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId) || null,
+        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
         resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
         publicado:         true,
       };
@@ -2960,7 +2962,7 @@ async function publicarGanhadoresVolei(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[r.posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId) || null,
+        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
         resultado_tecnico: r.placar ? `Placar final: ${r.placar}` : '',
         publicado:         true,
       };
@@ -2988,6 +2990,10 @@ function atualizarPremioPorPosicao() {
   const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
   const m = MODALIDADES[modId] || {};
   if (m.premio?.[posicao]) document.getElementById('g-premio').value = m.premio[posicao];
+  // Atualiza o campo patrocinador conforme a posição selecionada
+  const patrExistente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao && g.patrocinador);
+  document.getElementById('g-patrocinador').value =
+    patrExistente?.patrocinador || getPatrocinadorMod(modId, posicao);
 }
 
 function renderGridModalidades() {
@@ -3076,9 +3082,12 @@ function renderPainelMod(modId) {
         </div>`;
       }).join('');
 
-  // Lê patrocinador atual: da memória dos ganhadores ou do cache local
-  const patrocinadorAtual = ganhs.find(g => g.patrocinador)?.patrocinador
-    || localStorage.getItem('patrocinador_mod_' + modId) || '';
+  // Lê patrocinadores atuais por posição
+  const patroc1 = (ganhs.find(g => g.posicao === 1 && g.patrocinador)?.patrocinador
+    || localStorage.getItem(`patrocinador_mod_${modId}_pos1`) || '').replace(/"/g, '&quot;');
+  const patroc2 = (ganhs.find(g => g.posicao === 2 && g.patrocinador)?.patrocinador
+    || localStorage.getItem(`patrocinador_mod_${modId}_pos2`) || '').replace(/"/g, '&quot;');
+  const algumPatroc = patroc1 || patroc2;
 
   const listaGanhadores = ganhs.length === 0
     ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado.</div>'
@@ -3248,20 +3257,37 @@ function renderPainelMod(modId) {
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
       <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:14px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <span style="font-size:14px;font-weight:700;color:#fbbf24;">🤝 Patrocinador do Prêmio</span>
-          ${patrocinadorAtual ? `<span style="font-size:10px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:2px 8px;font-weight:700;">✅ Definido</span>` : `<span style="font-size:10px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:2px 8px;font-weight:700;">⚠️ Não informado</span>`}
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:14px;font-weight:700;color:#fbbf24;">🤝 Patrocinadores dos Prêmios</span>
+          ${algumPatroc
+            ? `<span style="font-size:10px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:2px 8px;font-weight:700;">✅ Definido</span>`
+            : `<span style="font-size:10px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:2px 8px;font-weight:700;">⚠️ Não informado</span>`}
         </div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:10px;">Empresa ou pessoa que custeou o prêmio desta modalidade. Aparece no Portal da Transparência.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input type="text" id="patrocinador-input-${modId}"
-            value="${patrocinadorAtual.replace(/"/g,'&quot;')}"
-            placeholder="Ex: Supermercado Bom Preço, Madeireira XYZ..."
-            style="flex:1;min-width:200px;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;"
-            onkeydown="if(event.key==='Enter') salvarPatrocinadorMod(${modId})">
+        <div style="font-size:11px;color:#64748b;margin-bottom:12px;">Empresa ou pessoa que custeou cada prêmio. Cada lugar pode ter um patrocinador diferente. Aparece no Portal da Transparência.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#fbbf24;margin-bottom:5px;">🥇 Patrocinador do 1º Lugar</div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="patrocinador-input-${modId}-pos1"
+                value="${patroc1}"
+                placeholder="Quem pagou o prêmio do 1º lugar..."
+                style="flex:1;padding:9px 12px;background:#0f172a;border:1px solid #fcd34d;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;"
+                onkeydown="if(event.key==='Enter') salvarPatrocinadorMod(${modId})">
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:5px;">🥈 Patrocinador do 2º Lugar</div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="patrocinador-input-${modId}-pos2"
+                value="${patroc2}"
+                placeholder="Quem pagou o prêmio do 2º lugar..."
+                style="flex:1;padding:9px 12px;background:#0f172a;border:1px solid #475569;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;"
+                onkeydown="if(event.key==='Enter') salvarPatrocinadorMod(${modId})">
+            </div>
+          </div>
           <button onclick="salvarPatrocinadorMod(${modId})"
-            style="padding:9px 16px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
-            💾 Salvar
+            style="align-self:flex-end;padding:9px 20px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);color:#fbbf24;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+            💾 Salvar Patrocinadores
           </button>
         </div>
       </div>
@@ -3312,7 +3338,8 @@ function abrirModalGanhador(participante, modId) {
   document.getElementById('g-parceiro').value = membros.join(', ');
   document.getElementById('g-equipe').value   = participante.nome_equipe || '';
   document.getElementById('g-resultado-tecnico').value = '';
-  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId);
+  const posicaoAtual = parseInt(document.getElementById('g-posicao').value) || 1;
+  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId, posicaoAtual);
   const maxLugares = m.maxLugares || 2;
   const selPosicao = document.getElementById('g-posicao');
   const opt3 = selPosicao.querySelector('option[value="3"]');
@@ -3352,7 +3379,7 @@ function editarGanhador(id, modId) {
   document.getElementById('g-equipe').value   = g.equipe || '';
   document.getElementById('g-resultado-tecnico').value = g.resultado_tecnico || '';
   document.getElementById('g-premio').value   = g.premio_descricao || '';
-  document.getElementById('g-patrocinador').value = g.patrocinador || getPatrocinadorMod(modId);
+  document.getElementById('g-patrocinador').value = g.patrocinador || getPatrocinadorMod(modId, g.posicao);
   document.getElementById('g-foto').value     = g.foto_url || '';
   document.getElementById('g-publicado').checked = !!g.publicado;
   const prev = document.getElementById('g-foto-preview');
@@ -3438,32 +3465,36 @@ async function excluirGanhador(id, nome, modId) {
 // ================================================================
 // PATROCINADOR — helper functions
 // ================================================================
-function getPatrocinadorMod(modId) {
-  const input = document.getElementById('patrocinador-input-' + modId);
+function getPatrocinadorMod(modId, posicao) {
+  // Prioridade: 1) input visível no DOM, 2) ganhador existente no banco, 3) cache localStorage
+  const input = document.getElementById(`patrocinador-input-${modId}-pos${posicao}`);
   if (input && input.value.trim()) return input.value.trim();
-  const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.patrocinador);
+  const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao && g.patrocinador);
   if (existente) return existente.patrocinador;
-  return localStorage.getItem('patrocinador_mod_' + modId) || '';
+  return localStorage.getItem(`patrocinador_mod_${modId}_pos${posicao}`) || '';
 }
 
 async function salvarPatrocinadorMod(modId) {
-  const input = document.getElementById('patrocinador-input-' + modId);
-  const valor = input?.value.trim() || '';
-  if (valor) localStorage.setItem('patrocinador_mod_' + modId, valor);
-  else localStorage.removeItem('patrocinador_mod_' + modId);
+  const val1 = document.getElementById(`patrocinador-input-${modId}-pos1`)?.value.trim() || '';
+  const val2 = document.getElementById(`patrocinador-input-${modId}-pos2`)?.value.trim() || '';
+
+  // Persiste no cache local por posição
+  val1 ? localStorage.setItem(`patrocinador_mod_${modId}_pos1`, val1) : localStorage.removeItem(`patrocinador_mod_${modId}_pos1`);
+  val2 ? localStorage.setItem(`patrocinador_mod_${modId}_pos2`, val2) : localStorage.removeItem(`patrocinador_mod_${modId}_pos2`);
 
   const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
   if (ganhs.length === 0) {
-    toast('✅ Patrocinador salvo! Será aplicado ao sincronizar os ganhadores.', 'sucesso');
+    toast('✅ Patrocinadores salvos! Serão aplicados ao sincronizar os ganhadores.', 'sucesso');
     return;
   }
-  toast('💾 Salvando patrocinador...', 'sucesso');
+  toast('💾 Salvando patrocinadores...', 'sucesso');
   try {
     for (const g of ganhs) {
+      const valor = g.posicao === 1 ? val1 : val2;
       await apiPost('ganhadores', { patrocinador: valor || null }, 'atualizar', g.id);
       todosGanhadores = todosGanhadores.map(gg => gg.id === g.id ? { ...gg, patrocinador: valor || null } : gg);
     }
-    toast(`✅ Patrocinador salvo em ${ganhs.length} ganhador(es)!`, 'sucesso');
+    toast(`✅ Patrocinadores salvos para ${ganhs.length} ganhador(es)!`, 'sucesso');
     renderGridModalidades();
   } catch(e) {
     console.warn('[Patrocinador] Erro ao salvar no banco:', e.message);
