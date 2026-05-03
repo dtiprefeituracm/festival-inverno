@@ -363,6 +363,11 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       style="background:#1e3a5f;border:1px solid #3b82f6;color:#60a5fa;font-size:11px;">
       ⚙️ Setup DB
     </button>
+    <button onclick="fixarConstraintModalidades()" class="btn-back"
+      title="Corrige constraint do banco para aceitar modalidades 8 e 9 (Aquáticas Feminino)"
+      style="background:#3f1e1e;border:1px solid #ef4444;color:#fca5a5;font-size:11px;">
+      🔧 Fix Constraint
+    </button>
   </div>
 </div>
 
@@ -952,6 +957,67 @@ async function rodarSetupCompleto() {
   } catch(e) {
     toast('❌ Erro no setup: ' + e.message, 'erro');
     console.error('[Setup] Erro:', e);
+  }
+}
+
+// ================================================================
+// FIX CONSTRAINT — Corrige ganhadores_modalidade_id_check
+// ================================================================
+async function fixarConstraintModalidades() {
+  if (!confirm(
+    '🔧 Corrigir Constraint do Banco\n\n' +
+    'Isso irá executar no Supabase:\n' +
+    '  ALTER TABLE ganhadores DROP CONSTRAINT ganhadores_modalidade_id_check;\n' +
+    '  ALTER TABLE ganhadores ADD CONSTRAINT ... CHECK (modalidade_id IN (1..9));\n\n' +
+    'Necessário para salvar ganhadores de Canoagem/Caiaque Feminino (IDs 8 e 9).\n' +
+    'Operação segura — não apaga dados.\n\nContinuar?'
+  )) return;
+
+  toast('🔧 Corrigindo constraint...', 'sucesso');
+
+  try {
+    const r = await fetch('/api/run-migrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: sessionStorage.getItem('adminToken') })
+    });
+    const d = await r.json();
+    console.log('[Fix Constraint] Log:', (d.log || []).join('\n'));
+
+    const logStr = (d.log || []).join('\n');
+    const fixOk  = logStr.includes('DROP constraint') || logStr.includes('ADD constraint');
+
+    if (fixOk && d.ok !== false) {
+      toast('✅ Constraint corrigida! Tente sincronizar novamente.', 'sucesso');
+    } else {
+      // exec_sql pode não estar disponível — abre janela com SQL manual
+      const sqlFix =
+        'ALTER TABLE ganhadores DROP CONSTRAINT IF EXISTS ganhadores_modalidade_id_check;\n' +
+        'ALTER TABLE ganhadores ADD CONSTRAINT ganhadores_modalidade_id_check\n' +
+        '  CHECK (modalidade_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9));';
+
+      const win = window.open('', '_blank', 'width=700,height=420');
+      if (win) {
+        win.document.write('<html><head><title>Fix Constraint<\/title>' +
+          '<style>body{background:#0f172a;color:#e2e8f0;font-family:monospace;font-size:13px;padding:24px;}' +
+          'h2{color:#f87171;}pre{background:#1e293b;padding:16px;border-radius:8px;' +
+          'border:1px solid #ef4444;white-space:pre-wrap;line-height:1.7;}' +
+          'p{color:#94a3b8;}.btn{background:#1e3a8a;color:#bfdbfe;border:1px solid #3b82f6;' +
+          'border-radius:6px;padding:8px 16px;font-size:13px;cursor:pointer;margin-top:12px;}' +
+          '<\/style><\/head><body>' +
+          '<h2>🔧 Execute este SQL no Supabase Dashboard<\/h2>' +
+          '<p>Copie e execute no <strong>Supabase → SQL Editor<\/strong>:<\/p>' +
+          '<pre id="sqlbox">' + sqlFix + '<\/pre>' +
+          '<p>Após executar, clique em <strong>Sincronizar com Premiação<\/strong> novamente.<\/p>' +
+          '<button class="btn" onclick="navigator.clipboard.writeText(document.getElementById(\'sqlbox\').textContent);this.textContent=\'✅ Copiado!\'">📋 Copiar SQL<\/button>' +
+          '<\/body><\/html>');
+        win.document.close();
+      }
+      toast('⚠️ Execute o SQL manual na janela que abriu.', 'erro');
+    }
+  } catch(e) {
+    toast('❌ Erro: ' + e.message, 'erro');
+    console.error('[Fix Constraint] Erro:', e);
   }
 }
 
