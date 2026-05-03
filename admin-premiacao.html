@@ -426,9 +426,9 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   <div class="sub-content" id="sub-volei">
     <div class="aviso">
       <strong>🏐 Vôlei de Praia & Futevôlei — Sistema de Grupos + Eliminatória</strong>
-      <strong>Passo 1:</strong> Sorteie os grupos (clique em "Sortear Grupos"). O sistema embaralha as duplas credenciadas aleatoriamente.
-      <strong>Passo 2:</strong> Registre os placares da fase classificatória (set único de 12 pts). O sistema monta o ranking por grupo.
-      <strong>Passo 3:</strong> Gere o chaveamento eliminatório (top 2 de cada grupo) e registre os placares finais (set único de 18 pts).
+      <strong>Passo 1:</strong> Sorteie os grupos automaticamente ou monte manualmente — escolha uma das opções abaixo.
+      <strong>Passo 2:</strong> Registre os placares da fase classificatória. Vôlei: set único de <strong>12 pts</strong>. Futevôlei: set único de <strong>18 pts</strong>.
+      <strong>Passo 3:</strong> Gere o chaveamento eliminatório (top 2 de cada grupo) e registre os placares finais.
     </div>
     <div class="mod-sel-row">
       <button class="mod-sel-btn ativo" id="vlbtn-1" onclick="selecionarVolei(1, this)">🏐 Vôlei Masc.</button>
@@ -1987,15 +1987,24 @@ function renderVolei() {
 
   // ── PASSO 1: Sorteio / Montagem ──
   html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-      <div>
-        <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🎲 Passo 1 — Definir Grupos</div>
-        <div style="font-size:11px;color:#64748b;margin-top:3px;">${cred.length} dupla(s) credenciada(s)</div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🎲 Passo 1 — Definir Grupos</div>
+      <div style="font-size:11px;color:#64748b;margin-top:3px;">${cred.length} dupla(s) credenciada(s) · Escolha como montar os grupos:</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+      <div style="background:#0f172a;border:2px solid #7c3aed;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:4px;">🎲 Sorteio Automático</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:10px;">O sistema distribui as duplas aleatoriamente nos grupos.</div>
+        <button class="btn-sortear" style="width:100%;justify-content:center;"
+          onclick="sortearGrupos(${modId},${gruposMod.length > 0})">
+          ${gruposMod.length > 0 ? '🔄 Ressortear Grupos' : '🎲 Sortear Grupos'}
+        </button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${gruposMod.length > 0 ? `<button class="btn-gerar" onclick="sortearGrupos(${modId},true)">🔄 Ressortear</button>` : ''}
-        <button class="btn-sortear" onclick="sortearGrupos(${modId},false)">🎲 ${gruposMod.length > 0 ? 'Re' : ''}Sortear</button>
-        <button class="btn-gerar" style="background:#1e3a5f;border-color:#a78bfa;color:#a78bfa;"
+      <div style="background:#0f172a;border:2px solid #a78bfa;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:4px;">✏️ Montagem Manual</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:10px;">Você define manualmente qual dupla vai em cada grupo.</div>
+        <button style="width:100%;padding:12px 20px;background:linear-gradient(135deg,#3b0764,#6d28d9);color:#ede9fe;
+          border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
           onclick="toggleManual(${modId})">✏️ Montar Manual</button>
       </div>
     </div>
@@ -2032,11 +2041,12 @@ function renderVolei() {
     const letrasGrupos = [...new Set(gruposMod.map(g => g.grupo))].sort();
     const pClassif    = partidasMod.filter(p => p.fase === 'classificatoria');
 
+    const ptClass = modId == 3 ? 18 : 12;
     html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>
           <div style="font-size:14px;font-weight:700;color:#e2e8f0;">📋 Passo 2 — Fase Classificatória</div>
-          <div style="font-size:11px;color:#64748b;">Set único de 12 pontos corridos (sem necessidade de 2 de diferença)</div>
+          <div style="font-size:11px;color:#64748b;">Set único de <strong style="color:#fbbf24;">${ptClass} pontos</strong> corridos (sem necessidade de 2 de diferença)</div>
         </div>
         <button class="btn-gerar" onclick="gerarPartidasClassificatoria(${modId})">⚙️ Gerar Partidas</button>
       </div>`;
@@ -2102,11 +2112,14 @@ function renderVolei() {
 
     // ── PASSO 3: Eliminatórias ──
     const pElim = partidasMod.filter(p => p.fase !== 'classificatoria');
+    const ptElimMin = modId == 3 ? 21 : 15;
+    const ptElimMax = modId == 3 ? 21 : 15;
+    const ptElimVirada = modId == 3 ? 11 : 8;
     html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>
           <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🏁 Passo 3 — Eliminatórias (Mata-Mata)</div>
-          <div style="font-size:11px;color:#64748b;">Set único de 18 pontos — virada de quadra aos 9 pontos</div>
+          <div style="font-size:11px;color:#64748b;">${modId == 3 ? 'Futevôlei: set único de <strong style="color:#fbbf24;">18 pontos</strong> — virada de quadra aos 9 pontos' : 'Vôlei: set único de <strong style="color:#fbbf24;">12 pontos</strong> — virada de quadra aos 6 pontos'}</div>
         </div>
         <button class="btn-gerar" onclick="gerarEliminatorias(${modId})">⚙️ Gerar Chaveamento</button>
       </div>`;
