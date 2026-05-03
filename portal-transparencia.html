@@ -59,7 +59,6 @@
   .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
   .badge-ouro { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
   .badge-prata { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-  .badge-bronze { background: #fef3c7; color: #92400e; border: 1px solid #fdba74; filter: sepia(0.3); }
   .badge-areia { background: #fef3c7; color: #92400e; }
   .badge-agua { background: #dbeafe; color: #1e40af; }
   .badge-pesca { background: #ecfdf5; color: #065f46; }
@@ -84,7 +83,6 @@
   .ganhador-medal { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
   .medal-1 { background: #fef3c7; }
   .medal-2 { background: #f1f5f9; }
-  .medal-3 { background: #fed7aa; }
   .ganhador-info { flex: 1; }
   .ganhador-nome { font-size: 14px; font-weight: 700; color: #1e293b; }
   .ganhador-mod { font-size: 12px; color: #1a56a0; font-weight: 600; margin-top: 2px; }
@@ -216,13 +214,18 @@
     </div>
     <div class="card">
       <div class="card-label">Modalidades</div>
-      <div class="card-val">9</div>
+      <div class="card-val">7</div>
       <div class="card-sub">esportes</div>
     </div>
     <div class="card">
       <div class="card-label">Credenciados</div>
       <div class="card-val" id="m-credenciados">—</div>
       <div class="card-sub">presença confirmada</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Campeões publicados</div>
+      <div class="card-val" id="m-campeoes">—</div>
+      <div class="card-sub">modalidades premiadas</div>
     </div>
   </div>
 
@@ -270,12 +273,10 @@
       <option value="1">Vôlei de Areia — Masculino</option>
       <option value="2">Vôlei de Areia — Feminino</option>
       <option value="3">Futevôlei</option>
-      <option value="4">Canoagem — Masculino</option>
-      <option value="5">Caiaque — Masculino</option>
+      <option value="4">Canoagem</option>
+      <option value="5">Caiaque</option>
       <option value="6">Pesca — Masculino</option>
       <option value="7">Pesca — Feminino</option>
-      <option value="8">Canoagem — Feminino</option>
-      <option value="9">Caiaque — Feminino</option>
     </select>
     <select id="filtro-cred" onchange="filtrarParticipantes()">
       <option value="">Todos</option>
@@ -319,6 +320,10 @@
       <strong>⏳ Resultado não publicado ainda</strong>
       Os ganhadores serão anunciados após o encerramento oficial do Festival de Inverno 2026.
     </div>
+  </div>
+  <div class="lgpd-aviso" style="background:#f0fdf4;border-color:#86efac;color:#166534;margin-top:16px;">
+    <strong>🏆 Premiação do Festival</strong>
+    O Festival de Inverno 2026 premia o <strong>1º e 2º lugar</strong> em cada modalidade. Clique no card de um ganhador para ver a ficha completa com informações de inscrição e presença.
   </div>
   <div id="ganhadores-container">
     <div class="loading">Carregando ganhadores...</div>
@@ -427,12 +432,10 @@ const MODALIDADES = {
   1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia' },
   2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia' },
   3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia' },
-  4: { nome: 'Canoagem',       sub: 'Masculino',  tipo: 'agua'  },
-  5: { nome: 'Caiaque',        sub: 'Masculino',  tipo: 'agua'  },
+  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua'  },
+  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua'  },
   6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca' },
   7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca' },
-  8: { nome: 'Canoagem',       sub: 'Feminino',   tipo: 'agua'  },
-  9: { nome: 'Caiaque',        sub: 'Feminino',   tipo: 'agua'  },
 };
 
 // ================================================================
@@ -505,9 +508,9 @@ async function carregarDados() {
     todasInscricoes    = inscricoes;
     dadosFiltrados     = participantes;
 
-    // Carrega apenas ganhadores publicados
+    // Carrega apenas ganhadores publicados (1º e 2º lugar — não há 3º lugar nas modalidades do festival)
     GANHADORES = (Array.isArray(ganhadores) ? ganhadores : [])
-      .filter(g => g.publicado)
+      .filter(g => g.publicado && g.posicao >= 1 && g.posicao <= 2)
       .map(g => ({
         posicao:        g.posicao,
         modalidade_id:  g.modalidade_id,
@@ -551,6 +554,11 @@ function renderVisaoGeral() {
 
   const credenciados = new Set(i.filter(x => x.presenca).map(x => x.participante_id)).size;
   document.getElementById('m-credenciados').textContent = credenciados;
+
+  // Modalidades com pelo menos 1 campeão publicado
+  const modsPremiadasSet = new Set(GANHADORES.map(g => g.modalidade_id));
+  document.getElementById('m-campeoes').textContent =
+    GANHADORES.length === 0 ? '—' : `${modsPremiadasSet.size}/${Object.keys(MODALIDADES).length}`;
 
   // Tabela por modalidade
   const porMod = {};
@@ -737,8 +745,9 @@ function renderGanhadores() {
       <div class="secao-body">`;
 
     lista.forEach(g => {
-      const medalEmoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
-      const medalCls   = g.posicao === 1 ? 'medal-1' : g.posicao === 2 ? 'medal-2' : 'medal-3';
+      const medalEmoji = g.posicao === 1 ? '🥇' : '🥈';
+      const medalCls   = g.posicao === 1 ? 'medal-1' : 'medal-2';
+      const posLabel   = g.posicao === 1 ? '1º lugar' : '2º lugar';
       const fotoHtml   = g.foto_url
         ? `<img src="${g.foto_url}" class="ganhador-foto" alt="Foto com troféu">`
         : `<div class="sem-foto">📷</div>`;
@@ -747,10 +756,11 @@ function renderGanhadores() {
         <div class="ganhador-medal ${medalCls}">${medalEmoji}</div>
         <div class="ganhador-info">
           <div class="ganhador-nome">${g.nome}</div>
-          ${g.parceiro ? `<div class="ganhador-detalhe">Parceiro(a): ${g.parceiro}</div>` : ''}
+          ${g.parceiro ? `<div class="ganhador-detalhe">👥 Parceiro(a): ${g.parceiro}</div>` : ''}
           ${g.equipe ? `<div class="ganhador-detalhe">🎣 Equipe: ${g.equipe}</div>` : ''}
-          <div class="ganhador-detalhe">${g.cidade || '—'}</div>
-          <div class="ganhador-mod">${g.posicao === 1 ? '🥇 1º lugar' : g.posicao === 2 ? '🥈 2º lugar' : g.posicao + 'º lugar'}</div>
+          <div class="ganhador-detalhe">📍 ${g.cidade || '—'}</div>
+          ${g.premio ? `<div class="ganhador-detalhe" style="color:#b45309;font-weight:700;margin-top:3px;">🎁 ${g.premio}</div>` : ''}
+          <div class="ganhador-mod">${medalEmoji} ${posLabel}</div>
         </div>
         ${fotoHtml}
       </div>`;
@@ -764,10 +774,10 @@ function renderGanhadores() {
 
 function abrirGanhador(g) {
   ganhadorAtual = g;
-  const medalEmoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
+  const medalEmoji = g.posicao === 1 ? '🥇' : '🥈';
+  const posLabel   = g.posicao === 1 ? '1º lugar' : '2º lugar';
   const mod = MODALIDADES[g.modalidade_id];
 
-  const posLabel = g.posicao === 1 ? '1º lugar' : g.posicao === 2 ? '2º lugar' : g.posicao + 'º lugar';
   document.getElementById('mg-titulo').textContent = `${mod?.nome || ''} — ${mod?.sub || ''} · ${posLabel}`;
   document.getElementById('mg-medal').textContent = medalEmoji;
 
@@ -784,8 +794,9 @@ function abrirGanhador(g) {
     ${g.parceiro ? `<div class="modal-row"><span class="modal-label">Parceiro(a)</span><span class="modal-val">${g.parceiro}</span></div>` : ''}
     ${g.equipe   ? `<div class="modal-row"><span class="modal-label">Equipe</span><span class="modal-val">${g.equipe}</span></div>` : ''}
     <div class="modal-row"><span class="modal-label">Cidade/UF</span><span class="modal-val">${g.cidade || '—'}</span></div>
-    <div class="modal-row"><span class="modal-label">Colocação</span><span class="modal-val">${medalEmoji} ${g.posicao}º lugar</span></div>
-    <div class="modal-row"><span class="modal-label">Modalidade</span><span class="modal-val">${mod?.nome || '—'} — ${mod?.sub || ''}</span></div>`;
+    <div class="modal-row"><span class="modal-label">Colocação</span><span class="modal-val">${g.posicao === 1 ? '🥇 1º lugar' : '🥈 2º lugar'}</span></div>
+    <div class="modal-row"><span class="modal-label">Modalidade</span><span class="modal-val">${mod?.nome || '—'} — ${mod?.sub || ''}</span></div>
+    ${g.premio ? `<div class="modal-row"><span class="modal-label">Prêmio</span><span class="modal-val" style="color:#b45309;font-weight:700;">${g.premio}</span></div>` : ''}`;
 
   // Tenta buscar ficha de inscrição se tiver participante_id
   const inscTitulo = document.getElementById('mg-inscricao-titulo');
