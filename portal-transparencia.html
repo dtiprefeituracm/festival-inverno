@@ -756,8 +756,23 @@ function renderGanhadores() {
     if (!mod) return;
     lista.sort((a, b) => a.posicao - b.posicao);
 
-    // Patrocinador da modalidade (todos os ganhadores da mesma modalidade têm o mesmo)
-    const patrocinadorMod = lista.find(g => g.patrocinador)?.patrocinador || null;
+    // Patrocinadores por posição
+    const patroc1 = lista.find(g => g.posicao === 1 && g.patrocinador)?.patrocinador || null;
+    const patroc2 = lista.find(g => g.posicao === 2 && g.patrocinador)?.patrocinador || null;
+    // Monta bloco de patrocinadores para o cabeçalho
+    let patrocinadorHtml = '';
+    if (patroc1 || patroc2) {
+      if (patroc1 === patroc2) {
+        // Mesmo patrocinador para os dois
+        patrocinadorHtml = `<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:6px 12px;font-size:12px;color:#92400e;font-weight:600;">🤝 Patrocinador: ${patroc1}</div>`;
+      } else {
+        // Patrocinadores diferentes por posição
+        patrocinadorHtml = `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+          ${patroc1 ? `<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:6px;padding:4px 10px;font-size:11px;color:#92400e;font-weight:600;">🥇 🤝 ${patroc1}</div>` : ''}
+          ${patroc2 ? `<div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;font-size:11px;color:#475569;font-weight:600;">🥈 🤝 ${patroc2}</div>` : ''}
+        </div>`;
+      }
+    }
 
     html += `<div class="secao" style="margin-top:16px;">
       <div class="secao-header">
@@ -765,7 +780,7 @@ function renderGanhadores() {
           <div class="secao-titulo">🏆 ${mod.nome} — ${mod.sub}</div>
           <div class="secao-sub">Clique no ganhador para ver a ficha completa</div>
         </div>
-        ${patrocinadorMod ? `<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:6px 12px;font-size:12px;color:#92400e;font-weight:600;">🤝 Patrocinador: ${patrocinadorMod}</div>` : ''}
+        ${patrocinadorHtml}
       </div>
       <div class="secao-body">`;
 
