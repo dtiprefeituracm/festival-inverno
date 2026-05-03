@@ -2513,7 +2513,14 @@ async function gerarEliminatorias(modId) {
 // Modal Placar
 function abrirModalPlacar(partidaId, modId, nomeA, nomeB, inscA, inscB, fase) {
   const partida  = todasPartidas.find(p => p.id === partidaId);
-  const maxPts   = fase === 'classificatoria' ? 12 : 18;
+  // Futevôlei (modId==3): classificatória=18, eliminatórias=18
+  // Vôlei (modId==1 ou 2): classificatória=12, eliminatórias=12
+  const isFutvolei = modId == 3;
+  const ptClass  = isFutvolei ? 18 : 12;
+  const ptElim   = isFutvolei ? 18 : 12;
+  const viradaClass = isFutvolei ? 9 : 6;
+  const viradaElim  = isFutvolei ? 9 : 6;
+  const maxPts   = fase === 'classificatoria' ? ptClass : ptElim;
   const faseDesc = {
     classificatoria: 'Classificatória',
     semi:   'Semi-Final',
@@ -2522,11 +2529,11 @@ function abrirModalPlacar(partidaId, modId, nomeA, nomeB, inscA, inscB, fase) {
     terceiro:'3º Lugar',
   };
   const regraDesc = {
-    classificatoria: 'Vence quem atingir 12 pts primeiro · Sem necessidade de 2 de diferença',
-    semi:    'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
-    quartas: 'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
-    final:   'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
-    terceiro:'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
+    classificatoria: `Vence quem atingir ${ptClass} pts primeiro · Sem necessidade de 2 de diferença`,
+    semi:    `Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
+    quartas: `Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
+    final:   `Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
+    terceiro:`Vence quem atingir ${ptElim} pts primeiro · Virada de quadra aos ${viradaElim} pontos`,
   };
 
   document.getElementById('pl-partida-id').value   = partidaId;
