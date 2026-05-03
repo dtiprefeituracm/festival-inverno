@@ -442,6 +442,13 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     Os resultados publicados pela aba <strong>🎯 Pontuação</strong> aparecem automaticamente aqui já preenchidos.
     Você também pode marcar ganhadores manualmente clicando em uma modalidade → "🏆 Marcar Ganhador" → preencha e salve → ative "Publicar".
   </div>
+  <div class="aviso aviso-warn">
+    <strong>⚠️ Só aparecem participantes credenciados</strong>
+    Se alguém reclamar que não está na lista, peça para verificar com a equipe de credenciamento.
+    Após ser credenciado no check-in, o nome aparece automaticamente aqui.
+    <br><br>
+    <strong>Fluxo:</strong> Participante reclama → vai ao check-in → credencia → volta aqui ✅
+  </div>
   <div class="modal-grid" id="grid-modalidades">
     <div class="loading-txt">Carregando modalidades...</div>
   </div>
@@ -1891,7 +1898,7 @@ function renderGridModalidades() {
   const grid = document.getElementById('grid-modalidades');
   if (!grid) return;
   grid.innerHTML = Object.entries(MODALIDADES).map(([id, m]) => {
-    const inscritos = todasInscricoes.filter(i => i.modalidade_id == id).length;
+    const inscritos = todasInscricoes.filter(i => i.modalidade_id == id && i.presenca).length;
     const ganhs     = todosGanhadores.filter(g => g.modalidade_id == id);
     const pubCount  = ganhs.filter(g => g.publicado).length;
     return `<div class="modal-card" id="card-mod-${id}" onclick="togglePainelMod(${id})">
@@ -1900,7 +1907,7 @@ function renderGridModalidades() {
         <span class="mod-arrow" id="arrow-${id}">▼</span>
       </div>
       <div class="modal-card-stats">
-        <div class="mod-stat"><div class="mod-stat-val">${inscritos}</div><div class="mod-stat-label">inscritos</div></div>
+        <div class="mod-stat"><div class="mod-stat-val">${inscritos}</div><div class="mod-stat-label">credenciados</div></div>
         <div class="mod-stat"><div class="mod-stat-val">${ganhs.length}/3</div><div class="mod-stat-label">ganhadores</div></div>
         <div class="mod-stat"><div class="mod-stat-val" style="color:${pubCount>0?'#22c55e':'#475569'};">${pubCount}</div><div class="mod-stat-label">publicados</div></div>
       </div>
@@ -1926,7 +1933,7 @@ function togglePainelMod(modId) {
 
 function renderPainelMod(modId) {
   const m        = MODALIDADES[modId];
-  const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId);
+  const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId && i.presenca); // Apenas credenciados
   const ganhs    = todosGanhadores.filter(g => g.modalidade_id == modId);
   const card     = document.getElementById('card-mod-' + modId);
   card.classList.add('expandido');
@@ -1951,7 +1958,7 @@ function renderPainelMod(modId) {
   }).filter(Boolean);
 
   const listaParticipantes = partsDaMod.length === 0
-    ? '<div class="vazio">Nenhum participante inscrito.</div>'
+    ? '<div class="vazio">⚠️ Nenhum credenciado nesta modalidade.<br><small style="color:#475569;">Participantes devem se credenciar no check-in antes de recerem premiação.</small></div>'
     : partsDaMod.map(p => {
         const jaGanhou = ganhs.some(g => g.participante_id === p.id);
         const extras = [];
@@ -1964,7 +1971,7 @@ function renderPainelMod(modId) {
         return `<div class="part-item">
           <div style="flex:1;min-width:0;">
             <div class="part-nome">${p.nome_completo}</div>
-            <div class="part-cidade">${p.cidade||'—'}/${p.uf||'RO'}${p.presenca?'<span class="part-cred"> · ✅ Credenciado</span>':''}</div>
+            <div class="part-cidade">${p.cidade||'—'}/${p.uf||'RO'}</div>
             ${extraHtml}
           </div>
           ${jaGanhou
@@ -1983,7 +1990,7 @@ function renderPainelMod(modId) {
   div.innerHTML = `
     <div class="painel-mod-header"><div class="painel-mod-titulo">${m.emoji} ${m.nome} — ${m.sub}</div></div>
     <div class="painel-mod-body">
-      <div class="secao-titulo" style="margin-bottom:10px;">🧑‍🤝‍🧑 Participantes inscritos</div>
+      <div class="secao-titulo" style="margin-bottom:10px;">✅ Credenciados presentes</div>
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
       <div class="secao-titulo" style="margin-bottom:10px;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/3)</span></div>
