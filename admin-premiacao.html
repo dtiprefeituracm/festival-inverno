@@ -1074,7 +1074,7 @@ function imprimirAquatica(modId, fase) {
   const temposFase   = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === fase);
 
   // Para fase final, pegar os top 4 da classificatória
-  let atletasParaImprimir = credenciados;
+  let atletasParaImprimir = fase === 'classificatoria' ? inscritos : credenciados;
   if (fase === 'final') {
     const temposClass  = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado && r.tempo_segundos);
     const rankingClass = [...temposClass].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
@@ -1097,7 +1097,14 @@ function imprimirAquatica(modId, fase) {
       return { nome_exibicao: nomeDupla(insc, part), _dns: true };
     });
 
-  const todos = [...grp1, ...grp2, ...grp3, ...grp4];
+  // Deduplica por inscricao_id para evitar entradas duplicadas
+  const idsVistos = new Set();
+  const dedup = arr => arr.filter(r => {
+    const key = r.inscricao_id || r.nome_exibicao;
+    if (idsVistos.has(key)) return false;
+    idsVistos.add(key); return true;
+  });
+  const todos = [...dedup(grp1), ...dedup(grp2), ...dedup(grp3), ...grp4];
 
   let posValida = 0;
   let linhas = '';
@@ -1108,32 +1115,48 @@ function imprimirAquatica(modId, fase) {
     if (isValido) posValida++;
     const isTop4   = fase === 'classificatoria' && isValido && posValida <= 4;
 
-    let posLabel, rowClass, situacao;
-    if (isDQL)        { posLabel = 'DQL'; rowClass = 'declass'; situacao = '⛔ Desclassificado'; }
-    else if (isDNS)   { posLabel = 'DNS'; rowClass = 'dns';     situacao = r.observacao || 'Não registrado'; }
-    else              { posLabel = medals[posValida-1] || posValida+'º'; rowClass = isTop4 ? 'top4' : ''; situacao = isTop4 ? '✅ → Final' : ''; }
+    let posLabel, rowClass, situacao, premioCell;
+    if (isDQL) {
+      posLabel = 'DQL'; rowClass = 'declass'; situacao = '⛔ Desclassificado'; premioCell = '—';
+    } else if (isDNS) {
+      posLabel = 'DNS'; rowClass = 'dns'; situacao = r.observacao || 'Não registrado'; premioCell = '—';
+    } else {
+      posLabel = medals[posValida-1] || posValida+'º';
+      rowClass = (isTop4 || fase === 'final') && posValida <= 3 ? 'destaque' : '';
+      // Situação: na classificatória marca TOP 4; na final marca lugar conquistado
+      if (fase === 'classificatoria') {
+        situacao = isTop4 ? '✅ → Final' : '';
+      } else {
+        // Fase final: mostra o lugar como título
+        situacao = posValida === 1 ? '🥇 Campeão' : posValida === 2 ? '🥈 Vice' : posValida === 3 ? '🥉 3º Lugar' : '';
+      }
+      // Prêmio: só para top 3 conforme regulamento
+      premioCell = posValida <= 3 ? (m.premio?.[posValida] || '—') : '—';
+    }
 
     linhas += `<tr class="${rowClass}">
       <td style="text-align:center;font-size:${posValida<=3&&isValido?'18':'13'}px;">${posLabel}</td>
       <td>${r.nome_exibicao}${r.observacao&&!isDNS?`<br><small style="color:#888;">${r.observacao}</small>`:''}</td>
       <td style="text-align:center;font-family:monospace;font-size:15px;font-weight:700;">${isDQL?'<s>'+formatTempo(r.tempo_segundos)+'</s>':r.tempo_segundos?formatTempo(r.tempo_segundos):'—'}</td>
       <td style="text-align:center;">${situacao}</td>
+      <td style="color:#b45309;font-weight:700;">${premioCell}</td>
     </tr>`;
   });
 
-  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum dado registrado.</td></tr>`;
+  if (!linhas) linhas = `<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Nenhum dado registrado.</td></tr>`;
 
-  const win = window.open('', '_blank', 'width=800,height=600');
+  const win = window.open('', '_blank', 'width=900,height=620');
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
   <title>Impressão — ${titulo}</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
-    h1 { font-size: 18px; margin-bottom: 4px; }
-    .sub { font-size: 12px; color: #666; margin-bottom: 20px; }
+    h1 { font-size: 18px; margin-bottom: 4px; color: #1a56a0; }
+    .sub { font-size: 12px; color: #666; margin-bottom: 8px; }
+    .regra { font-size: 12px; color: #444; background: #f0f9ff; border-left: 3px solid #1a56a0; padding: 8px 12px; margin-bottom: 20px; border-radius: 4px; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #1a56a0; color: white; padding: 10px 12px; font-size: 13px; text-align: left; }
     td { padding: 9px 12px; border-bottom: 1px solid #ddd; font-size: 13px; vertical-align: middle; }
-    tr.top4 td { background: #f0fdf4; font-weight: 600; }
+    tr.destaque td { background: #f0fdf4; font-weight: 600; }
     tr.declass td { color: #aaa; text-decoration: line-through; background: #fafafa; }
     tr.dns td { color: #999; font-style: italic; background: #f8f8f8; }
     .rodape { margin-top: 24px; font-size: 11px; color: #999; text-align: right; }
@@ -1141,8 +1164,9 @@ function imprimirAquatica(modId, fase) {
   </style></head><body>
   <h1>${titulo}</h1>
   <div class="sub">Festival de Inverno 2026 — SEMESP · Costa Marques/RO &nbsp;|&nbsp; Impresso em ${new Date().toLocaleString('pt-BR')}</div>
+  <div class="regra">📋 ${fase === 'final' ? 'Resultado Final · Premiação conforme Regulamento do Festival de Inverno 2026' : 'Classificatória · Os 4 melhores tempos avançam para a Final'}</div>
   <table>
-    <thead><tr><th>#</th><th>Atleta / Dupla</th><th>Tempo</th><th>Situação</th></tr></thead>
+    <thead><tr><th>#</th><th>Atleta / Dupla</th><th>Tempo</th><th>Situação</th><th>Prêmio</th></tr></thead>
     <tbody>${linhas}</tbody>
   </table>
   <div class="rodape">Gerado por admin-premiacao · Festival de Inverno 2026</div>
@@ -1150,6 +1174,7 @@ function imprimirAquatica(modId, fase) {
   </body></html>`);
   win.document.close();
 }
+
 
 function imprimirPesca(modId) {
   const m       = MODALIDADES[modId];
@@ -1938,31 +1963,36 @@ async function sincronizarAguaPremiacao(modId) {
   const base        = usarFinal ? temposFinal : temposClass;
   const ranking     = [...base].sort((a, b) => a.tempo_segundos - b.tempo_segundos);
 
-  if (ranking.length < 1) { toast('Nenhum resultado de tempo para sincronizar. Registre os tempos na aba Pontuação → Aquáticas.', 'erro'); return; }
+  if (ranking.length < 1) {
+    toast('Nenhum resultado de tempo para sincronizar. Registre os tempos na aba Pontuação → Aquáticas.', 'erro');
+    return;
+  }
 
-  const btn = document.querySelector(`#painel-mod-${modId} button[onclick*="sincronizarAgua"]`);
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
+  const btnSel = document.querySelector(`#painel-mod-${modId} button[onclick*="sincronizarAgua"]`);
+  if (btnSel) { btnSel.disabled = true; btnSel.textContent = '⏳ Sincronizando...'; }
 
   try {
     const top3 = ranking.slice(0, 3);
     for (let i = 0; i < top3.length; i++) {
       const r       = top3[i];
       const posicao = i + 1;
-      // Tenta encontrar cidade do participante via inscrição
-      const insc  = todasInscricoes.find(ins => ins.id === r.inscricao_id);
-      const part  = insc ? todosParticipantes.find(p => p.id === insc.participante_id) : null;
+      // Usa == (loose equality) para evitar falha por tipos string/número
+      const insc = todasInscricoes.find(ins => ins.id == r.inscricao_id);
+      const part = insc ? todosParticipantes.find(p => p.id == insc.participante_id) : null;
       const dados = {
-        participante_id:   r.participante_id || part?.id || null,
-        modalidade_id:     modId,
-        posicao,
+        participante_id:   part?.id || r.participante_id || null,
+        modalidade_id:     parseInt(modId),
+        posicao:           posicao,
         nome_exibicao:     r.nome_exibicao,
         cidade:            part?.cidade || '',
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[posicao] || '',
-        resultado_tecnico: `Tempo ${usarFinal ? 'Final' : 'Classificatória'}: ${formatTempo(r.tempo_segundos)}`,
+        resultado_tecnico: 'Tempo ' + (usarFinal ? 'Final' : 'Classificatoria') + ': ' + formatTempo(r.tempo_segundos),
+        foto_url:          null,
         publicado:         true,
       };
+      // Verifica existente com == para evitar tipo mismatch
       const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
       if (existente) {
         await apiPost('ganhadores', dados, 'atualizar', existente.id);
@@ -1973,13 +2003,19 @@ async function sincronizarAguaPremiacao(modId) {
         if (newId) todosGanhadores.push({ ...dados, id: newId });
       }
     }
-    toast(`✅ Premiação de ${m.nome} (${m.sub}) sincronizada! ${top3.length} lugar(es) publicados.`);
+    toast('✅ Premiação de ' + m.nome + ' (' + m.sub + ') sincronizada! ' + top3.length + ' lugar(es) publicados.');
     const painel = document.getElementById('painel-mod-' + modId);
     if (painel) painel.remove();
     renderGridModalidades();
-    setTimeout(() => togglePainelMod(modId), 100);
-  } catch(e) { toast('Erro ao sincronizar. Verifique a conexão.', 'erro'); console.error(e); }
-  if (btn) { btn.disabled = false; btn.textContent = '🔄 Sincronizar com Premiação'; }
+    setTimeout(() => togglePainelMod(modId), 150);
+  } catch(e) {
+    console.error('Erro em sincronizarAguaPremiacao:', e);
+    toast('Erro ao sincronizar: ' + (e?.message || 'verifique o console para detalhes.'), 'erro');
+  }
+  if (btnSel && !btnSel.closest('#painel-mod-' + modId + ':not(.aberto)')) {
+    btnSel.disabled = false;
+    btnSel.textContent = '🔄 Sincronizar com Premiação';
+  }
 }
 
 async function publicarGanhadoresPesca(modId) {
