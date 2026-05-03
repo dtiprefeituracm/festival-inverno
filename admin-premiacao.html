@@ -789,12 +789,12 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 // CONFIGURAÇÃO — Modalidades
 // ================================================================
 const MODALIDADES = {
-  1: { nome:'Vôlei de Areia', sub:'Masculino',  tipo:'areia', emoji:'🏐', dupla:true,  equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  2: { nome:'Vôlei de Areia', sub:'Feminino',   tipo:'areia', emoji:'🏐', dupla:true,  equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
-  3: { nome:'Futevôlei',      sub:'Masculino',  tipo:'areia', emoji:'⚽', dupla:true,  equipe:false,
-       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  1: { nome:'Vôlei de Areia', sub:'Masculino',  tipo:'areia', emoji:'🏐', dupla:true,  equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
+  2: { nome:'Vôlei de Areia', sub:'Feminino',   tipo:'areia', emoji:'🏐', dupla:true,  equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
+  3: { nome:'Futevôlei',      sub:'Masculino',  tipo:'areia', emoji:'⚽', dupla:true,  equipe:false, maxLugares:2,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
   4: { nome:'Canoagem',       sub:'Masculino',  tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false, maxLugares:2,
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
   5: { nome:'Caiaque',        sub:'Masculino',  tipo:'agua',  emoji:'🚣', dupla:false, equipe:false, maxLugares:2,
@@ -803,10 +803,10 @@ const MODALIDADES = {
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
   9: { nome:'Caiaque',        sub:'Feminino',   tipo:'agua',  emoji:'🚣', dupla:false, equipe:false, maxLugares:2,
        premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu' } },
-  6: { nome:'Pesca',          sub:'Masculino',  tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
-       premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu', 3:'Troféu' } },
-  7: { nome:'Pesca',          sub:'Feminino',   tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
-       premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu', 3:'Troféu' } },
+  6: { nome:'Pesca',          sub:'Masculino',  tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,  maxLugares:2,
+       premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu' } },
+  7: { nome:'Pesca',          sub:'Feminino',   tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,  maxLugares:2,
+       premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu' } },
 };
 
 // ================================================================
