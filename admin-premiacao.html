@@ -1151,6 +1151,116 @@ function imprimirAquatica(modId, fase) {
   win.document.close();
 }
 
+function imprimirPesca(modId) {
+  const m       = MODALIDADES[modId];
+  const titulo  = `${m.emoji} ${m.nome} — ${m.sub} · Ranking Final`;
+  const medals  = ['🥇','🥈','🥉'];
+  const validos = todosResultadosPesca.filter(r => r.modalidade_id == modId && !r.desclassificado && r.tamanho_cm > 0);
+  const declass = todosResultadosPesca.filter(r => r.modalidade_id == modId && r.desclassificado);
+  const ranking = [...validos].sort((a, b) => b.tamanho_cm - a.tamanho_cm);
+
+  let linhas = '';
+  ranking.forEach((r, idx) => {
+    const pos = idx + 1;
+    const medal = medals[idx] || (pos + 'º');
+    const premio = m.premio?.[pos] || '';
+    linhas += `<tr class="${pos <= 2 ? 'destaque' : ''}">
+      <td style="text-align:center;font-size:${pos<=3?'18':'13'}px;">${medal}</td>
+      <td><strong>${r.nome_exibicao}</strong>${r.nome_equipe ? '<br><small>' + r.nome_equipe + '</small>' : ''}</td>
+      <td style="text-align:center;font-size:18px;font-weight:800;color:#166534;">${r.tamanho_cm.toFixed(1)} cm</td>
+      <td>${r.especie || '—'}</td>
+      <td>${r.video_url ? '<a href="' + r.video_url + '">🎬 Vídeo</a>' : '—'}</td>
+      <td style="color:#b45309;font-weight:700;">${premio}</td>
+    </tr>`;
+  });
+  declass.forEach(r => {
+    linhas += `<tr class="declass">
+      <td style="text-align:center;">⛔</td>
+      <td><s>${r.nome_exibicao}</s>${r.nome_equipe ? '<br><small>' + r.nome_equipe + '</small>' : ''}</td>
+      <td style="text-align:center;">—</td>
+      <td>—</td><td>—</td>
+      <td style="color:#aaa;">Desclassificado</td>
+    </tr>`;
+  });
+
+  if (!linhas) linhas = `<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">Nenhum resultado registrado.</td></tr>`;
+
+  const win = window.open('', '_blank', 'width=900,height=650');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Impressão — ${titulo}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+    h1 { font-size: 20px; margin-bottom: 4px; color: #1a56a0; }
+    .sub { font-size: 12px; color: #666; margin-bottom: 8px; }
+    .regra { font-size: 12px; color: #444; background: #f0f9ff; border-left: 3px solid #1a56a0; padding: 8px 12px; margin-bottom: 20px; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1a56a0; color: white; padding: 10px 12px; font-size: 13px; text-align: left; }
+    td { padding: 9px 12px; border-bottom: 1px solid #ddd; font-size: 13px; vertical-align: middle; }
+    tr.destaque td { background: #f0fdf4; font-weight: 600; }
+    tr.declass td { color: #aaa; background: #fafafa; }
+    .rodape { margin-top: 24px; font-size: 11px; color: #999; text-align: right; }
+    @media print { body { padding: 16px; } a { color: #111; } }
+  </style></head><body>
+  <h1>${titulo}</h1>
+  <div class="sub">Festival de Inverno 2026 — SEMESP · Costa Marques/RO &nbsp;|&nbsp; Impresso em ${new Date().toLocaleString('pt-BR')}</div>
+  <div class="regra">📋 Critério: maior peixe válido (cm) · Vídeo obrigatório com código de validação · Duração: 2h30min</div>
+  <table>
+    <thead><tr><th>#</th><th>Equipe / Capitão</th><th>Medição</th><th>Espécie</th><th>Vídeo</th><th>Prêmio</th></tr></thead>
+    <tbody>${linhas}</tbody>
+  </table>
+  <div class="rodape">Gerado por admin-premiacao · Festival de Inverno 2026</div>
+  <script>window.onload=()=>{ window.print(); }<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function imprimirPremiacao(modId) {
+  const m     = MODALIDADES[modId];
+  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId && g.publicado).sort((a,b) => a.posicao - b.posicao);
+  const medals = ['🥇','🥈','🥉'];
+
+  let linhas = '';
+  ganhs.forEach(g => {
+    const medal = medals[g.posicao - 1] || g.posicao + 'º';
+    const res   = g.resultado_tecnico ? `<br><small style="color:#555;">${g.resultado_tecnico}</small>` : '';
+    const eq    = [g.parceiro, g.equipe].filter(Boolean).join(' · ');
+    linhas += `<tr>
+      <td style="text-align:center;font-size:24px;">${medal}</td>
+      <td><strong>${g.nome_exibicao || '—'}</strong>${res}${eq ? '<br><small>' + eq + '</small>' : ''}</td>
+      <td>${g.cidade || '—'}</td>
+      <td style="color:#b45309;font-weight:700;">${g.premio_descricao || '—'}</td>
+    </tr>`;
+  });
+
+  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum ganhador publicado.</td></tr>`;
+
+  const win = window.open('', '_blank', 'width=800,height=550');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Premiação — ${m.emoji} ${m.nome} ${m.sub}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+    h1 { font-size: 20px; margin-bottom: 4px; color: #1a56a0; }
+    .sub { font-size: 12px; color: #666; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1a56a0; color: white; padding: 10px 12px; font-size: 13px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #ddd; font-size: 14px; vertical-align: middle; }
+    tr:nth-child(1) td { background: #fffde7; }
+    tr:nth-child(2) td { background: #f8f8f8; }
+    .rodape { margin-top: 24px; font-size: 11px; color: #999; text-align: right; }
+    @media print { body { padding: 16px; } }
+  </style></head><body>
+  <h1>${m.emoji} Premiação — ${m.nome} (${m.sub})</h1>
+  <div class="sub">Festival de Inverno 2026 — SEMESP · Costa Marques/RO &nbsp;|&nbsp; Impresso em ${new Date().toLocaleString('pt-BR')}</div>
+  <table>
+    <thead><tr><th>Lugar</th><th>Atleta / Equipe</th><th>Cidade</th><th>Prêmio</th></tr></thead>
+    <tbody>${linhas}</tbody>
+  </table>
+  <div class="rodape">Gerado por admin-premiacao · Festival de Inverno 2026</div>
+  <script>window.onload=()=>{ window.print(); }<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
 function formatTempo(sec) {
   if (sec === null || sec === undefined || isNaN(sec)) return '—';
   const m = Math.floor(sec / 60);
@@ -1532,11 +1642,18 @@ function renderPesca() {
     </div>`;
   });
 
-  // Botão publicar
+  // Botões de publicar + imprimir
   if (ranking.length > 0) {
-    html += `<button class="btn-publicar" onclick="publicarGanhadoresPesca(${modId})">
-      🌐 Publicar Resultado Final no Portal da Transparência
-    </button>`;
+    html += `<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+      <button class="btn-publicar" style="flex:1;" onclick="publicarGanhadoresPesca(${modId})">
+        🌐 Publicar no Portal da Transparência
+      </button>
+      <button onclick="imprimirPesca(${modId})"
+        style="padding:14px 20px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;
+               border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        🖨️ Imprimir Ranking
+      </button>
+    </div>`;
   }
 
   el.innerHTML = html;
@@ -1749,6 +1866,52 @@ async function salvarPesca() {
   } catch(e) { toast('Erro ao salvar.', 'erro'); console.error(e); }
 
   btn.disabled = false; btn.textContent = '💾 Salvar Resultado';
+}
+
+async function sincronizarPescaPremiacao(modId) {
+  // Mesma lógica do publicarGanhadoresPesca mas fechando/reabrindo o painel automaticamente
+  const m       = MODALIDADES[modId];
+  const validos  = todosResultadosPesca.filter(r => r.modalidade_id == modId && !r.desclassificado && r.tamanho_cm > 0);
+  const ranking  = [...validos].sort((a, b) => b.tamanho_cm - a.tamanho_cm);
+
+  if (ranking.length < 1) { toast('Nenhum resultado de pesca para sincronizar.', 'erro'); return; }
+
+  const btn = document.querySelector(`#painel-mod-${modId} button[onclick*="sincronizar"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
+
+  try {
+    for (let i = 0; i < Math.min(3, ranking.length); i++) {
+      const r = ranking[i];
+      const posicao = i + 1;
+      const dados = {
+        participante_id:   r.participante_id || null,
+        modalidade_id:     modId,
+        posicao,
+        nome_exibicao:     r.nome_exibicao,
+        equipe:            r.nome_equipe || '',
+        cidade:            '',
+        parceiro:          '',
+        premio_descricao:  m.premio?.[posicao] || '',
+        resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
+        publicado:         true,
+      };
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
+      if (existente) {
+        await apiPost('ganhadores', dados, 'atualizar', existente.id);
+        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+      } else {
+        const res = await apiPost('ganhadores', dados, 'inserir');
+        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+        if (newId) todosGanhadores.push({ ...dados, id: newId });
+      }
+    }
+    toast(`✅ Premiação da Pesca sincronizada! ${Math.min(3, ranking.length)} lugar(es) publicados.`);
+    // Fecha e reabre o painel para refletir os novos dados
+    const painel = document.getElementById('painel-mod-' + modId);
+    if (painel) painel.remove();
+    renderGridModalidades();
+    setTimeout(() => togglePainelMod(modId), 100);
+  } catch(e) { toast('Erro ao sincronizar.', 'erro'); console.error(e); }
 }
 
 async function publicarGanhadoresPesca(modId) {
@@ -2607,17 +2770,99 @@ function renderPainelMod(modId) {
     ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado.</div>'
     : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => renderGanhadorItem(g, modId)).join('');
 
+  // Para pesca: monta bloco de ranking automático da aba Pontuação
+  let blocoRankingPesca = '';
+  if (m.tipo === 'pesca') {
+    const validos  = todosResultadosPesca.filter(r => r.modalidade_id == modId && !r.desclassificado && r.tamanho_cm > 0);
+    const rankPesca = [...validos].sort((a, b) => b.tamanho_cm - a.tamanho_cm);
+    const medals   = ['🥇','🥈','🥉'];
+
+    if (rankPesca.length > 0) {
+      let rows = rankPesca.map((r, idx) => {
+        const pos    = idx + 1;
+        const medal  = medals[idx] || pos + 'º';
+        const premio = m.premio?.[pos] || '';
+        const jaSync = ganhs.some(g => g.posicao == pos && g.nome_exibicao === r.nome_exibicao);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;
+                    background:#0f172a;border-radius:8px;margin-bottom:6px;
+                    border-left:4px solid ${pos===1?'#ffd700':pos===2?'#c0c0c0':pos===3?'#cd7f32':'#334155'};">
+          <div style="font-size:${pos<=3?'22':'14'}px;flex-shrink:0;">${medal}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${r.nome_exibicao}</div>
+            ${r.nome_equipe ? `<div style="font-size:11px;color:#60a5fa;">🏷️ ${r.nome_equipe}</div>` : ''}
+            <div style="font-size:11px;color:#64748b;">${r.especie ? '🐟 ' + r.especie : ''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:20px;font-weight:800;color:#34d399;">${r.tamanho_cm.toFixed(1)} cm</div>
+            ${premio ? `<div style="font-size:10px;color:#fbbf24;font-weight:700;">${premio}</div>` : ''}
+            ${jaSync ? `<div style="font-size:10px;color:#22c55e;">✅ Sincronizado</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      const todosSynced = ganhs.length >= Math.min(rankPesca.length, 3);
+      blocoRankingPesca = `
+        <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);
+                    border-radius:10px;padding:14px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#34d399;">📊 Ranking da Pontuação (Pesca)</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">${rankPesca.length} equipe(s) com resultado registrado</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="imprimirPesca(${modId})"
+                style="padding:7px 13px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;
+                       border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                🖨️ Imprimir
+              </button>
+              <button onclick="sincronizarPescaPremiacao(${modId})"
+                style="padding:7px 13px;background:linear-gradient(135deg,#065f46,#166534);
+                       color:#d1fae5;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                🔄 Sincronizar com Premiação
+              </button>
+            </div>
+          </div>
+          ${rows}
+          ${!todosSynced ? `<div style="font-size:11px;color:#fbbf24;margin-top:8px;">⚠️ Clique em "Sincronizar" para puxar estes resultados automaticamente para a seção de ganhadores.</div>` : ''}
+        </div>`;
+    } else {
+      blocoRankingPesca = `
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);
+                    border-radius:10px;padding:14px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#fbbf24;">⚠️ Sem resultados na Pontuação</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+            Acesse a aba <strong>🎣 Pontuação → Pesca</strong> e registre as medições das equipes.
+            Os resultados aparecerão aqui automaticamente.
+          </div>
+        </div>`;
+    }
+  }
+
+  // Botão imprimir premiação (para todas as modalidades)
+  const btnImprimirPremiacao = ganhs.length > 0
+    ? `<button onclick="imprimirPremiacao(${modId})"
+        style="width:100%;padding:11px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;
+               border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;display:flex;
+               align-items:center;justify-content:center;gap:8px;">
+        🖨️ Imprimir Premiação
+      </button>`
+    : '';
+
   const div = document.createElement('div');
   div.className = 'painel-mod aberto';
   div.id = 'painel-mod-' + modId;
   div.innerHTML = `
     <div class="painel-mod-header"><div class="painel-mod-titulo">${m.emoji} ${m.nome} — ${m.sub}</div></div>
     <div class="painel-mod-body">
+      ${blocoRankingPesca}
       <div class="secao-titulo" style="margin-bottom:10px;">✅ Credenciados presentes</div>
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
-      <div class="secao-titulo" style="margin-bottom:10px;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/3)</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div class="secao-titulo" style="margin-bottom:0;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/3)</span></div>
+      </div>
       <div id="lista-ganhs-${modId}">${listaGanhadores}</div>
+      ${btnImprimirPremiacao}
     </div>`;
   card.insertAdjacentElement('afterend', div);
 }
@@ -2773,6 +3018,17 @@ function atualizarPainelMod(modId) {
   listaGanhs.innerHTML = ganhs.length === 0
     ? '<div class="vazio" style="padding:12px;">Nenhum ganhador.</div>'
     : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => renderGanhadorItem(g, modId)).join('');
+  // Atualiza / insere botão imprimir premiação
+  const existing = document.getElementById('btn-imp-prem-' + modId);
+  if (existing) existing.remove();
+  if (ganhs.length > 0) {
+    const btn = document.createElement('button');
+    btn.id = 'btn-imp-prem-' + modId;
+    btn.setAttribute('onclick', `imprimirPremiacao(${modId})`);
+    btn.style.cssText = 'width:100%;padding:11px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;';
+    btn.textContent = '🖨️ Imprimir Premiação';
+    listaGanhs.insertAdjacentElement('afterend', btn);
+  }
 }
 
 // ================================================================
