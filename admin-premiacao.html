@@ -2410,6 +2410,29 @@ function renderVolei() {
       const faseLabels = { semi:'Semi-Final', quartas:'Quartas de Final', final:'Final' };
       const fasesOrdem = ['quartas', 'semi', 'final'];
 
+      // ── Detecta: ambas semis encerradas mas Final ainda "A definir" ──
+      const semisFeitas = pElim.filter(p => p.fase === 'semi' && p.encerrada && p.vencedor_nome);
+      const totalSemis  = pElim.filter(p => p.fase === 'semi').length;
+      const finalPart   = pElim.find(p => p.fase === 'final');
+      const finalVazia  = finalPart && (finalPart.nome_a === 'A definir' || finalPart.nome_b === 'A definir');
+
+      if (semisFeitas.length >= 2 && totalSemis >= 2 && finalVazia) {
+        html += `<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.4);border-radius:10px;
+                             padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#22c55e;">✅ Ambas as semis encerradas!</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px;">
+              🥇 ${semisFeitas[0]?.vencedor_nome} &nbsp;·&nbsp; 🥇 ${semisFeitas[1]?.vencedor_nome}
+            </div>
+          </div>
+          <button onclick="preencherFinalManual(${modId})"
+            style="padding:9px 18px;background:linear-gradient(135deg,#065f46,#16a34a);color:#d1fae5;
+                   border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+            ⚡ Preencher Final Agora
+          </button>
+        </div>`;
+      }
+
       fasesOrdem.forEach(fase => {
         const pFase = pElim.filter(p => p.fase === fase);
         if (pFase.length === 0) return;
@@ -2951,10 +2974,20 @@ async function avancarVencedoresParaFinal(modId) {
   try {
     await apiPost('partidas_volei', dados, 'atualizar', final.id);
     todasPartidas = todasPartidas.map(p => p.id === final.id ? { ...p, ...dados } : p);
-    toast('🏆 Final preenchida automaticamente com os vencedores das semis!', 'sucesso');
+    toast('🏆 Final preenchida com os vencedores das semis!', 'sucesso');
   } catch(e) {
     console.warn('[Auto-avanço] Erro ao preencher Final:', e.message);
+    toast('Erro ao preencher Final. Verifique o console.', 'erro');
   }
+}
+
+// Botão manual — para casos onde as semis já estavam salvas antes do auto-avanço existir
+async function preencherFinalManual(modId) {
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Preenchendo...'; }
+  await avancarVencedoresParaFinal(modId);
+  renderVolei();
+  if (btn) { btn.disabled = false; }
 }
 
 async function publicarGanhadoresVolei(modId) {
