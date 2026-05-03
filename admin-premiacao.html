@@ -1046,9 +1046,6 @@ function renderAquatica() {
   const rankingClass = [...temposClass].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
   const idsTop4      = new Set(rankingClass.slice(0, 4).map(r => r.inscricao_id));
 
-  // Resultados da fase atual
-  const temposFase = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === fase);
-
   // Para fase final, só mostrar os top 4 da classificatória
   let credParaExibir = credenciados;
   if (fase === 'final') {
@@ -1063,40 +1060,82 @@ function renderAquatica() {
     }
   }
 
-  // Monta ranking para exibição
-  const rankingFase = [...temposFase].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+  // Resultados da fase atual
+  const temposFase   = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === fase);
+  const idsComReg    = new Set(temposFase.map(r => r.inscricao_id));
 
+  // Grupos para o ranking completo
+  const grp1Valid  = temposFase.filter(r => r.tempo_segundos && !r.desclassificado)
+                               .sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+  const grp2Declass = temposFase.filter(r => r.desclassificado);
+  const grp3SemTempo = temposFase.filter(r => !r.tempo_segundos && !r.desclassificado);
+  const grp4SemReg   = credParaExibir
+    .filter(insc => !idsComReg.has(insc.id))
+    .map(insc => {
+      const part = todosParticipantes.find(p => p.id === insc.participante_id);
+      return { inscricao_id: insc.id, nome_exibicao: nomeDupla(insc, part), _semRegistro: true };
+    });
+
+  const rankingCompleto = [...grp1Valid, ...grp2Declass, ...grp3SemTempo, ...grp4SemReg];
+
+  // Monta ranking para exibição
   // HTML
   let html = '';
 
-  // Ranking
-  if (rankingFase.length > 0) {
+  // Ranking — sempre exibe (mesmo sem tempos ainda)
+  {
+    const totalComTempo = grp1Valid.length;
     html += `<div class="ranking-wrap" style="margin-bottom:20px;">
       <div class="ranking-header">
         <div><span class="ranking-titulo">🏅 Ranking — ${fase === 'classificatoria' ? 'Classificatória' : 'Final'}</span></div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="ranking-sub">${rankingFase.length} tempo${rankingFase.length !== 1 ? 's' : ''} registrado${rankingFase.length !== 1 ? 's' : ''}</span>
-          <button onclick="imprimirAquatica(${modId},'${fase}')"
+          <span class="ranking-sub">${totalComTempo} com tempo · ${grp4SemReg.length + grp3SemTempo.length} DNS · ${grp2Declass.length} DQL</span>
+          ${totalComTempo > 0 ? `<button onclick="imprimirAquatica(${modId},'${fase}')"
             style="padding:5px 11px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
             🖨️ ${fase === 'classificatoria' ? 'Imprimir Top 4' : 'Imprimir Resultado'}
-          </button>
+          </button>` : ''}
         </div>
       </div>`;
-    rankingFase.forEach((r, idx) => {
-      const pos = idx + 1;
-      const isTop4 = fase === 'classificatoria' && pos <= 4;
-      const declass = r.desclassificado;
+
+    let posValida = 0;
+    rankingCompleto.forEach((r) => {
+      const isDNS    = r._semRegistro || (!r.tempo_segundos && !r.desclassificado);
+      const isDQL    = r.desclassificado;
+      const isValido = r.tempo_segundos && !isDQL;
+
+      if (isValido) posValida++;
+      const pos    = isValido ? posValida : null;
+      const isTop4 = fase === 'classificatoria' && pos !== null && pos <= 4;
+
+      let posHtml, corNome, corTempo, badgeExtra;
+      if (isDQL) {
+        posHtml   = `<div class="pos-badge pos-n" style="font-size:9px;background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#f87171;">DQL</div>`;
+        corNome   = '#64748b'; corTempo = '#475569';
+        badgeExtra = '<span class="declass-badge">Desclassificado</span>';
+      } else if (isDNS) {
+        posHtml   = `<div class="pos-badge pos-n" style="font-size:9px;background:rgba(100,116,139,0.15);border-color:#334155;color:#475569;">DNS</div>`;
+        corNome   = '#475569'; corTempo = '#334155';
+        badgeExtra = `<span style="font-size:10px;color:#475569;background:rgba(71,85,105,0.15);border:1px solid #334155;border-radius:6px;padding:2px 7px;font-weight:700;">${r.observacao || 'Não registrado'}</span>`;
+      } else {
+        posHtml   = `<div class="pos-badge ${pos===1?'pos-1':pos===2?'pos-2':pos===3?'pos-3':'pos-n'}">${pos}</div>`;
+        corNome   = '#e2e8f0'; corTempo = '#60a5fa';
+        badgeExtra = isTop4 ? '<span class="top4-badge">TOP 4 → Final</span>' : '';
+      }
+
       html += `<div class="ranking-row">
-        <div class="pos-badge ${pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : 'pos-n'}">${pos}</div>
+        ${posHtml}
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:${declass ? '#64748b' : '#e2e8f0'};${declass ? 'text-decoration:line-through;' : ''}">${r.nome_exibicao}</div>
-          <div style="font-size:11px;color:#64748b;">${fase === 'classificatoria' ? 'Classificatória' : 'Final'}${r.observacao ? ' · <span style="color:#f59e0b;">'+r.observacao+'</span>' : ''}</div>
+          <div style="font-size:13px;font-weight:700;color:${corNome};${isDQL?'text-decoration:line-through;':''}">${r.nome_exibicao}</div>
+          <div style="font-size:11px;color:#64748b;">${r.observacao && !isDNS ? '<span style="color:#f59e0b;">'+r.observacao+'</span>' : (fase==='classificatoria'?'Classificatória':'Final')}</div>
         </div>
-        <div style="font-size:16px;font-weight:800;color:${declass ? '#475569' : '#60a5fa'};font-family:monospace;">${r.tempo_segundos ? formatTempo(r.tempo_segundos) : '—'}</div>
-        ${isTop4 ? '<span class="top4-badge">TOP 4 → Final</span>' : ''}
-        ${declass ? '<span class="declass-badge">Desclassificado</span>' : ''}
+        <div style="font-size:16px;font-weight:800;color:${corTempo};font-family:monospace;">${r.tempo_segundos ? formatTempo(r.tempo_segundos) : '—'}</div>
+        ${badgeExtra}
       </div>`;
     });
+
+    if (rankingCompleto.length === 0) {
+      html += `<div class="vazio">Nenhum dado registrado ainda.</div>`;
+    }
     html += `</div>`;
   }
 
