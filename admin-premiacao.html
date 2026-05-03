@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <!--
-  Admin — Premiação · Galeria · Fotos Credenciamento
+  Admin — Pontuação · Premiação · Galeria · Fotos Credenciamento
   Festival de Inverno 2026 — SEMESP / Costa Marques/RO
   Desenvolvido por Ewerson Luiz de Oliveira — DTI
   Requer: /api/supabase e /api/admin-auth
+  v2.0 — Sistema automático de pontuação por modalidade
 -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Premiação — Festival de Inverno 2026</title>
+<title>Admin — Pontuação & Premiação · Festival de Inverno 2026</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
@@ -20,12 +21,13 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   border-bottom: 1px solid rgba(255,255,255,0.1); }
 .header-title { font-size: 17px; font-weight: 800; color: white; }
 .header-sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
-.header-actions { display: flex; gap: 8px; }
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn-back { padding: 8px 16px; background: rgba(255,255,255,0.12); color: white;
-  border: none; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; text-decoration: none; }
+  border: none; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600;
+  text-decoration: none; }
 .btn-back:hover { background: rgba(255,255,255,0.2); }
 
-/* ── Alerta de auth ── */
+/* ── Auth ── */
 .auth-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
   z-index: 999; align-items: center; justify-content: center; }
 .auth-overlay.show { display: flex; }
@@ -40,20 +42,160 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
 .auth-err { color: #f87171; font-size: 12px; text-align: center; margin-top: 8px; display: none; }
 
-/* ── Navegação tabs ── */
-.tabs { background: #1e293b; border-bottom: 1px solid #334155; padding: 0 24px;
-  display: flex; gap: 2px; }
-.tab-btn { padding: 14px 18px; color: #64748b; font-size: 13px; font-weight: 600;
+/* ── Tabs principais ── */
+.tabs { background: #1e293b; border-bottom: 1px solid #334155; padding: 0 16px;
+  display: flex; gap: 0; overflow-x: auto; }
+.tab-btn { padding: 14px 16px; color: #64748b; font-size: 13px; font-weight: 600;
   cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent;
   transition: all 0.15s; white-space: nowrap; }
 .tab-btn:hover { color: #e2e8f0; }
 .tab-btn.ativo { color: #60a5fa; border-bottom-color: #60a5fa; }
 
-/* ── Conteúdo das tabs ── */
-.tab-content { display: none; padding: 24px; max-width: 1100px; margin: 0 auto; }
+/* ── Tab content ── */
+.tab-content { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
 .tab-content.ativa { display: block; }
 
-/* ── Cards de modalidade ── */
+/* ── Sub-navegação (Pontuação) ── */
+.sub-nav { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.sub-btn { padding: 10px 18px; background: #1e293b; border: 1px solid #334155;
+  border-radius: 10px; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; }
+.sub-btn:hover { border-color: #475569; color: #e2e8f0; }
+.sub-btn.ativo { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+.sub-content { display: none; }
+.sub-content.ativa { display: block; }
+
+/* ── Seletor de modalidade dentro de sub-tab ── */
+.mod-sel-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.mod-sel-btn { padding: 9px 16px; background: #1e293b; border: 1px solid #334155;
+  border-radius: 8px; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap; }
+.mod-sel-btn:hover { border-color: #475569; color: #e2e8f0; }
+.mod-sel-btn.ativo { background: #1e3a5f; border-color: #60a5fa; color: #60a5fa; }
+
+/* ── Fase tabs (Classificatória / Final) ── */
+.fase-row { display: flex; gap: 8px; margin-bottom: 18px; }
+.fase-btn { padding: 8px 16px; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; }
+.fase-btn.ativo { background: #1e3a5f; border-color: #60a5fa; color: #60a5fa; }
+
+/* ── Ranking table ── */
+.ranking-wrap { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+  overflow: hidden; margin-bottom: 20px; }
+.ranking-header { padding: 14px 18px; background: #162032; border-bottom: 1px solid #334155;
+  display: flex; align-items: center; justify-content: space-between; }
+.ranking-titulo { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+.ranking-sub { font-size: 11px; color: #64748b; }
+.ranking-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+  border-bottom: 1px solid #1e293b; transition: background 0.1s; }
+.ranking-row:last-child { border-bottom: none; }
+.ranking-row:hover { background: #162032; }
+.pos-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.pos-1 { background: linear-gradient(135deg,#b8860b,#ffd700); color: #1c1400; }
+.pos-2 { background: linear-gradient(135deg,#808080,#c0c0c0); color: #1c1c1c; }
+.pos-3 { background: linear-gradient(135deg,#8b4513,#cd7f32); color: #fff; }
+.pos-n { background: #1e293b; border: 1px solid #334155; color: #64748b; }
+.top4-badge { font-size: 10px; color: #22c55e; background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; padding: 2px 7px;
+  font-weight: 700; margin-left: 6px; }
+.declass-badge { font-size: 10px; color: #ef4444; background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; padding: 2px 7px; font-weight: 700; }
+
+/* ── Cards de participante para entrada de dados ── */
+.part-data-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 8px; }
+.part-data-card:hover { border-color: #475569; }
+.part-data-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.part-data-nome { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+.part-data-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+.part-data-result { font-size: 14px; font-weight: 800; color: #60a5fa; }
+.tempo-input-wrap { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.tempo-input { width: 130px; padding: 8px 12px; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; color: #e2e8f0; font-size: 14px; font-family: 'Courier New', monospace;
+  font-weight: 700; outline: none; letter-spacing: 1px; }
+.tempo-input:focus { border-color: #60a5fa; }
+.tempo-input::placeholder { color: #334155; font-weight: 400; }
+.btn-salvar-tempo { padding: 8px 14px; background: #064e3b; color: #6ee7b7;
+  border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-salvar-tempo:hover { background: #065f46; }
+.btn-declass { padding: 8px 12px; background: rgba(239,68,68,0.1); color: #f87171;
+  border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; font-size: 11px;
+  font-weight: 700; cursor: pointer; }
+.btn-declass:hover { background: rgba(239,68,68,0.2); }
+
+/* ── Pesca ── */
+.pesca-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 8px; }
+.pesca-card:hover { border-color: #475569; }
+.pesca-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.pesca-medida { font-size: 22px; font-weight: 800; color: #34d399; }
+.pesca-video { display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+  color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.3);
+  border-radius: 6px; padding: 3px 8px; text-decoration: none; }
+.btn-pesca-registrar { padding: 8px 14px; background: #1e3a5f; color: #60a5fa;
+  border: 1px solid #3b82f6; border-radius: 8px; font-size: 12px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0; }
+.btn-pesca-registrar:hover { background: #1a4a7a; }
+.validacao-badge { font-size: 10px; color: #fbbf24; background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.3); border-radius: 6px; padding: 2px 7px; font-weight: 700; }
+
+/* ── Vôlei — Grupos ── */
+.grupo-wrap { margin-bottom: 16px; }
+.grupo-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: #162032; border: 1px solid #334155; border-radius: 8px 8px 0 0; }
+.grupo-letra { width: 32px; height: 32px; border-radius: 8px; background: #1a56a0;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+  font-weight: 800; color: white; flex-shrink: 0; }
+.grupo-titulo { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+.grupo-body { background: #1e293b; border: 1px solid #334155; border-top: none;
+  border-radius: 0 0 8px 8px; overflow: hidden; }
+.grupo-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid #334155; }
+.grupo-item:last-child { border-bottom: none; }
+.grupo-num { width: 24px; height: 24px; border-radius: 6px; background: #0f172a;
+  display: flex; align-items: center; justify-content: center; font-size: 11px;
+  font-weight: 700; color: #64748b; flex-shrink: 0; }
+
+/* ── Partidas ── */
+.partidas-grid { display: flex; flex-direction: column; gap: 8px; }
+.partida-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.partida-times { flex: 1; min-width: 200px; }
+.partida-nome { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+.partida-vs { font-size: 10px; color: #475569; font-weight: 600; margin: 4px 0; }
+.placar-display { font-size: 18px; font-weight: 800; color: #60a5fa;
+  background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+  padding: 6px 14px; text-align: center; min-width: 60px; }
+.placar-encerrada { color: #22c55e; }
+.btn-placar { padding: 8px 14px; background: #1e3a5f; color: #60a5fa;
+  border: 1px solid #3b82f6; border-radius: 8px; font-size: 12px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0; }
+.btn-placar:hover { background: #1a4a7a; }
+.fase-label { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.fase-class { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+.fase-elim { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.fase-final { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.vencedor-mark { font-size: 10px; color: #22c55e; font-weight: 700; }
+
+/* ── Botão de publicar resultado ── */
+.btn-publicar { width: 100%; padding: 14px; background: linear-gradient(135deg,#166534,#15803d);
+  color: #d1fae5; border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  cursor: pointer; margin-top: 16px; display: flex; align-items: center; justify-content: center;
+  gap: 8px; }
+.btn-publicar:hover { background: linear-gradient(135deg,#14532d,#166534); }
+.btn-publicar:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sortear { padding: 12px 20px; background: linear-gradient(135deg,#4c1d95,#7c3aed);
+  color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.btn-sortear:hover { background: linear-gradient(135deg,#3b0764,#6d28d9); }
+.btn-gerar { padding: 10px 18px; background: #1e3a5f; color: #60a5fa;
+  border: 1px solid #3b82f6; border-radius: 8px; font-size: 12px; font-weight: 700;
+  cursor: pointer; }
+.btn-gerar:hover { background: #162d4a; }
+
+/* ── Cards de modalidade (premiação) ── */
 .modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
 .modal-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
   padding: 16px; cursor: pointer; transition: all 0.2s; }
@@ -70,7 +212,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 .mod-stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; }
 .mod-arrow { color: #64748b; font-size: 16px; }
 
-/* ── Painel de participantes por modalidade ── */
+/* ── Painel participantes ── */
 .painel-mod { background: #1e293b; border: 1px solid #3b82f6; border-radius: 12px;
   margin-top: 14px; overflow: hidden; display: none; }
 .painel-mod.aberto { display: block; }
@@ -78,30 +220,17 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
 .painel-mod-titulo { font-size: 14px; font-weight: 700; color: #60a5fa; }
 .painel-mod-body { padding: 16px 18px; }
-
-/* ── Participante item ── */
 .part-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px;
-  border: 1px solid #334155; border-radius: 8px; margin-bottom: 6px; background: #0f172a;
-  transition: all 0.15s; }
+  border: 1px solid #334155; border-radius: 8px; margin-bottom: 6px; background: #0f172a; }
 .part-item:hover { border-color: #475569; }
 .part-nome { flex: 1; font-size: 13px; font-weight: 600; color: #e2e8f0; }
 .part-cidade { font-size: 11px; color: #64748b; }
 .part-cred { font-size: 10px; color: #22c55e; }
 .btn-ganhar { padding: 6px 12px; background: #fbbf24; color: #1c1c00; border: none;
-  border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
 .btn-ganhar:hover { background: #f59e0b; }
-.btn-sm { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
-  cursor: pointer; border: none; }
-.btn-danger { background: #fee2e2; color: #dc2626; }
-.btn-danger:hover { background: #fecaca; }
-.btn-edit { background: #eff6ff; color: #1d4ed8; }
-.btn-edit:hover { background: #dbeafe; }
-.btn-pub { background: #f0fdf4; color: #16a34a; }
-.btn-pub:hover { background: #dcfce7; }
-.btn-unpub { background: #fef9c3; color: #92400e; }
-.btn-unpub:hover { background: #fef08a; }
 
-/* ── Ganhadores existentes por modalidade ── */
+/* ── Ganhadores ── */
 .ganhador-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
   border: 1px solid #334155; border-radius: 8px; margin-bottom: 8px; background: #0f172a; }
 .ganhador-medal { font-size: 26px; width: 36px; text-align: center; flex-shrink: 0; }
@@ -112,12 +241,9 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   border: 1px solid #334155; }
 .ganhador-foto-vazia { width: 54px; height: 54px; border-radius: 6px; border: 2px dashed #334155;
   display: flex; align-items: center; justify-content: center; font-size: 22px; color: #475569; }
-.pub-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
-.pub-dot.verde { background: #22c55e; }
-.pub-dot.cinza { background: #475569; }
 
-/* ── Modal de formulário ── */
-.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+/* ── Modal genérico ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
   z-index: 200; align-items: center; justify-content: center; padding: 16px; }
 .modal-bg.aberto { display: flex; }
 .modal-box { background: #1e293b; border-radius: 16px; padding: 24px; width: 100%;
@@ -131,6 +257,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   border-radius: 8px; color: #e2e8f0; font-size: 13px; outline: none; font-family: inherit; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3b82f6; }
 .form-group select option { background: #0f172a; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .foto-preview { width: 100%; height: 160px; object-fit: cover; border-radius: 8px;
   border: 1px solid #334155; margin-top: 8px; display: none; }
 .btn-salvar { width: 100%; padding: 12px; background: #1a56a0; color: white;
@@ -145,11 +272,9 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 .galeria-add { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
   padding: 18px; margin-bottom: 20px; }
 .galeria-add-titulo { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 14px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .galeria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .galeria-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-  overflow: hidden; transition: all 0.15s; }
-.galeria-card:hover { border-color: #475569; }
+  overflow: hidden; }
 .galeria-card img { width: 100%; height: 140px; object-fit: cover; display: block; background: #0f172a; }
 .galeria-card-body { padding: 10px; }
 .galeria-legenda { font-size: 12px; color: #94a3b8; margin-bottom: 8px;
@@ -165,42 +290,48 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 .credenciado-nome { font-size: 13px; font-weight: 600; color: #e2e8f0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .credenciado-mod { font-size: 11px; color: #64748b; }
-.credenciado-foto-input { flex: 1; padding: 7px 10px; background: #0f172a;
-  border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: 12px;
-  outline: none; min-width: 200px; }
-.credenciado-foto-input:focus { border-color: #3b82f6; }
 .foto-alimento-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px;
-  border: 1px solid #334155; display: none; flex-shrink: 0; }
-.btn-salvar-foto { padding: 7px 12px; background: #064e3b; color: #6ee7b7;
-  border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
-.btn-salvar-foto:hover { background: #065f46; }
-.btn-salvar-foto.salvando { opacity: 0.5; }
+  border: 1px solid #334155; flex-shrink: 0; }
 
-/* ── Vazio / loading ── */
+/* ── Utilitários ── */
+.pub-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.pub-dot.verde { background: #22c55e; }
+.pub-dot.cinza { background: #475569; }
+.btn-sm { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; }
+.btn-danger { background: #fee2e2; color: #dc2626; }
+.btn-danger:hover { background: #fecaca; }
+.btn-edit { background: #eff6ff; color: #1d4ed8; }
+.btn-edit:hover { background: #dbeafe; }
+.btn-pub { background: #f0fdf4; color: #16a34a; }
+.btn-pub:hover { background: #dcfce7; }
+.btn-unpub { background: #fef9c3; color: #92400e; }
+.btn-unpub:hover { background: #fef08a; }
 .vazio { text-align: center; padding: 32px; color: #475569; font-size: 13px; }
 .loading-txt { text-align: center; padding: 24px; color: #475569; font-size: 13px; }
 .aviso { background: #1e3a5f; border: 1px solid #3b82f6; border-radius: 8px;
   padding: 12px 14px; font-size: 12px; color: #93c5fd; margin-bottom: 16px; }
 .aviso strong { display: block; margin-bottom: 3px; color: #60a5fa; }
-
-/* ── Sections ── */
-.secao-titulo { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.aviso-warn { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.4); color: #fcd34d; }
+.aviso-warn strong { color: #fbbf24; }
+.aviso-ok { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.4); color: #86efac; }
+.aviso-ok strong { color: #22c55e; }
+.secao-titulo { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px; }
 .secao-sub { font-size: 11px; color: #64748b; font-weight: 400; }
 .divider { border: none; border-top: 1px solid #334155; margin: 20px 0; }
-
-/* ── Toast ── */
 .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
   border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999;
   transform: translateY(80px); transition: transform 0.3s; max-width: 320px; }
 .toast.show { transform: translateY(0); }
 .toast.sucesso { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
 .toast.erro { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+.resultado-tecnico { font-size: 11px; color: #fbbf24; margin-top: 3px; }
 
-/* ── Responsive ── */
 @media (max-width: 640px) {
   .modal-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
-  .tab-content { padding: 16px; }
+  .tab-content { padding: 12px; }
+  .header-title { font-size: 14px; }
 }
 </style>
 </head>
@@ -209,7 +340,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 <!-- Auth overlay -->
 <div class="auth-overlay" id="auth-overlay">
   <div class="auth-box">
-    <h2>🔐 Admin — Premiação</h2>
+    <h2>🔐 Admin — Pontuação & Premiação</h2>
     <p>Festival de Inverno 2026 — SEMESP</p>
     <input type="text" id="auth-usuario" placeholder="Usuário" autocomplete="username">
     <input type="password" id="auth-senha" placeholder="Senha" autocomplete="current-password">
@@ -221,48 +352,110 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 <!-- Header -->
 <div class="header">
   <div>
-    <div class="header-title">🏆 Admin — Premiação · Galeria · Fotos</div>
+    <div class="header-title">🏆 Admin — Pontuação · Premiação · Galeria</div>
     <div class="header-sub">Festival de Inverno 2026 — SEMESP · Costa Marques/RO</div>
   </div>
   <div class="header-actions">
-    <a href="portal-transparencia.html" target="_blank" class="btn-back">👁️ Ver Portal</a>
-    <button onclick="voltarAdmin()" class="btn-back">← Admin Principal</button>
+    <a href="portal-transparencia.html" target="_blank" class="btn-back">👁️ Portal</a>
+    <button onclick="voltarAdmin()" class="btn-back">← Admin</button>
   </div>
 </div>
 
 <!-- Tabs -->
 <div class="tabs">
-  <button class="tab-btn ativo" onclick="abrirTab('premiacao', this)">🏆 Premiação</button>
-  <button class="tab-btn" onclick="abrirTab('galeria', this)">📸 Galeria do Evento</button>
-  <button class="tab-btn" onclick="abrirTab('alimentos', this)">🥦 Fotos de Alimentos</button>
+  <button class="tab-btn ativo" onclick="abrirTab('pontuacao', this)">🎯 Pontuação</button>
+  <button class="tab-btn" onclick="abrirTab('premiacao', this)">🏆 Premiação</button>
+  <button class="tab-btn" onclick="abrirTab('galeria', this)">📸 Galeria</button>
+  <button class="tab-btn" onclick="abrirTab('alimentos', this)">🥦 Alimentos</button>
 </div>
 
-<!-- ═══════════════════════════════════════ -->
-<!--  TAB: PREMIAÇÃO                        -->
-<!-- ═══════════════════════════════════════ -->
-<div class="tab-content ativa" id="tab-premiacao">
-  <div class="aviso">
-    <strong>ℹ️ Como funciona a premiação</strong>
-    Clique em uma modalidade para ver os participantes inscritos → clique em "🏆 Marcar Ganhador" → preencha a colocação, prêmio e foto → salve → ative "Publicar" quando quiser que apareça no Portal da Transparência.
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  TAB: PONTUAÇÃO                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="tab-content ativa" id="tab-pontuacao">
+
+  <!-- Sub-navegação -->
+  <div class="sub-nav">
+    <button class="sub-btn ativo" id="subbtn-aquaticas" onclick="abrirSubTab('aquaticas', this)">🌊 Aquáticas</button>
+    <button class="sub-btn" id="subbtn-pesca" onclick="abrirSubTab('pesca', this)">🎣 Pesca</button>
+    <button class="sub-btn" id="subbtn-volei" onclick="abrirSubTab('volei', this)">🏐 Vôlei & Futevôlei</button>
   </div>
 
+  <!-- ── SUB: AQUÁTICAS ── -->
+  <div class="sub-content ativa" id="sub-aquaticas">
+    <div class="aviso">
+      <strong>⏱️ Competição por Tempo — Corrida de Canoa / Corrida de Caiaque</strong>
+      Fase Classificatória: registre o tempo de todos os credenciados. Os 4 melhores tempos avançam para a Final.
+      Fase Final: registre o tempo da corrida final. O sistema define automaticamente 1º e 2º lugares.
+      Formato: <strong>MM:SS.CC</strong> (ex: 05:42.30 = 5 minutos, 42 segundos e 30 centésimos)
+    </div>
+    <div class="mod-sel-row">
+      <button class="mod-sel-btn ativo" id="aqbtn-4" onclick="selecionarAquatica(4, this)">🛶 Canoagem (Dupla)</button>
+      <button class="mod-sel-btn" id="aqbtn-5" onclick="selecionarAquatica(5, this)">🚣 Caiaque</button>
+    </div>
+    <div class="fase-row">
+      <button class="fase-btn ativo" id="fasebtn-classificatoria" onclick="selecionarFaseAquatica('classificatoria', this)">📋 Classificatória (todos)</button>
+      <button class="fase-btn" id="fasebtn-final" onclick="selecionarFaseAquatica('final', this)">🏁 Final (Top 4)</button>
+    </div>
+    <div id="aquatica-content"><div class="loading-txt">Carregando...</div></div>
+  </div>
+
+  <!-- ── SUB: PESCA ── -->
+  <div class="sub-content" id="sub-pesca">
+    <div class="aviso">
+      <strong>🎣 Pesca Embarcada — Pesque e Solte</strong>
+      Vence a equipe que apresentar o <strong>maior peixe válido</strong> (medição em cm).
+      A captura deve ser comprovada por <strong>vídeo obrigatório</strong> mostrando: captura, medição e soltura.
+      A organização fornece um <strong>código de validação</strong> que deve aparecer no vídeo.
+    </div>
+    <div class="mod-sel-row">
+      <button class="mod-sel-btn ativo" id="pebtn-6" onclick="selecionarPesca(6, this)">👨 Pesca Masculino</button>
+      <button class="mod-sel-btn" id="pebtn-7" onclick="selecionarPesca(7, this)">👩 Pesca Feminino</button>
+    </div>
+    <div id="pesca-content"><div class="loading-txt">Carregando...</div></div>
+  </div>
+
+  <!-- ── SUB: VÔLEI ── -->
+  <div class="sub-content" id="sub-volei">
+    <div class="aviso">
+      <strong>🏐 Vôlei de Praia & Futevôlei — Sistema de Grupos + Eliminatória</strong>
+      <strong>Passo 1:</strong> Sorteie os grupos (clique em "Sortear Grupos"). O sistema embaralha as duplas credenciadas aleatoriamente.
+      <strong>Passo 2:</strong> Registre os placares da fase classificatória (set único de 12 pts). O sistema monta o ranking por grupo.
+      <strong>Passo 3:</strong> Gere o chaveamento eliminatório (top 2 de cada grupo) e registre os placares finais (set único de 18 pts).
+    </div>
+    <div class="mod-sel-row">
+      <button class="mod-sel-btn ativo" id="vlbtn-1" onclick="selecionarVolei(1, this)">🏐 Vôlei Masc.</button>
+      <button class="mod-sel-btn" id="vlbtn-2" onclick="selecionarVolei(2, this)">🏐 Vôlei Fem.</button>
+      <button class="mod-sel-btn" id="vlbtn-3" onclick="selecionarVolei(3, this)">⚽ Futevôlei</button>
+    </div>
+    <div id="volei-content"><div class="loading-txt">Carregando...</div></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  TAB: PREMIAÇÃO                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-premiacao">
+  <div class="aviso">
+    <strong>ℹ️ Como funciona a premiação</strong>
+    Os resultados publicados pela aba <strong>🎯 Pontuação</strong> aparecem automaticamente aqui já preenchidos.
+    Você também pode marcar ganhadores manualmente clicando em uma modalidade → "🏆 Marcar Ganhador" → preencha e salve → ative "Publicar".
+  </div>
   <div class="modal-grid" id="grid-modalidades">
     <div class="loading-txt">Carregando modalidades...</div>
   </div>
-
   <div id="painel-participantes"></div>
 </div>
 
-<!-- ═══════════════════════════════════════ -->
-<!--  TAB: GALERIA                          -->
-<!-- ═══════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  TAB: GALERIA                                      -->
+<!-- ═══════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-galeria">
   <div class="aviso">
     <strong>📸 Galeria do Evento</strong>
-    Adicione URLs de fotos (Supabase Storage, Google Drive compartilhado, Imgur, etc.). As fotos marcadas como "Publicado" aparecem automaticamente na aba Galeria do Portal da Transparência.
+    Fotos marcadas como "Publicado" aparecem na aba Galeria do Portal da Transparência.
   </div>
-
-  <!-- Form adicionar foto -->
   <div class="galeria-add">
     <div class="galeria-add-titulo">➕ Adicionar foto</div>
     <div class="form-group">
@@ -295,29 +488,21 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     </div>
     <button class="btn-salvar" onclick="salvarFotoGaleria()" style="margin-top:0;">Adicionar à Galeria</button>
   </div>
-
-  <!-- Lista de fotos -->
   <div class="secao-titulo">📷 Fotos cadastradas <span class="secao-sub" id="cont-galeria"></span></div>
-  <div class="galeria-grid" id="galeria-lista">
-    <div class="loading-txt">Carregando...</div>
-  </div>
+  <div class="galeria-grid" id="galeria-lista"><div class="loading-txt">Carregando...</div></div>
 </div>
 
-<!-- ═══════════════════════════════════════ -->
-<!--  TAB: FOTOS DE ALIMENTOS               -->
-<!-- ═══════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  TAB: ALIMENTOS                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-alimentos">
   <div class="aviso">
     <strong>🥦 Alimentos Arrecadados no Credenciamento</strong>
-    Fotos capturadas automaticamente durante o check-in. Cada participante entregou 1 kg por pessoa inscrita. Esta tela é somente leitura — para adicionar foto, acesse o <a href="checkin.html" target="_blank" style="color:#60a5fa;">Credenciamento</a>.
+    Fotos capturadas durante o check-in. Somente leitura — para adicionar, acesse o <a href="checkin.html" target="_blank" style="color:#60a5fa;">Credenciamento</a>.
   </div>
-
-  <!-- Stats -->
   <div id="alim-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;"></div>
-
-  <!-- Filtros -->
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-    <input type="text" id="busca-cred" placeholder="🔍 Buscar credenciado..."
+    <input type="text" id="busca-cred" placeholder="🔍 Buscar..."
       style="padding:9px 12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;flex:1;min-width:200px;"
       oninput="filtrarCredenciados()">
     <select id="filtro-mod-cred" onchange="filtrarCredenciados()"
@@ -338,21 +523,19 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <option value="sem">⚠️ Sem foto</option>
     </select>
   </div>
-
   <div class="secao-titulo">✅ Credenciados <span class="secao-sub" id="cont-credenciados"></span></div>
-  <div id="lista-credenciados">
-    <div class="loading-txt">Carregando credenciados...</div>
-  </div>
+  <div id="lista-credenciados"><div class="loading-txt">Carregando...</div></div>
 </div>
 
-<!-- Modal Formulário Ganhador -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  MODAL: GANHADOR (Premiação manual)                -->
+<!-- ═══════════════════════════════════════════════════ -->
 <div class="modal-bg" id="modal-ganhador-bg">
   <div class="modal-box">
     <div class="modal-titulo" id="modal-titulo">Marcar Ganhador</div>
     <input type="hidden" id="g-participante-id">
     <input type="hidden" id="g-inscricao-mod-id">
     <input type="hidden" id="g-edit-id">
-
     <div class="form-group">
       <label>Participante</label>
       <input type="text" id="g-nome" placeholder="Nome completo" readonly style="color:#60a5fa;font-weight:600;">
@@ -372,7 +555,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       </div>
     </div>
     <div class="form-group">
-      <label>Parceiro(a) <span style="color:#475569;font-weight:400;">(modalidades em dupla)</span></label>
+      <label>Parceiro(a) / Equipe</label>
       <input type="text" id="g-parceiro" placeholder="Nome do parceiro(a)">
       <div id="g-parceiro-aviso" style="display:none;font-size:11px;color:#f59e0b;margin-top:5px;padding:6px 10px;background:rgba(245,158,11,0.1);border-radius:6px;border-left:3px solid #f59e0b;"></div>
     </div>
@@ -381,8 +564,12 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <input type="text" id="g-equipe" placeholder="Nome da equipe">
     </div>
     <div class="form-group">
+      <label>Resultado Técnico <span style="color:#475569;font-weight:400;">(tempo/medição/placar)</span></label>
+      <input type="text" id="g-resultado-tecnico" placeholder="Ex: 05:42.30 | 47.5 cm | 12×8">
+    </div>
+    <div class="form-group">
       <label>Descrição do Prêmio</label>
-      <textarea id="g-premio" rows="2" placeholder="Ex: Troféu + R$ 500,00 em dinheiro"></textarea>
+      <textarea id="g-premio" rows="2" placeholder="Ex: Troféu + R$ 750,00"></textarea>
     </div>
     <div class="form-group">
       <label>📤 Upload da Foto com o Troféu</label>
@@ -400,9 +587,102 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
         Publicar imediatamente no Portal da Transparência
       </label>
     </div>
-
     <button class="btn-salvar" id="btn-salvar-ganhador" onclick="salvarGanhador()">💾 Salvar Ganhador</button>
     <button class="btn-cancelar" onclick="fecharModalGanhador()">Cancelar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  MODAL: RESULTADO PESCA                            -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-pesca-bg">
+  <div class="modal-box">
+    <div class="modal-titulo">🎣 Registrar Resultado — Pesca</div>
+    <input type="hidden" id="p-resultado-id">
+    <input type="hidden" id="p-inscricao-id">
+    <input type="hidden" id="p-participante-id">
+    <input type="hidden" id="p-modalidade-id">
+    <div class="form-group">
+      <label>Equipe / Capitão</label>
+      <input type="text" id="p-nome" readonly style="color:#60a5fa;font-weight:600;">
+    </div>
+    <div class="form-group">
+      <label>Nome da Equipe</label>
+      <input type="text" id="p-nome-equipe" placeholder="Nome da equipe (opcional)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>📏 Medição do Peixe (cm) *</label>
+        <input type="number" id="p-tamanho" step="0.1" min="0" placeholder="Ex: 45.5"
+          style="font-size:18px;font-weight:800;color:#34d399;">
+      </div>
+      <div class="form-group">
+        <label>🐟 Espécie (opcional)</label>
+        <input type="text" id="p-especie" placeholder="Ex: Dourado">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>🎬 URL do Vídeo (obrigatório pelo regulamento)</label>
+      <input type="url" id="p-video-url" placeholder="https://youtube.com/... ou link direto">
+      <div style="font-size:11px;color:#94a3b8;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;">
+        📋 O vídeo deve mostrar: <strong>captura</strong> → <strong>medição</strong> → <strong>soltura</strong> do peixe (Art. 15, IV do regulamento)
+      </div>
+    </div>
+    <div class="form-group">
+      <label>🔑 Código de Validação da Organização</label>
+      <input type="text" id="p-codigo" placeholder="Código fornecido pela organização (Art. 15, V)">
+    </div>
+    <div class="form-group">
+      <label>Observação</label>
+      <textarea id="p-obs" rows="2" placeholder="Observações adicionais..."></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="p-desclassificado" style="width:auto;accent-color:#ef4444;transform:scale(1.3);">
+      <label for="p-desclassificado" style="text-transform:none;font-size:13px;cursor:pointer;color:#f87171;">
+        ⛔ Desclassificar esta equipe
+      </label>
+    </div>
+    <button class="btn-salvar" id="btn-salvar-pesca" onclick="salvarPesca()">💾 Salvar Resultado</button>
+    <button class="btn-cancelar" onclick="fecharModalPesca()">Cancelar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  MODAL: PLACAR VÔLEI                              -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-placar-bg">
+  <div class="modal-box">
+    <div class="modal-titulo" id="placar-titulo">Registrar Placar</div>
+    <input type="hidden" id="pl-partida-id">
+    <input type="hidden" id="pl-modalidade-id">
+    <input type="hidden" id="pl-inscricao-a">
+    <input type="hidden" id="pl-inscricao-b">
+    <div style="background:#0f172a;border-radius:10px;padding:16px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:13px;font-weight:700;color:#e2e8f0;" id="pl-nome-a">—</div>
+      <div style="font-size:11px;color:#475569;margin:8px 0;">VS</div>
+      <div style="font-size:13px;font-weight:700;color:#e2e8f0;" id="pl-nome-b">—</div>
+    </div>
+    <div id="pl-info-fase" style="font-size:12px;color:#94a3b8;margin-bottom:14px;padding:8px 12px;background:rgba(96,165,250,0.1);border-radius:8px;"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label id="pl-label-a">Pontos Equipe A</label>
+        <input type="number" id="pl-pontos-a" min="0" max="25" placeholder="0"
+          style="font-size:24px;font-weight:800;color:#60a5fa;text-align:center;">
+      </div>
+      <div class="form-group">
+        <label id="pl-label-b">Pontos Equipe B</label>
+        <input type="number" id="pl-pontos-b" min="0" max="25" placeholder="0"
+          style="font-size:24px;font-weight:800;color:#60a5fa;text-align:center;">
+      </div>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="pl-encerrada" style="width:auto;accent-color:#22c55e;transform:scale(1.3);" checked>
+      <label for="pl-encerrada" style="text-transform:none;font-size:13px;cursor:pointer;color:#e2e8f0;">
+        Partida encerrada (define vencedor automaticamente)
+      </label>
+    </div>
+    <button class="btn-salvar" id="btn-salvar-placar" onclick="salvarPlacar()">💾 Registrar Placar</button>
+    <button class="btn-cancelar" onclick="fecharModalPlacar()">Cancelar</button>
   </div>
 </div>
 
@@ -411,23 +691,23 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 
 <script>
 // ================================================================
-// CONFIGURAÇÃO
+// CONFIGURAÇÃO — Modalidades
 // ================================================================
 const MODALIDADES = {
-  1: { nome: 'Vôlei de Areia', sub: 'Masculino',  tipo: 'areia', emoji: '🏐', dupla: true,  equipe: false,
-       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
-  2: { nome: 'Vôlei de Areia', sub: 'Feminino',   tipo: 'areia', emoji: '🏐', dupla: true,  equipe: false,
-       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
-  3: { nome: 'Futevôlei',      sub: 'Masculino',  tipo: 'areia', emoji: '⚽', dupla: true,  equipe: false,
-       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
-  4: { nome: 'Canoagem',       sub: 'Dupla',      tipo: 'agua',  emoji: '🛶', dupla: true,  equipe: false,
-       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
-  5: { nome: 'Caiaque',        sub: 'Individual', tipo: 'agua',  emoji: '🚣', dupla: false, equipe: false,
-       premio: { 1: '🥇 R$ 750,00 + troféu', 2: '🥈 R$ 400,00 + troféu', 3: 'Troféu' } },
-  6: { nome: 'Pesca',          sub: 'Masculino',  tipo: 'pesca', emoji: '🎣', dupla: false, equipe: true,
-       premio: { 1: '🥇 R$ 2.500,00 + troféu', 2: '🥈 R$ 1.000,00 + troféu', 3: 'Troféu' } },
-  7: { nome: 'Pesca',          sub: 'Feminino',   tipo: 'pesca', emoji: '🎣', dupla: false, equipe: true,
-       premio: { 1: '🥇 R$ 2.500,00 + troféu', 2: '🥈 R$ 1.000,00 + troféu', 3: 'Troféu' } },
+  1: { nome:'Vôlei de Areia', sub:'Masculino',  tipo:'areia', emoji:'🏐', dupla:true,  equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  2: { nome:'Vôlei de Areia', sub:'Feminino',   tipo:'areia', emoji:'🏐', dupla:true,  equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  3: { nome:'Futevôlei',      sub:'Masculino',  tipo:'areia', emoji:'⚽', dupla:true,  equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  4: { nome:'Canoagem',       sub:'Dupla',      tipo:'agua',  emoji:'🛶', dupla:true,  equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  5: { nome:'Caiaque',        sub:'Individual', tipo:'agua',  emoji:'🚣', dupla:false, equipe:false,
+       premio:{ 1:'🥇 R$ 750,00 + troféu', 2:'🥈 R$ 400,00 + troféu', 3:'Troféu' } },
+  6: { nome:'Pesca',          sub:'Masculino',  tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
+       premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu', 3:'Troféu' } },
+  7: { nome:'Pesca',          sub:'Feminino',   tipo:'pesca', emoji:'🎣', dupla:false, equipe:true,
+       premio:{ 1:'🥇 R$ 2.500,00 + troféu', 2:'🥈 R$ 1.000,00 + troféu', 3:'Troféu' } },
 };
 
 // ================================================================
@@ -441,15 +721,13 @@ async function fazerLogin() {
   if (!usuario || !senha) { err.style.display = 'block'; return; }
   try {
     const r = await fetch('/api/admin-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usuario, senha })
     });
     const d = await r.json();
     if (d.ok) {
       sessionStorage.setItem('adminToken', d.token || 'ok');
       sessionStorage.setItem('adminUsuario', usuario);
-      // Salva como objeto JSON para ser compatível com o JSON.parse do admin.html
       sessionStorage.setItem('adminPerfil', JSON.stringify({ perfil: d.perfil || 'operador', nome: usuario, podeExcluir: false }));
       document.getElementById('auth-overlay').classList.remove('show');
       inicializar();
@@ -458,25 +736,12 @@ async function fazerLogin() {
 }
 
 function voltarAdmin() {
-  // Salva token no localStorage para que admin.html recupere mesmo em nova navegação
   const token  = sessionStorage.getItem('adminToken');
   const perfil = sessionStorage.getItem('adminPerfil');
   if (token)  localStorage.setItem('adminToken',  token);
   if (perfil) localStorage.setItem('adminPerfil', perfil);
-
-  if (window.opener && !window.opener.closed) {
-    window.close(); // fecha esta aba, volta para aba do admin.html
-  } else {
-    window.location.href = 'admin.html';
-  }
-}
-
-function atualizarPremioPorPosicao() {
-  const modId   = parseInt(document.getElementById('g-inscricao-mod-id').value);
-  const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
-  const m = MODALIDADES[modId] || {};
-  const premioEl = document.getElementById('g-premio');
-  if (m.premio?.[posicao]) premioEl.value = m.premio[posicao];
+  if (window.opener && !window.opener.closed) window.close();
+  else window.location.href = 'admin.html';
 }
 
 function verificarAuth() {
@@ -490,10 +755,8 @@ function verificarAuth() {
 // ================================================================
 async function apiGet(tabela, query = '') {
   const r = await fetch('/api/supabase', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ acao: 'buscar', tabela, query,
-      token: sessionStorage.getItem('adminToken') })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao:'buscar', tabela, query, token: sessionStorage.getItem('adminToken') })
   });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
@@ -501,10 +764,8 @@ async function apiGet(tabela, query = '') {
 
 async function apiPost(tabela, dados, metodo = 'inserir', id = null) {
   const r = await fetch('/api/supabase', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ acao: metodo, tabela, dados, id,
-      token: sessionStorage.getItem('adminToken') })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: metodo, tabela, dados, id, token: sessionStorage.getItem('adminToken') })
   });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
@@ -523,28 +784,51 @@ function toast(msg, tipo = 'sucesso') {
 // ================================================================
 // ESTADO GLOBAL
 // ================================================================
-let todosParticipantes = [];
-let todasInscricoes    = [];
-let todosGanhadores    = [];
-let todasFotos         = [];
-let modAtiva           = null;
+let todosParticipantes   = [];
+let todasInscricoes      = [];
+let todosGanhadores      = [];
+let todasFotos           = [];
+let todosResultadosTempo = [];
+let todosResultadosPesca = [];
+let todasPartidas        = [];
+let todosGruposVolei     = [];
+
+let credenciadosFiltrados = [];
+
+// Estado das sub-tabs de pontuação
+let aquaticaModId  = 4;
+let aquaticaFase   = 'classificatoria';
+let pescaModId     = 6;
+let voleiModId     = 1;
 
 // ================================================================
 // INICIALIZAÇÃO
 // ================================================================
 async function inicializar() {
   try {
-    const [participantes, inscricoes, ganhadores, fotos] = await Promise.all([
+    const [participantes, inscricoes, ganhadores, fotos,
+           tempos, pescas, partidas, grupos] = await Promise.all([
       apiGet('participantes', 'select=id,nome_completo,cidade,uf,foto_alimento,foto_alimento_em'),
       apiGet('inscricoes', 'select=*'),
       apiGet('ganhadores', 'select=*').catch(() => []),
       apiGet('galeria_fotos', 'select=*').catch(() => []),
+      apiGet('resultados_tempo', 'select=*').catch(() => []),
+      apiGet('resultados_pesca', 'select=*').catch(() => []),
+      apiGet('partidas_volei', 'select=*').catch(() => []),
+      apiGet('grupos_volei', 'select=*').catch(() => []),
     ]);
-    todosParticipantes = Array.isArray(participantes) ? participantes : [];
-    todasInscricoes    = Array.isArray(inscricoes)    ? inscricoes    : [];
-    todosGanhadores    = Array.isArray(ganhadores)    ? ganhadores    : [];
-    todasFotos         = Array.isArray(fotos)         ? fotos         : [];
+    todosParticipantes   = Array.isArray(participantes)   ? participantes   : [];
+    todasInscricoes      = Array.isArray(inscricoes)      ? inscricoes      : [];
+    todosGanhadores      = Array.isArray(ganhadores)      ? ganhadores      : [];
+    todasFotos           = Array.isArray(fotos)           ? fotos           : [];
+    todosResultadosTempo = Array.isArray(tempos)          ? tempos          : [];
+    todosResultadosPesca = Array.isArray(pescas)          ? pescas          : [];
+    todasPartidas        = Array.isArray(partidas)        ? partidas        : [];
+    todosGruposVolei     = Array.isArray(grupos)          ? grupos          : [];
 
+    renderAquatica();
+    renderPesca();
+    renderVolei();
     renderGridModalidades();
     renderGaleria();
     renderCredenciados();
@@ -555,7 +839,7 @@ async function inicializar() {
 }
 
 // ================================================================
-// TABS
+// TABS e SUB-TABS
 // ================================================================
 function abrirTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('ativa'));
@@ -564,37 +848,967 @@ function abrirTab(id, btn) {
   btn.classList.add('ativo');
 }
 
+function abrirSubTab(id, btn) {
+  document.querySelectorAll('.sub-content').forEach(s => s.classList.remove('ativa'));
+  document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('sub-' + id).classList.add('ativa');
+  btn.classList.add('ativo');
+}
+
+// ================================================================
+// AQUÁTICAS — Helpers de tempo
+// ================================================================
+function parseTempo(str) {
+  if (!str) return null;
+  str = str.trim().replace(',', '.');
+  // Aceita: MM:SS.CC, MM:SS, SS.CC, SS
+  const m1 = str.match(/^(\d+):(\d+)(?:[.](\d+))?$/);
+  if (m1) {
+    const min = parseInt(m1[1]);
+    const seg = parseInt(m1[2]);
+    const cs  = m1[3] ? parseFloat('0.' + m1[3].padEnd(3, '0')) : 0;
+    return min * 60 + seg + cs;
+  }
+  const m2 = str.match(/^(\d+)(?:[.](\d+))?$/);
+  if (m2) {
+    const seg = parseInt(m2[1]);
+    const cs  = m2[2] ? parseFloat('0.' + m2[2].padEnd(3,'0')) : 0;
+    return seg + cs;
+  }
+  return null;
+}
+
+function formatTempo(sec) {
+  if (sec === null || sec === undefined || isNaN(sec)) return '—';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  const cs = Math.round((sec - Math.floor(sec)) * 100);
+  return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}.${cs.toString().padStart(2,'0')}`;
+}
+
+function nomeDupla(insc, part) {
+  let n = part?.nome_completo || 'Desconhecido';
+  if (insc?.parceiro_nome) n += ' / ' + insc.parceiro_nome;
+  return n;
+}
+
+// ================================================================
+// AQUÁTICAS — Render
+// ================================================================
+function selecionarAquatica(modId, btn) {
+  document.querySelectorAll('.mod-sel-btn[id^="aqbtn-"]').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  aquaticaModId = modId;
+  renderAquatica();
+}
+
+function selecionarFaseAquatica(fase, btn) {
+  document.querySelectorAll('.fase-btn').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  aquaticaFase = fase;
+  renderAquatica();
+}
+
+function renderAquatica() {
+  const el = document.getElementById('aquatica-content');
+  if (!el) return;
+
+  const modId = aquaticaModId;
+  const fase  = aquaticaFase;
+  const m     = MODALIDADES[modId];
+
+  // Inscrições desta modalidade
+  const inscritos    = todasInscricoes.filter(i => i.modalidade_id == modId);
+  const credenciados = inscritos.filter(i => i.presenca);
+
+  if (credenciados.length === 0) {
+    el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Nenhum credenciado</strong>Nenhum participante fez check-in nesta modalidade ainda.</div>`;
+    return;
+  }
+
+  // Resultados da fase classificatória para saber top 4
+  const temposClass = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado);
+  const rankingClass = [...temposClass].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+  const idsTop4      = new Set(rankingClass.slice(0, 4).map(r => r.inscricao_id));
+
+  // Resultados da fase atual
+  const temposFase = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === fase);
+
+  // Para fase final, só mostrar os top 4 da classificatória
+  let credParaExibir = credenciados;
+  if (fase === 'final') {
+    if (rankingClass.length < 1) {
+      el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Fase Classificatória pendente</strong>Registre os tempos da fase classificatória primeiro para identificar os 4 finalistas.</div>`;
+      return;
+    }
+    credParaExibir = credenciados.filter(i => idsTop4.has(i.id));
+    if (credParaExibir.length === 0) {
+      el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Sem finalistas</strong>Registre os tempos da classificatória primeiro.</div>`;
+      return;
+    }
+  }
+
+  // Monta ranking para exibição
+  const rankingFase = [...temposFase].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+
+  // HTML
+  let html = '';
+
+  // Ranking
+  if (rankingFase.length > 0) {
+    html += `<div class="ranking-wrap" style="margin-bottom:20px;">
+      <div class="ranking-header">
+        <div><span class="ranking-titulo">🏅 Ranking — ${fase === 'classificatoria' ? 'Classificatória' : 'Final'}</span></div>
+        <span class="ranking-sub">${rankingFase.length} tempo${rankingFase.length !== 1 ? 's' : ''} registrado${rankingFase.length !== 1 ? 's' : ''}</span>
+      </div>`;
+    rankingFase.forEach((r, idx) => {
+      const pos = idx + 1;
+      const isTop4 = fase === 'classificatoria' && pos <= 4;
+      const declass = r.desclassificado;
+      html += `<div class="ranking-row">
+        <div class="pos-badge ${pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : 'pos-n'}">${pos}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:${declass ? '#64748b' : '#e2e8f0'};${declass ? 'text-decoration:line-through;' : ''}">${r.nome_exibicao}</div>
+          <div style="font-size:11px;color:#64748b;">${fase === 'classificatoria' ? 'Classificatória' : 'Final'}</div>
+        </div>
+        <div style="font-size:16px;font-weight:800;color:${declass ? '#475569' : '#60a5fa'};font-family:monospace;">${formatTempo(r.tempo_segundos)}</div>
+        ${isTop4 ? '<span class="top4-badge">TOP 4 → Final</span>' : ''}
+        ${declass ? '<span class="declass-badge">Desclassificado</span>' : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Lista de entrada de tempos
+  html += `<div class="secao-titulo">${fase === 'classificatoria' ? '⌚ Registrar Tempos — Classificatória' : '🏁 Registrar Tempos — Final (Top 4)'}</div>`;
+
+  credParaExibir.forEach(insc => {
+    const part = todosParticipantes.find(p => p.id === insc.participante_id);
+    const nome = nomeDupla(insc, part);
+    const resExist = temposFase.find(r => r.inscricao_id === insc.id);
+    const tempoAtual = resExist ? formatTempo(resExist.tempo_segundos) : '';
+    const isDeclass  = resExist?.desclassificado || false;
+
+    html += `<div class="part-data-card" id="aqcard-${insc.id}">
+      <div class="part-data-header">
+        <div style="flex:1;">
+          <div class="part-data-nome">${nome}</div>
+          <div class="part-data-sub">${part?.cidade || '—'}/${part?.uf || 'RO'} · ✅ Credenciado</div>
+        </div>
+        ${resExist ? `<div class="part-data-result" style="${isDeclass ? 'text-decoration:line-through;color:#475569;' : ''}">${formatTempo(resExist.tempo_segundos)}${isDeclass ? ' ⛔' : ''}</div>` : '<div style="font-size:11px;color:#475569;">Sem tempo</div>'}
+      </div>
+      <div class="tempo-input-wrap">
+        <input class="tempo-input" id="tempo-${insc.id}" placeholder="MM:SS.CC"
+          value="${tempoAtual}" title="Formato: minutos:segundos.centésimos — ex: 05:42.30">
+        <button class="btn-salvar-tempo" onclick="salvarTempo('${insc.id}','${insc.participante_id}','${nome.replace(/'/g,"\\'")}','${fase}')">
+          ✅ Salvar
+        </button>
+        ${resExist ? `<button class="btn-declass" onclick="toggleDesclassificarTempo('${resExist.id}',${!isDeclass},'${insc.id}')">
+          ${isDeclass ? '↩️ Reabilitar' : '⛔ Desclassificar'}
+        </button>` : ''}
+      </div>
+    </div>`;
+  });
+
+  // Botão publicar (só na fase final, se houver pelo menos 1 tempo)
+  const temposFinalExist = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'final' && !r.desclassificado);
+  const temposClassValidos = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado);
+
+  if (fase === 'final' && temposFinalExist.length > 0) {
+    html += `<button class="btn-publicar" onclick="publicarGanhadoresAquaticas(${modId})">
+      🌐 Publicar Resultado Final no Portal da Transparência
+    </button>`;
+  } else if (fase === 'classificatoria' && temposClassValidos.length > 0) {
+    html += `<div class="aviso aviso-ok" style="margin-top:16px;">
+      <strong>✅ Classificatória em andamento</strong>
+      ${temposClassValidos.length} tempo(s) registrado(s). Os 4 melhores avançam para a Final.
+      Quando todos estiverem registrados, vá para a aba <strong>🏁 Final</strong>.
+    </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+async function salvarTempo(inscricaoId, participanteId, nomeExibicao, fase) {
+  const input = document.getElementById('tempo-' + inscricaoId);
+  const val   = input?.value?.trim();
+  const tempo  = parseTempo(val);
+  if (!tempo) { toast('Formato inválido! Use MM:SS.CC (ex: 05:42.30)', 'erro'); return; }
+
+  const existente = todosResultadosTempo.find(r =>
+    r.modalidade_id == aquaticaModId && r.inscricao_id === inscricaoId && r.fase === fase);
+
+  const dados = {
+    modalidade_id: aquaticaModId,
+    inscricao_id:  inscricaoId,
+    participante_id: participanteId,
+    nome_exibicao: nomeExibicao,
+    fase,
+    tempo_segundos: tempo,
+    desclassificado: false,
+  };
+
+  try {
+    if (existente) {
+      await apiPost('resultados_tempo', dados, 'atualizar', existente.id);
+      todosResultadosTempo = todosResultadosTempo.map(r => r.id === existente.id ? { ...r, ...dados } : r);
+    } else {
+      const res = await apiPost('resultados_tempo', dados, 'inserir');
+      const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+      if (newId) todosResultadosTempo.push({ ...dados, id: newId });
+    }
+    toast(`✅ Tempo ${formatTempo(tempo)} salvo!`);
+    renderAquatica();
+  } catch(e) { toast('Erro ao salvar tempo.', 'erro'); console.error(e); }
+}
+
+async function toggleDesclassificarTempo(id, declass, inscricaoId) {
+  try {
+    await apiPost('resultados_tempo', { desclassificado: declass }, 'atualizar', id);
+    todosResultadosTempo = todosResultadosTempo.map(r =>
+      r.id === id ? { ...r, desclassificado: declass } : r);
+    toast(declass ? '⛔ Desclassificado.' : '↩️ Reabilitado.');
+    renderAquatica();
+  } catch(e) { toast('Erro.', 'erro'); }
+}
+
+async function publicarGanhadoresAquaticas(modId) {
+  const m = MODALIDADES[modId];
+  const temposFinal  = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'final' && !r.desclassificado);
+  const temposClass  = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado);
+
+  const base    = temposFinal.length >= 1 ? temposFinal : temposClass;
+  const ranking = [...base].sort((a, b) => a.tempo_segundos - b.tempo_segundos);
+
+  if (ranking.length < 1) { toast('Registre ao menos um resultado antes de publicar.', 'erro'); return; }
+
+  const btn = document.querySelector(`button.btn-publicar`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
+
+  try {
+    for (let i = 0; i < Math.min(3, ranking.length); i++) {
+      const r = ranking[i];
+      const posicao = i + 1;
+      const dados = {
+        participante_id:   r.participante_id || null,
+        modalidade_id:     modId,
+        posicao,
+        nome_exibicao:     r.nome_exibicao,
+        cidade:            '',
+        parceiro:          '',
+        equipe:            '',
+        premio_descricao:  m.premio?.[posicao] || '',
+        resultado_tecnico: `Tempo: ${formatTempo(r.tempo_segundos)}`,
+        publicado:         true,
+      };
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
+      if (existente) {
+        await apiPost('ganhadores', dados, 'atualizar', existente.id);
+        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+      } else {
+        const res = await apiPost('ganhadores', dados, 'inserir');
+        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+        if (newId) todosGanhadores.push({ ...dados, id: newId });
+      }
+    }
+    toast(`✅ Resultado de ${m.nome} publicado no portal!`);
+    renderGridModalidades();
+  } catch(e) { toast('Erro ao publicar. Verifique o console.', 'erro'); console.error(e); }
+  if (btn) { btn.disabled = false; btn.textContent = '🌐 Publicar Resultado Final no Portal da Transparência'; }
+}
+
+// ================================================================
+// PESCA — Render
+// ================================================================
+function selecionarPesca(modId, btn) {
+  document.querySelectorAll('.mod-sel-btn[id^="pebtn-"]').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  pescaModId = modId;
+  renderPesca();
+}
+
+function renderPesca() {
+  const el = document.getElementById('pesca-content');
+  if (!el) return;
+
+  const modId     = pescaModId;
+  const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId);
+  const cred      = inscritos.filter(i => i.presenca);
+
+  if (cred.length === 0) {
+    el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Nenhum credenciado</strong>Nenhuma equipe fez check-in nesta modalidade.</div>`;
+    return;
+  }
+
+  const resultados = todosResultadosPesca.filter(r => r.modalidade_id == modId && !r.desclassificado);
+  const ranking    = [...resultados].sort((a, b) => (b.tamanho_cm || 0) - (a.tamanho_cm || 0));
+
+  let html = '';
+
+  // Ranking
+  if (ranking.length > 0) {
+    html += `<div class="ranking-wrap" style="margin-bottom:20px;">
+      <div class="ranking-header">
+        <span class="ranking-titulo">🏅 Ranking por Medição</span>
+        <span class="ranking-sub">${ranking.length} equipe(s) com resultado</span>
+      </div>`;
+    ranking.forEach((r, idx) => {
+      const pos = idx + 1;
+      html += `<div class="ranking-row">
+        <div class="pos-badge ${pos===1?'pos-1':pos===2?'pos-2':pos===3?'pos-3':'pos-n'}">${pos}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${r.nome_exibicao}</div>
+          <div style="font-size:11px;color:#64748b;">${r.nome_equipe || ''} ${r.especie ? '· ' + r.especie : ''}</div>
+          ${r.codigo_validacao ? `<span class="validacao-badge">🔑 Cód: ${r.codigo_validacao}</span>` : ''}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px;font-weight:800;color:#34d399;">${r.tamanho_cm ? r.tamanho_cm.toFixed(1) + ' cm' : '—'}</div>
+          ${r.video_url ? `<a href="${r.video_url}" target="_blank" class="pesca-video">🎬 Vídeo</a>` : '<div style="font-size:10px;color:#ef4444;">⚠️ Sem vídeo</div>'}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Cards de equipes
+  html += `<div class="secao-titulo">🎣 Equipes Credenciadas — Registrar Resultado</div>`;
+
+  cred.forEach(insc => {
+    const part = todosParticipantes.find(p => p.id === insc.participante_id);
+    const nome = part?.nome_completo || 'Desconhecido';
+    const membros = [insc.parceiro_nome, insc.membro3_nome, insc.membro4_nome].filter(Boolean);
+    const res    = todosResultadosPesca.find(r => r.inscricao_id === insc.id);
+
+    html += `<div class="pesca-card">
+      <div class="pesca-card-header">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${nome}</div>
+          ${res?.nome_equipe ? `<div style="font-size:11px;color:#60a5fa;margin-top:1px;">🏷️ ${res.nome_equipe}</div>` : ''}
+          ${membros.length ? `<div style="font-size:11px;color:#64748b;margin-top:2px;">👥 ${membros.join(', ')}</div>` : ''}
+          <div style="font-size:11px;color:#22c55e;margin-top:2px;">✅ Credenciada</div>
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          ${res && !res.desclassificado ? `<div class="pesca-medida">${res.tamanho_cm?.toFixed(1)} cm</div>` : ''}
+          ${res?.desclassificado ? '<span class="declass-badge">⛔ Desclassificada</span>' : ''}
+          ${res?.video_url ? `<a href="${res.video_url}" target="_blank" class="pesca-video">🎬 Ver vídeo</a>` : ''}
+          <button class="btn-pesca-registrar" onclick="abrirModalPesca('${insc.id}','${insc.participante_id}','${nome.replace(/'/g,"\\'")}',${modId})">
+            ${res ? '✏️ Editar' : '➕ Registrar'}
+          </button>
+        </div>
+      </div>
+      ${res?.codigo_validacao ? `<div style="margin-top:8px;"><span class="validacao-badge">🔑 Código: ${res.codigo_validacao}</span></div>` : ''}
+      ${res?.observacao ? `<div style="font-size:11px;color:#94a3b8;margin-top:6px;">📝 ${res.observacao}</div>` : ''}
+    </div>`;
+  });
+
+  // Botão publicar
+  if (ranking.length > 0) {
+    html += `<button class="btn-publicar" onclick="publicarGanhadoresPesca(${modId})">
+      🌐 Publicar Resultado Final no Portal da Transparência
+    </button>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// Modal Pesca
+function abrirModalPesca(inscricaoId, participanteId, nome, modId) {
+  const res = todosResultadosPesca.find(r => r.inscricao_id === inscricaoId);
+  document.getElementById('p-resultado-id').value  = res?.id || '';
+  document.getElementById('p-inscricao-id').value  = inscricaoId;
+  document.getElementById('p-participante-id').value = participanteId;
+  document.getElementById('p-modalidade-id').value = modId;
+  document.getElementById('p-nome').value          = nome;
+  document.getElementById('p-nome-equipe').value   = res?.nome_equipe || '';
+  document.getElementById('p-tamanho').value       = res?.tamanho_cm || '';
+  document.getElementById('p-especie').value       = res?.especie || '';
+  document.getElementById('p-video-url').value     = res?.video_url || '';
+  document.getElementById('p-codigo').value        = res?.codigo_validacao || '';
+  document.getElementById('p-obs').value           = res?.observacao || '';
+  document.getElementById('p-desclassificado').checked = res?.desclassificado || false;
+  document.getElementById('modal-pesca-bg').classList.add('aberto');
+}
+
+function fecharModalPesca() {
+  document.getElementById('modal-pesca-bg').classList.remove('aberto');
+}
+
+async function salvarPesca() {
+  const btn          = document.getElementById('btn-salvar-pesca');
+  const editId       = document.getElementById('p-resultado-id').value;
+  const inscricaoId  = document.getElementById('p-inscricao-id').value;
+  const participanteId = document.getElementById('p-participante-id').value;
+  const modId        = parseInt(document.getElementById('p-modalidade-id').value);
+  const nome         = document.getElementById('p-nome').value;
+  const nomeEquipe   = document.getElementById('p-nome-equipe').value.trim();
+  const tamanho      = parseFloat(document.getElementById('p-tamanho').value);
+  const especie      = document.getElementById('p-especie').value.trim();
+  const videoUrl     = document.getElementById('p-video-url').value.trim();
+  const codigo       = document.getElementById('p-codigo').value.trim();
+  const obs          = document.getElementById('p-obs').value.trim();
+  const declass      = document.getElementById('p-desclassificado').checked;
+
+  if (!declass && (!tamanho || tamanho <= 0)) {
+    toast('Informe a medição do peixe em cm.', 'erro'); return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  const dados = {
+    modalidade_id:    modId,
+    inscricao_id:     inscricaoId,
+    participante_id:  participanteId || null,
+    nome_exibicao:    nome,
+    nome_equipe:      nomeEquipe || null,
+    tamanho_cm:       declass ? null : tamanho,
+    especie:          especie || null,
+    video_url:        videoUrl || null,
+    codigo_validacao: codigo || null,
+    observacao:       obs || null,
+    desclassificado:  declass,
+  };
+
+  try {
+    if (editId) {
+      await apiPost('resultados_pesca', dados, 'atualizar', editId);
+      todosResultadosPesca = todosResultadosPesca.map(r => r.id === editId ? { ...r, ...dados } : r);
+    } else {
+      const res = await apiPost('resultados_pesca', dados, 'inserir');
+      const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+      if (newId) todosResultadosPesca.push({ ...dados, id: newId });
+    }
+    fecharModalPesca();
+    toast('✅ Resultado de pesca salvo!');
+    renderPesca();
+  } catch(e) { toast('Erro ao salvar.', 'erro'); console.error(e); }
+
+  btn.disabled = false; btn.textContent = '💾 Salvar Resultado';
+}
+
+async function publicarGanhadoresPesca(modId) {
+  const m       = MODALIDADES[modId];
+  const validos = todosResultadosPesca.filter(r => r.modalidade_id == modId && !r.desclassificado && r.tamanho_cm > 0);
+  const ranking = [...validos].sort((a, b) => b.tamanho_cm - a.tamanho_cm);
+
+  if (ranking.length < 1) { toast('Registre ao menos um resultado válido.', 'erro'); return; }
+
+  const btn = document.querySelector(`button.btn-publicar`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
+
+  try {
+    for (let i = 0; i < Math.min(3, ranking.length); i++) {
+      const r = ranking[i];
+      const posicao = i + 1;
+      const dados = {
+        participante_id:   r.participante_id || null,
+        modalidade_id:     modId,
+        posicao,
+        nome_exibicao:     r.nome_exibicao,
+        equipe:            r.nome_equipe || '',
+        cidade:            '',
+        parceiro:          '',
+        premio_descricao:  m.premio?.[posicao] || '',
+        resultado_tecnico: `Maior peixe: ${r.tamanho_cm?.toFixed(1)} cm${r.especie ? ' (' + r.especie + ')' : ''}`,
+        publicado:         true,
+      };
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
+      if (existente) {
+        await apiPost('ganhadores', dados, 'atualizar', existente.id);
+        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+      } else {
+        const res = await apiPost('ganhadores', dados, 'inserir');
+        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+        if (newId) todosGanhadores.push({ ...dados, id: newId });
+      }
+    }
+    toast(`✅ Resultado da Pesca publicado no portal!`);
+    renderGridModalidades();
+  } catch(e) { toast('Erro ao publicar.', 'erro'); console.error(e); }
+  if (btn) { btn.disabled = false; btn.textContent = '🌐 Publicar Resultado Final no Portal da Transparência'; }
+}
+
+// ================================================================
+// VÔLEI — Render
+// ================================================================
+function selecionarVolei(modId, btn) {
+  document.querySelectorAll('.mod-sel-btn[id^="vlbtn-"]').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  voleiModId = modId;
+  renderVolei();
+}
+
+function renderVolei() {
+  const el = document.getElementById('volei-content');
+  if (!el) return;
+
+  const modId     = voleiModId;
+  const m         = MODALIDADES[modId];
+  const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId);
+  const cred      = inscritos.filter(i => i.presenca);
+
+  if (cred.length === 0) {
+    el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Nenhum credenciado</strong>Nenhuma dupla fez check-in nesta modalidade.</div>`;
+    return;
+  }
+
+  const gruposMod   = todosGruposVolei.filter(g => g.modalidade_id == modId);
+  const partidasMod = todasPartidas.filter(p => p.modalidade_id == modId);
+
+  let html = '';
+
+  // ── PASSO 1: Sorteio ──
+  html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🎲 Passo 1 — Sorteio de Grupos</div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px;">${cred.length} dupla(s) credenciada(s)</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        ${gruposMod.length > 0 ? `<button class="btn-gerar" onclick="sortearGrupos(${modId},true)">🔄 Ressortear</button>` : ''}
+        <button class="btn-sortear" onclick="sortearGrupos(${modId},false)">🎲 ${gruposMod.length > 0 ? 'Re' : ''}Sortear Grupos</button>
+      </div>
+    </div>
+  `;
+
+  if (gruposMod.length > 0) {
+    const letrasGrupos = [...new Set(gruposMod.map(g => g.grupo))].sort();
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px;">`;
+    letrasGrupos.forEach(letra => {
+      const membros = gruposMod.filter(g => g.grupo === letra);
+      html += `<div class="grupo-wrap" style="margin-bottom:0;">
+        <div class="grupo-header">
+          <div class="grupo-letra">${letra}</div>
+          <div class="grupo-titulo">Grupo ${letra} <span style="font-size:11px;color:#64748b;">(${membros.length} dupla${membros.length!==1?'s':''})</span></div>
+        </div>
+        <div class="grupo-body">`;
+      membros.forEach((g, idx) => {
+        html += `<div class="grupo-item">
+          <div class="grupo-num">${idx + 1}</div>
+          <div style="font-size:12px;color:#e2e8f0;font-weight:600;">${g.nome_exibicao}</div>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  // ── PASSO 2: Fase Classificatória ──
+  if (gruposMod.length > 0) {
+    const letrasGrupos = [...new Set(gruposMod.map(g => g.grupo))].sort();
+    const pClassif    = partidasMod.filter(p => p.fase === 'classificatoria');
+
+    html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#e2e8f0;">📋 Passo 2 — Fase Classificatória</div>
+          <div style="font-size:11px;color:#64748b;">Set único de 12 pontos corridos (sem necessidade de 2 de diferença)</div>
+        </div>
+        <button class="btn-gerar" onclick="gerarPartidasClassificatoria(${modId})">⚙️ Gerar Partidas</button>
+      </div>`;
+
+    if (pClassif.length > 0) {
+      letrasGrupos.forEach(letra => {
+        const pGrupo  = pClassif.filter(p => p.grupo === letra);
+        const gmGrupo = gruposMod.filter(g => g.grupo === letra);
+
+        if (pGrupo.length === 0) return;
+
+        html += `<div class="grupo-wrap">
+          <div class="grupo-header">
+            <div class="grupo-letra">${letra}</div>
+            <div class="grupo-titulo">Grupo ${letra}</div>
+          </div>
+          <div class="grupo-body" style="padding:12px;">`;
+
+        // Tabela de ranking do grupo
+        const rankGrupo = calcularRankingGrupo(pGrupo, gmGrupo);
+        if (rankGrupo.length > 0) {
+          html += `<table style="width:100%;font-size:11px;margin-bottom:10px;border-collapse:collapse;">
+            <tr style="color:#64748b;"><th style="text-align:left;padding:4px 6px;">Dupla</th><th style="padding:4px;">P</th><th style="padding:4px;">V</th><th style="padding:4px;">D</th><th style="padding:4px;">P+</th><th style="padding:4px;">P-</th></tr>`;
+          rankGrupo.forEach((rk, idx) => {
+            const avanc = idx < 2 ? ' style="color:#22c55e;font-weight:700;"' : '';
+            html += `<tr${avanc}>
+              <td style="padding:4px 6px;">${idx<2?'→ ':''} ${rk.nome}</td>
+              <td style="text-align:center;padding:4px;">${rk.pontos}</td>
+              <td style="text-align:center;padding:4px;">${rk.vitorias}</td>
+              <td style="text-align:center;padding:4px;">${rk.derrotas}</td>
+              <td style="text-align:center;padding:4px;">${rk.pontosP}</td>
+              <td style="text-align:center;padding:4px;">${rk.pontosC}</td>
+            </tr>`;
+          });
+          html += `</table>`;
+        }
+
+        // Partidas
+        html += `<div class="partidas-grid">`;
+        pGrupo.forEach(p => {
+          html += `<div class="partida-card">
+            <div class="partida-times">
+              <div class="partida-nome">${p.nome_a}</div>
+              <div class="partida-vs">vs</div>
+              <div class="partida-nome">${p.nome_b}</div>
+              ${p.encerrada && p.vencedor_nome ? `<div class="vencedor-mark">🏆 ${p.vencedor_nome}</div>` : ''}
+            </div>
+            ${p.encerrada
+              ? `<div class="placar-display placar-encerrada">${p.pontos_a ?? '?'} × ${p.pontos_b ?? '?'}</div>`
+              : `<div class="placar-display">—</div>`}
+            <span class="fase-label fase-class">Classif.</span>
+            <button class="btn-placar" onclick="abrirModalPlacar('${p.id}',${modId},'${p.nome_a.replace(/'/g,"\\'")}','${p.nome_b.replace(/'/g,"\\'")}','${p.inscricao_a_id}','${p.inscricao_b_id}','classificatoria')">
+              ${p.encerrada ? '✏️ Editar' : '⚽ Placar'}
+            </button>
+          </div>`;
+        });
+        html += `</div></div></div>`;
+      });
+    } else {
+      html += `<div class="vazio">Clique em "Gerar Partidas" para criar as partidas da fase classificatória.</div>`;
+    }
+    html += `</div>`;
+
+    // ── PASSO 3: Eliminatórias ──
+    const pElim = partidasMod.filter(p => p.fase !== 'classificatoria');
+    html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#e2e8f0;">🏁 Passo 3 — Eliminatórias (Mata-Mata)</div>
+          <div style="font-size:11px;color:#64748b;">Set único de 18 pontos — virada de quadra aos 9 pontos</div>
+        </div>
+        <button class="btn-gerar" onclick="gerarEliminatorias(${modId})">⚙️ Gerar Chaveamento</button>
+      </div>`;
+
+    if (pElim.length > 0) {
+      const faseLabels = { semi:'Semi-Final', quartas:'Quartas de Final', final:'Final', terceiro:'3º Lugar' };
+      const fasesOrdem = ['quartas', 'semi', 'terceiro', 'final'];
+
+      fasesOrdem.forEach(fase => {
+        const pFase = pElim.filter(p => p.fase === fase);
+        if (pFase.length === 0) return;
+        html += `<div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:8px;">${faseLabels[fase] || fase}</div>
+          <div class="partidas-grid">`;
+        pFase.forEach(p => {
+          html += `<div class="partida-card">
+            <div class="partida-times">
+              <div class="partida-nome">${p.nome_a}</div>
+              <div class="partida-vs">vs</div>
+              <div class="partida-nome">${p.nome_b}</div>
+              ${p.encerrada && p.vencedor_nome ? `<div class="vencedor-mark">🏆 ${p.vencedor_nome}</div>` : ''}
+            </div>
+            ${p.encerrada
+              ? `<div class="placar-display placar-encerrada">${p.pontos_a ?? '?'} × ${p.pontos_b ?? '?'}</div>`
+              : `<div class="placar-display">—</div>`}
+            <span class="fase-label ${fase==='final'?'fase-final':'fase-elim'}">${faseLabels[fase]}</span>
+            <button class="btn-placar" onclick="abrirModalPlacar('${p.id}',${modId},'${p.nome_a.replace(/'/g,"\\'")}','${p.nome_b.replace(/'/g,"\\'")}','${p.inscricao_a_id}','${p.inscricao_b_id}','${fase}')">
+              ${p.encerrada ? '✏️ Editar' : '⚽ Placar'}
+            </button>
+          </div>`;
+        });
+        html += `</div></div>`;
+      });
+    } else {
+      html += `<div class="vazio">Complete a fase classificatória e clique em "Gerar Chaveamento".</div>`;
+    }
+
+    // Botão publicar (se houver final registrada)
+    const finalEncerrada = pElim.find(p => p.fase === 'final' && p.encerrada);
+    if (finalEncerrada) {
+      html += `<button class="btn-publicar" onclick="publicarGanhadoresVolei(${modId})">
+        🌐 Publicar Resultado Final no Portal da Transparência
+      </button>`;
+    }
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// Cálculo de ranking de grupo
+function calcularRankingGrupo(partidas, membros) {
+  const stats = {};
+  membros.forEach(g => {
+    stats[g.nome_exibicao] = { nome: g.nome_exibicao, pontos: 0, vitorias: 0, derrotas: 0, pontosP: 0, pontosC: 0 };
+  });
+  partidas.filter(p => p.encerrada).forEach(p => {
+    if (!stats[p.nome_a]) stats[p.nome_a] = { nome: p.nome_a, pontos: 0, vitorias: 0, derrotas: 0, pontosP: 0, pontosC: 0 };
+    if (!stats[p.nome_b]) stats[p.nome_b] = { nome: p.nome_b, pontos: 0, vitorias: 0, derrotas: 0, pontosP: 0, pontosC: 0 };
+    stats[p.nome_a].pontosP += p.pontos_a || 0;
+    stats[p.nome_a].pontosC += p.pontos_b || 0;
+    stats[p.nome_b].pontosP += p.pontos_b || 0;
+    stats[p.nome_b].pontosC += p.pontos_a || 0;
+    if (p.vencedor_nome === p.nome_a) { stats[p.nome_a].vitorias++; stats[p.nome_a].pontos += 2; stats[p.nome_b].derrotas++; }
+    else if (p.vencedor_nome === p.nome_b) { stats[p.nome_b].vitorias++; stats[p.nome_b].pontos += 2; stats[p.nome_a].derrotas++; }
+  });
+  return Object.values(stats).sort((a, b) =>
+    b.pontos - a.pontos || (b.pontosP - b.pontosC) - (a.pontosP - a.pontosC) || b.pontosP - a.pontosP);
+}
+
+async function sortearGrupos(modId, resorteio = false) {
+  if (resorteio && !confirm('Isso vai apagar o sorteio atual e todas as partidas desta modalidade. Confirmar?')) return;
+
+  const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId && i.presenca);
+  const shuffled  = [...inscritos].sort(() => Math.random() - 0.5);
+  const numGrupos = shuffled.length <= 4 ? 1 : shuffled.length <= 8 ? 2 : Math.ceil(shuffled.length / 4);
+  const letras    = 'ABCDEFGH'.split('').slice(0, numGrupos);
+
+  // Apagar grupos e partidas existentes
+  const exGrupos   = todosGruposVolei.filter(g => g.modalidade_id == modId);
+  const exPartidas = todasPartidas.filter(p => p.modalidade_id == modId);
+  for (const eg of exGrupos)   await apiPost('grupos_volei',   null, 'deletar', eg.id).catch(() => {});
+  for (const ep of exPartidas) await apiPost('partidas_volei', null, 'deletar', ep.id).catch(() => {});
+  todosGruposVolei = todosGruposVolei.filter(g => g.modalidade_id != modId);
+  todasPartidas    = todasPartidas.filter(p => p.modalidade_id != modId);
+
+  const novos = [];
+  for (let i = 0; i < shuffled.length; i++) {
+    const insc  = shuffled[i];
+    const part  = todosParticipantes.find(p => p.id === insc.participante_id);
+    const nome  = nomeDupla(insc, part);
+    const grupo = letras[i % numGrupos];
+    const dados = { modalidade_id: modId, grupo, inscricao_id: insc.id,
+      participante_id: insc.participante_id, nome_exibicao: nome };
+    const res = await apiPost('grupos_volei', dados, 'inserir');
+    const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+    if (newId) novos.push({ ...dados, id: newId });
+  }
+  todosGruposVolei.push(...novos);
+  toast(`🎲 ${shuffled.length} duplas sorteadas em ${numGrupos} grupo(s)!`);
+  renderVolei();
+}
+
+async function gerarPartidasClassificatoria(modId) {
+  const gruposMod  = todosGruposVolei.filter(g => g.modalidade_id == modId);
+  const letras     = [...new Set(gruposMod.map(g => g.grupo))].sort();
+  const existentes = todasPartidas.filter(p => p.modalidade_id == modId && p.fase === 'classificatoria');
+
+  // Remove partidas classificatórias existentes
+  for (const ep of existentes) await apiPost('partidas_volei', null, 'deletar', ep.id).catch(() => {});
+  todasPartidas = todasPartidas.filter(p => !(p.modalidade_id == modId && p.fase === 'classificatoria'));
+
+  const novas = [];
+  for (const letra of letras) {
+    const membros = gruposMod.filter(g => g.grupo === letra);
+    // Round-robin dentro do grupo
+    for (let i = 0; i < membros.length; i++) {
+      for (let j = i + 1; j < membros.length; j++) {
+        const a = membros[i], b = membros[j];
+        const dados = { modalidade_id: modId, fase: 'classificatoria', grupo: letra,
+          inscricao_a_id: a.inscricao_id, nome_a: a.nome_exibicao,
+          inscricao_b_id: b.inscricao_id, nome_b: b.nome_exibicao,
+          encerrada: false };
+        const res = await apiPost('partidas_volei', dados, 'inserir');
+        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+        if (newId) novas.push({ ...dados, id: newId });
+      }
+    }
+  }
+  todasPartidas.push(...novas);
+  toast(`✅ ${novas.length} partida(s) da classificatória gerada(s)!`);
+  renderVolei();
+}
+
+async function gerarEliminatorias(modId) {
+  const gruposMod  = todosGruposVolei.filter(g => g.modalidade_id == modId);
+  const letras     = [...new Set(gruposMod.map(g => g.grupo))].sort();
+  const pClass     = todasPartidas.filter(p => p.modalidade_id == modId && p.fase === 'classificatoria');
+
+  // Calcular top 2 de cada grupo
+  const classificados = [];
+  letras.forEach(letra => {
+    const pGrupo  = pClass.filter(p => p.grupo === letra);
+    const gGrupo  = gruposMod.filter(g => g.grupo === letra);
+    const ranking = calcularRankingGrupo(pGrupo, gGrupo);
+    ranking.slice(0, 2).forEach((rk, idx) => {
+      const gEntry = gGrupo.find(g => g.nome_exibicao === rk.nome);
+      classificados.push({ nome: rk.nome, inscricao_id: gEntry?.inscricao_id, grupo: letra, posGrupo: idx + 1 });
+    });
+  });
+
+  if (classificados.length < 2) {
+    toast('Registre ao menos algumas partidas classificatórias para gerar as eliminatórias.', 'erro'); return;
+  }
+
+  // Remove eliminatórias existentes
+  const exElim = todasPartidas.filter(p => p.modalidade_id == modId && p.fase !== 'classificatoria');
+  for (const ep of exElim) await apiPost('partidas_volei', null, 'deletar', ep.id).catch(() => {});
+  todasPartidas = todasPartidas.filter(p => !(p.modalidade_id == modId && p.fase !== 'classificatoria'));
+
+  const novas = [];
+  // Com 2 classificados: direto para a final
+  // Com 4 classificados: semi-finais cruzadas (1A vs 2B, 1B vs 2A)
+  let fases = [];
+  if (classificados.length >= 4) {
+    // Semis cruzadas
+    fases = [
+      { a: classificados[0], b: classificados[3], fase: 'semi' }, // 1A vs 2B (ou último)
+      { a: classificados[1], b: classificados[2], fase: 'semi' }, // 2A vs 1B
+    ];
+  } else {
+    fases = [{ a: classificados[0], b: classificados[1], fase: 'final' }];
+  }
+
+  for (const f of fases) {
+    const dados = { modalidade_id: modId, fase: f.fase,
+      inscricao_a_id: f.a.inscricao_id, nome_a: f.a.nome,
+      inscricao_b_id: f.b.inscricao_id, nome_b: f.b.nome,
+      encerrada: false };
+    const res = await apiPost('partidas_volei', dados, 'inserir');
+    const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+    if (newId) novas.push({ ...dados, id: newId });
+  }
+
+  // Se houver semis, cria espaços para final e terceiro lugar
+  if (classificados.length >= 4) {
+    for (const fase of ['final', 'terceiro']) {
+      const dados = { modalidade_id: modId, fase,
+        inscricao_a_id: null, nome_a: 'A definir',
+        inscricao_b_id: null, nome_b: 'A definir',
+        encerrada: false };
+      const res = await apiPost('partidas_volei', dados, 'inserir');
+      const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+      if (newId) novas.push({ ...dados, id: newId });
+    }
+  }
+
+  todasPartidas.push(...novas);
+  toast(`✅ Chaveamento eliminatório gerado!`);
+  renderVolei();
+}
+
+// Modal Placar
+function abrirModalPlacar(partidaId, modId, nomeA, nomeB, inscA, inscB, fase) {
+  const partida = todasPartidas.find(p => p.id === partidaId);
+  const faseLabel = { classificatoria:'Classificatória — set de 12 pontos', semi:'Semi-Final — set de 18 pontos (virada aos 9)',
+    quartas:'Quartas — set de 18 pontos', final:'Final — set de 18 pontos', terceiro:'3º Lugar — set de 18 pontos' };
+  document.getElementById('pl-partida-id').value  = partidaId;
+  document.getElementById('pl-modalidade-id').value = modId;
+  document.getElementById('pl-inscricao-a').value = inscA || '';
+  document.getElementById('pl-inscricao-b').value = inscB || '';
+  document.getElementById('pl-nome-a').textContent = nomeA;
+  document.getElementById('pl-nome-b').textContent = nomeB;
+  document.getElementById('pl-label-a').textContent = nomeA;
+  document.getElementById('pl-label-b').textContent = nomeB;
+  document.getElementById('pl-info-fase').textContent = faseLabel[fase] || fase;
+  document.getElementById('placar-titulo').textContent = `⚽ Registrar Placar — ${faseLabel[fase] || fase}`;
+  document.getElementById('pl-pontos-a').value = partida?.pontos_a ?? '';
+  document.getElementById('pl-pontos-b').value = partida?.pontos_b ?? '';
+  document.getElementById('pl-encerrada').checked = partida?.encerrada ?? true;
+  document.getElementById('modal-placar-bg').classList.add('aberto');
+}
+
+function fecharModalPlacar() {
+  document.getElementById('modal-placar-bg').classList.remove('aberto');
+}
+
+async function salvarPlacar() {
+  const btn       = document.getElementById('btn-salvar-placar');
+  const partidaId = document.getElementById('pl-partida-id').value;
+  const modId     = parseInt(document.getElementById('pl-modalidade-id').value);
+  const nomeA     = document.getElementById('pl-nome-a').textContent;
+  const nomeB     = document.getElementById('pl-nome-b').textContent;
+  const inscA     = document.getElementById('pl-inscricao-a').value;
+  const inscB     = document.getElementById('pl-inscricao-b').value;
+  const ptA       = parseInt(document.getElementById('pl-pontos-a').value) || 0;
+  const ptB       = parseInt(document.getElementById('pl-pontos-b').value) || 0;
+  const encerrada = document.getElementById('pl-encerrada').checked;
+  const vencedorId   = encerrada ? (ptA > ptB ? inscA : inscB) : null;
+  const vencedorNome = encerrada ? (ptA > ptB ? nomeA : ptB > ptA ? nomeB : null) : null;
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  const dados = { pontos_a: ptA, pontos_b: ptB, encerrada,
+    vencedor_inscricao_id: vencedorId || null, vencedor_nome: vencedorNome || null };
+
+  try {
+    await apiPost('partidas_volei', dados, 'atualizar', partidaId);
+    todasPartidas = todasPartidas.map(p => p.id === partidaId ? { ...p, ...dados } : p);
+    fecharModalPlacar();
+    toast('✅ Placar salvo!');
+    renderVolei();
+  } catch(e) { toast('Erro ao salvar placar.', 'erro'); console.error(e); }
+
+  btn.disabled = false; btn.textContent = '💾 Registrar Placar';
+}
+
+async function publicarGanhadoresVolei(modId) {
+  const m       = MODALIDADES[modId];
+  const final3  = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'final' && p.encerrada);
+  const terceiro = todasPartidas.find(p => p.modalidade_id == modId && p.fase === 'terceiro' && p.encerrada);
+
+  if (!final3) { toast('A partida final ainda não foi registrada.', 'erro'); return; }
+
+  const btn = document.querySelector('button.btn-publicar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; }
+
+  try {
+    const resultados = [
+      { posicao: 1, nome: final3.vencedor_nome, inscricao_id: final3.vencedor_inscricao_id,
+        placar: `${final3.pontos_a}×${final3.pontos_b}` },
+      { posicao: 2, nome: final3.vencedor_nome === final3.nome_a ? final3.nome_b : final3.nome_a,
+        inscricao_id: final3.vencedor_nome === final3.nome_a ? final3.inscricao_b_id : final3.inscricao_a_id,
+        placar: `${final3.pontos_b}×${final3.pontos_a}` },
+    ];
+    if (terceiro?.vencedor_nome) {
+      resultados.push({ posicao: 3, nome: terceiro.vencedor_nome, inscricao_id: terceiro.vencedor_inscricao_id, placar: '' });
+    }
+
+    for (const r of resultados) {
+      const insc  = todasInscricoes.find(i => i.id === r.inscricao_id);
+      const part  = insc ? todosParticipantes.find(p => p.id === insc?.participante_id) : null;
+      const dados = {
+        participante_id:   part?.id || null,
+        modalidade_id:     modId,
+        posicao:           r.posicao,
+        nome_exibicao:     r.nome,
+        cidade:            part?.cidade || '',
+        parceiro:          insc?.parceiro_nome || '',
+        equipe:            '',
+        premio_descricao:  m.premio?.[r.posicao] || '',
+        resultado_tecnico: r.placar ? `Placar final: ${r.placar}` : '',
+        publicado:         true,
+      };
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == r.posicao);
+      if (existente) {
+        await apiPost('ganhadores', dados, 'atualizar', existente.id);
+        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+      } else {
+        const res = await apiPost('ganhadores', dados, 'inserir');
+        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+        if (newId) todosGanhadores.push({ ...dados, id: newId });
+      }
+    }
+    toast(`✅ Resultado de ${m.nome} publicado no portal!`);
+    renderGridModalidades();
+  } catch(e) { toast('Erro ao publicar.', 'erro'); console.error(e); }
+  if (btn) { btn.disabled = false; btn.textContent = '🌐 Publicar Resultado Final no Portal da Transparência'; }
+}
+
 // ================================================================
 // PREMIAÇÃO — Grid de modalidades
 // ================================================================
+function atualizarPremioPorPosicao() {
+  const modId   = parseInt(document.getElementById('g-inscricao-mod-id').value);
+  const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
+  const m = MODALIDADES[modId] || {};
+  if (m.premio?.[posicao]) document.getElementById('g-premio').value = m.premio[posicao];
+}
+
 function renderGridModalidades() {
   const grid = document.getElementById('grid-modalidades');
+  if (!grid) return;
   grid.innerHTML = Object.entries(MODALIDADES).map(([id, m]) => {
     const inscritos = todasInscricoes.filter(i => i.modalidade_id == id).length;
-    const ganhs = todosGanhadores.filter(g => g.modalidade_id == id);
-    const pubCount = ganhs.filter(g => g.publicado).length;
-    return `
-    <div class="modal-card" id="card-mod-${id}" onclick="togglePainelMod(${id})">
+    const ganhs     = todosGanhadores.filter(g => g.modalidade_id == id);
+    const pubCount  = ganhs.filter(g => g.publicado).length;
+    return `<div class="modal-card" id="card-mod-${id}" onclick="togglePainelMod(${id})">
       <div class="modal-card-header">
-        <div>
-          <div class="modal-card-titulo">${m.emoji} ${m.nome}</div>
-          <div class="modal-card-sub">${m.sub}</div>
-        </div>
+        <div><div class="modal-card-titulo">${m.emoji} ${m.nome}</div><div class="modal-card-sub">${m.sub}</div></div>
         <span class="mod-arrow" id="arrow-${id}">▼</span>
       </div>
       <div class="modal-card-stats">
-        <div class="mod-stat">
-          <div class="mod-stat-val">${inscritos}</div>
-          <div class="mod-stat-label">inscritos</div>
-        </div>
-        <div class="mod-stat">
-          <div class="mod-stat-val">${ganhs.length}/3</div>
-          <div class="mod-stat-label">ganhadores</div>
-        </div>
-        <div class="mod-stat">
-          <div class="mod-stat-val" style="color:${pubCount > 0 ? '#22c55e' : '#475569'};">${pubCount}</div>
-          <div class="mod-stat-label">publicados</div>
-        </div>
+        <div class="mod-stat"><div class="mod-stat-val">${inscritos}</div><div class="mod-stat-label">inscritos</div></div>
+        <div class="mod-stat"><div class="mod-stat-val">${ganhs.length}/3</div><div class="mod-stat-label">ganhadores</div></div>
+        <div class="mod-stat"><div class="mod-stat-val" style="color:${pubCount>0?'#22c55e':'#475569'};">${pubCount}</div><div class="mod-stat-label">publicados</div></div>
       </div>
     </div>`;
   }).join('');
@@ -602,304 +1816,211 @@ function renderGridModalidades() {
 
 function togglePainelMod(modId) {
   const painel = document.getElementById('painel-mod-' + modId);
-  const todos  = document.querySelectorAll('.painel-mod');
   const card   = document.getElementById('card-mod-' + modId);
-
   if (painel && painel.classList.contains('aberto')) {
     painel.classList.remove('aberto');
     card.classList.remove('expandido');
     document.getElementById('arrow-' + modId).textContent = '▼';
     return;
   }
-
-  todos.forEach(p => p.classList.remove('aberto'));
+  document.querySelectorAll('.painel-mod').forEach(p => p.classList.remove('aberto'));
   document.querySelectorAll('.modal-card').forEach(c => c.classList.remove('expandido'));
   document.querySelectorAll('.mod-arrow').forEach(a => a.textContent = '▼');
-
   if (!painel) renderPainelMod(modId);
-  else {
-    painel.classList.add('aberto');
-    card.classList.add('expandido');
-    document.getElementById('arrow-' + modId).textContent = '▲';
-  }
+  else { painel.classList.add('aberto'); card.classList.add('expandido'); document.getElementById('arrow-' + modId).textContent = '▲'; }
 }
 
 function renderPainelMod(modId) {
-  const m = MODALIDADES[modId];
+  const m        = MODALIDADES[modId];
   const inscritos = todasInscricoes.filter(i => i.modalidade_id == modId);
-  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
-  const card = document.getElementById('card-mod-' + modId);
+  const ganhs    = todosGanhadores.filter(g => g.modalidade_id == modId);
+  const card     = document.getElementById('card-mod-' + modId);
   card.classList.add('expandido');
   document.getElementById('arrow-' + modId).textContent = '▲';
 
-  // Participantes desta modalidade — inclui dados da inscrição (parceiro, equipe, membros)
-
-  // Para duplas: se parceiro_nome está vazio, busca reversa — quem listou este participante como parceiro?
   function inferirParceiro(participanteId, nomePrincipal) {
     const outro = inscritos.find(i =>
-      i.participante_id !== participanteId &&
-      i.parceiro_nome &&
-      i.parceiro_nome.trim().toLowerCase() === nomePrincipal.trim().toLowerCase()
-    );
-    if (outro) {
-      const pOutro = todosParticipantes.find(p => p.id === outro.participante_id);
-      return pOutro?.nome_completo || outro.parceiro_nome;
-    }
-    // Fallback: busca em TODAS as inscrições da mesma modalidade
-    const outraMod = todasInscricoes.find(i =>
-      i.modalidade_id == modId &&
-      i.participante_id !== participanteId &&
-      i.parceiro_nome &&
-      i.parceiro_nome.trim().toLowerCase() === nomePrincipal.trim().toLowerCase()
-    );
-    if (outraMod) {
-      const pM = todosParticipantes.find(p => p.id === outraMod.participante_id);
-      return pM?.nome_completo || null;
-    }
+      i.participante_id !== participanteId && i.parceiro_nome &&
+      i.parceiro_nome.trim().toLowerCase() === nomePrincipal.trim().toLowerCase());
+    if (outro) { const pO = todosParticipantes.find(p => p.id === outro.participante_id); return pO?.nome_completo || outro.parceiro_nome; }
     return null;
   }
 
   const partsDaMod = inscritos.map(i => {
     const p = todosParticipantes.find(p => p.id === i.participante_id);
     if (!p) return null;
-    // Parceiro: usa o campo direto; se vazio e é dupla, faz busca reversa
     let parceiroNome = i.parceiro_nome || null;
-    if (!parceiroNome && m.dupla) {
-      parceiroNome = inferirParceiro(i.participante_id, p.nome_completo);
-    }
-    return {
-      ...p,
-      inscricao_id:   i.id,
-      presenca:       i.presenca,
-      parceiro_nome:  parceiroNome,
-      membro3_nome:   i.membro3_nome   || null,
-      membro4_nome:   i.membro4_nome   || null,
-      nome_equipe:    i.nome_equipe    || null,
-      parceiro_inferido: (!i.parceiro_nome && !!parceiroNome), // flag para UI
-    };
+    if (!parceiroNome && m.dupla) parceiroNome = inferirParceiro(i.participante_id, p.nome_completo);
+    return { ...p, inscricao_id: i.id, presenca: i.presenca, parceiro_nome: parceiroNome,
+      membro3_nome: i.membro3_nome || null, membro4_nome: i.membro4_nome || null,
+      nome_equipe: i.nome_equipe || null, parceiro_inferido: (!i.parceiro_nome && !!parceiroNome) };
   }).filter(Boolean);
 
   const listaParticipantes = partsDaMod.length === 0
-    ? '<div class="vazio">Nenhum participante inscrito nesta modalidade.</div>'
+    ? '<div class="vazio">Nenhum participante inscrito.</div>'
     : partsDaMod.map(p => {
-        const jàGanhou = ganhs.some(g => g.participante_id === p.id);
+        const jaGanhou = ganhs.some(g => g.participante_id === p.id);
         const extras = [];
-        if (p.parceiro_nome) {
-          const inf = p.parceiro_inferido ? ' (inferido)' : '';
-          extras.push('c/ ' + p.parceiro_nome + inf);
-        }
+        if (p.parceiro_nome) extras.push('c/ ' + p.parceiro_nome + (p.parceiro_inferido ? ' (inferido)' : ''));
         if (p.membro3_nome)  extras.push(p.membro3_nome);
         if (p.membro4_nome)  extras.push(p.membro4_nome);
         if (p.nome_equipe)   extras.push('Equipe: ' + p.nome_equipe);
-        // Para duplas sem parceiro identificado, avisa o admin
-        const semParceiro = m.dupla && !p.parceiro_nome;
         const extraHtml = extras.length
-          ? `<div style="font-size:11px;color:#60a5fa;margin-top:2px;">${extras.join(' · ')}</div>`
-          : semParceiro
-            ? `<div style="font-size:11px;color:#f59e0b;margin-top:2px;">⚠️ Parceiro não cadastrado</div>`
-            : '';
+          ? `<div style="font-size:11px;color:#60a5fa;margin-top:2px;">${extras.join(' · ')}</div>` : '';
         return `<div class="part-item">
           <div style="flex:1;min-width:0;">
             <div class="part-nome">${p.nome_completo}</div>
-            <div class="part-cidade">${p.cidade || '—'} / ${p.uf || 'RO'}
-              ${p.presenca ? '<span class="part-cred"> · ✅ Credenciado</span>' : ''}</div>
+            <div class="part-cidade">${p.cidade||'—'}/${p.uf||'RO'}${p.presenca?'<span class="part-cred"> · ✅ Credenciado</span>':''}</div>
             ${extraHtml}
           </div>
-          ${jàGanhou
-            ? `<span style="font-size:11px;color:#fbbf24;">⭐ Já cadastrado</span>`
-            : `<button class="btn-ganhar" onclick="abrirModalGanhador(${JSON.stringify(p).replace(/\"/g,'&quot;')}, ${modId})">🏆 Marcar</button>`}
+          ${jaGanhou
+            ? `<span style="font-size:11px;color:#fbbf24;">⭐ Cadastrado</span>`
+            : `<button class="btn-ganhar" onclick="abrirModalGanhador(${JSON.stringify(p).replace(/"/g,'&quot;')},${modId})">🏆 Marcar</button>`}
         </div>`;
       }).join('');
 
-  // Ganhadores já cadastrados
   const listaGanhadores = ganhs.length === 0
-    ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado ainda.</div>'
-    : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => {
-        const emoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
-        return `<div class="ganhador-item">
-          <div class="ganhador-medal">${emoji}</div>
-          <div class="ganhador-dados">
-            <div class="ganhador-nome">${g.nome_exibicao || '—'}</div>
-            <div class="ganhador-detalhe">${g.cidade || '—'} ${g.parceiro ? '· Parceiro: '+g.parceiro : ''} ${g.equipe ? '· '+g.equipe : ''}</div>
-            ${g.premio_descricao ? `<div class="ganhador-detalhe" style="color:#fbbf24;">🎁 ${g.premio_descricao}</div>` : ''}
-            <div style="margin-top:4px;">
-              <span class="pub-dot ${g.publicado ? 'verde' : 'cinza'}"></span>
-              <span style="font-size:10px;color:${g.publicado ? '#22c55e' : '#64748b'};">${g.publicado ? 'Publicado' : 'Rascunho'}</span>
-            </div>
-          </div>
-          ${g.foto_url
-            ? `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">`
-            : `<div class="ganhador-foto-vazia">📷</div>`}
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <button class="btn-sm btn-edit" onclick="editarGanhador('${g.id}', ${modId})">✏️ Editar</button>
-            <button class="btn-sm ${g.publicado ? 'btn-unpub' : 'btn-pub'}"
-              onclick="togglePublicar('${g.id}', ${!g.publicado}, ${modId})">
-              ${g.publicado ? '🔒 Ocultar' : '🌐 Publicar'}
-            </button>
-            <button class="btn-sm btn-danger" onclick="excluirGanhador('${g.id}', '${g.nome_exibicao}', ${modId})">🗑️ Excluir</button>
-          </div>
-        </div>`;
-      }).join('');
+    ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado.</div>'
+    : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => renderGanhadorItem(g, modId)).join('');
 
   const div = document.createElement('div');
   div.className = 'painel-mod aberto';
   div.id = 'painel-mod-' + modId;
   div.innerHTML = `
-    <div class="painel-mod-header">
-      <div class="painel-mod-titulo">${m.emoji} ${m.nome} — ${m.sub}</div>
-    </div>
+    <div class="painel-mod-header"><div class="painel-mod-titulo">${m.emoji} ${m.nome} — ${m.sub}</div></div>
     <div class="painel-mod-body">
       <div class="secao-titulo" style="margin-bottom:10px;">🧑‍🤝‍🧑 Participantes inscritos</div>
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
-      <div class="secao-titulo" style="margin-bottom:10px;">🏆 Ganhadores cadastrados <span class="secao-sub">(${ganhs.length}/3)</span></div>
+      <div class="secao-titulo" style="margin-bottom:10px;">🏆 Ganhadores <span class="secao-sub">(${ganhs.length}/3)</span></div>
       <div id="lista-ganhs-${modId}">${listaGanhadores}</div>
     </div>`;
-
   card.insertAdjacentElement('afterend', div);
 }
 
-// ================================================================
-// MODAL FORMULÁRIO GANHADOR
-// ================================================================
+function renderGanhadorItem(g, modId) {
+  const emoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
+  return `<div class="ganhador-item">
+    <div class="ganhador-medal">${emoji}</div>
+    <div class="ganhador-dados">
+      <div class="ganhador-nome">${g.nome_exibicao || '—'}</div>
+      <div class="ganhador-detalhe">${g.cidade||'—'} ${g.parceiro?'· '+g.parceiro:''} ${g.equipe?'· '+g.equipe:''}</div>
+      ${g.resultado_tecnico ? `<div class="resultado-tecnico">📊 ${g.resultado_tecnico}</div>` : ''}
+      ${g.premio_descricao ? `<div class="ganhador-detalhe" style="color:#fbbf24;">🎁 ${g.premio_descricao}</div>` : ''}
+      <div style="margin-top:4px;">
+        <span class="pub-dot ${g.publicado?'verde':'cinza'}"></span>
+        <span style="font-size:10px;color:${g.publicado?'#22c55e':'#64748b'};">${g.publicado?'Publicado':'Rascunho'}</span>
+      </div>
+    </div>
+    ${g.foto_url ? `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">` : `<div class="ganhador-foto-vazia">📷</div>`}
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button class="btn-sm btn-edit" onclick="editarGanhador('${g.id}',${modId})">✏️</button>
+      <button class="btn-sm ${g.publicado?'btn-unpub':'btn-pub'}" onclick="togglePublicar('${g.id}',${!g.publicado},${modId})">
+        ${g.publicado?'🔒':'🌐'}
+      </button>
+      <button class="btn-sm btn-danger" onclick="excluirGanhador('${g.id}','${g.nome_exibicao}',${modId})">🗑️</button>
+    </div>
+  </div>`;
+}
+
 function abrirModalGanhador(participante, modId) {
   const m = MODALIDADES[modId] || {};
-  document.getElementById('modal-titulo').textContent =
-    `🏆 Marcar Ganhador — ${m.nome || ''} ${m.sub || ''}`;
+  document.getElementById('modal-titulo').textContent = `🏆 Marcar Ganhador — ${m.nome||''} ${m.sub||''}`;
   document.getElementById('g-participante-id').value = participante.id || '';
   document.getElementById('g-inscricao-mod-id').value = modId;
   document.getElementById('g-edit-id').value = '';
-  document.getElementById('g-nome').value = participante.nome_completo || '';
-  document.getElementById('g-cidade').value = (participante.cidade || '') + '/' + (participante.uf || 'RO');
-
-  // ── Auto-preenche Parceiro(a) ──────────────────────────────
-  // Duplas (Vôlei, Futevôlei, Canoagem): 1 parceiro obrigatório
-  // Pesca: até 3 membros extras (parceiro + membro3 + membro4)
-  const membrosExtras = [];
-  if (participante.parceiro_nome) membrosExtras.push(participante.parceiro_nome);
-  if (participante.membro3_nome)  membrosExtras.push(participante.membro3_nome);
-  if (participante.membro4_nome)  membrosExtras.push(participante.membro4_nome);
-  document.getElementById('g-parceiro').value = membrosExtras.join(', ');
-
-  // Aviso visual se dupla sem parceiro identificado
-  const avisoParceiroEl = document.getElementById('g-parceiro-aviso');
-  if (avisoParceiroEl) {
-    if (m.dupla && !participante.parceiro_nome && !participante.membro3_nome) {
-      avisoParceiroEl.textContent = '⚠️ Parceiro não cadastrado na inscrição — preencha manualmente.';
-      avisoParceiroEl.style.display = 'block';
-    } else if (participante.parceiro_inferido) {
-      avisoParceiroEl.textContent = 'ℹ️ Parceiro identificado por busca reversa.';
-      avisoParceiroEl.style.display = 'block';
-    } else {
-      avisoParceiroEl.style.display = 'none';
-    }
-  }
-
-  // ── Auto-preenche Nome da Equipe (pesca) ──────────────────
-  document.getElementById('g-equipe').value = participante.nome_equipe || '';
-
-  // ── Auto-preenche Prêmio pelo regulamento ─────────────────
+  document.getElementById('g-nome').value    = participante.nome_completo || '';
+  document.getElementById('g-cidade').value  = (participante.cidade||'') + '/' + (participante.uf||'RO');
+  const membros = [participante.parceiro_nome, participante.membro3_nome, participante.membro4_nome].filter(Boolean);
+  document.getElementById('g-parceiro').value = membros.join(', ');
+  document.getElementById('g-equipe').value   = participante.nome_equipe || '';
+  document.getElementById('g-resultado-tecnico').value = '';
   const posicao = parseInt(document.getElementById('g-posicao').value) || 1;
-  const premioDefault = m.premio?.[posicao] || '';
-  // Só preenche se o campo estiver vazio (não sobrescreve o que o usuário digitou)
-  const premioEl = document.getElementById('g-premio');
-  if (!premioEl.value) premioEl.value = premioDefault;
-
-  document.getElementById('g-foto').value = '';
+  document.getElementById('g-premio').value   = m.premio?.[posicao] || '';
+  document.getElementById('g-foto').value     = '';
   const statusEl = document.getElementById('g-foto-upload-status');
   if (statusEl) statusEl.textContent = '';
   document.getElementById('g-foto-preview').style.display = 'none';
   document.getElementById('g-publicado').checked = false;
+  const avisoEl = document.getElementById('g-parceiro-aviso');
+  if (avisoEl) {
+    if (m.dupla && !participante.parceiro_nome) { avisoEl.textContent = '⚠️ Parceiro não cadastrado — preencha manualmente.'; avisoEl.style.display = 'block'; }
+    else avisoEl.style.display = 'none';
+  }
   document.getElementById('modal-ganhador-bg').classList.add('aberto');
 }
-
 
 function editarGanhador(id, modId) {
   const g = todosGanhadores.find(g => g.id === id);
   if (!g) return;
-  document.getElementById('modal-titulo').textContent =
-    `✏️ Editar Ganhador — ${MODALIDADES[modId].nome}`;
+  document.getElementById('modal-titulo').textContent = `✏️ Editar Ganhador — ${MODALIDADES[modId].nome}`;
   document.getElementById('g-participante-id').value = g.participante_id || '';
   document.getElementById('g-inscricao-mod-id').value = modId;
   document.getElementById('g-edit-id').value = id;
-  document.getElementById('g-nome').value = g.nome_exibicao || '';
+  document.getElementById('g-nome').value    = g.nome_exibicao || '';
   document.getElementById('g-posicao').value = g.posicao;
-  document.getElementById('g-cidade').value = g.cidade || '';
+  document.getElementById('g-cidade').value  = g.cidade || '';
   document.getElementById('g-parceiro').value = g.parceiro || '';
-  document.getElementById('g-equipe').value = g.equipe || '';
-  document.getElementById('g-premio').value = g.premio_descricao || '';
-  document.getElementById('g-foto').value = g.foto_url || '';
+  document.getElementById('g-equipe').value   = g.equipe || '';
+  document.getElementById('g-resultado-tecnico').value = g.resultado_tecnico || '';
+  document.getElementById('g-premio').value   = g.premio_descricao || '';
+  document.getElementById('g-foto').value     = g.foto_url || '';
   document.getElementById('g-publicado').checked = !!g.publicado;
   const prev = document.getElementById('g-foto-preview');
-  if (g.foto_url) { prev.src = g.foto_url; prev.style.display = 'block'; }
-  else prev.style.display = 'none';
+  if (g.foto_url) { prev.src = g.foto_url; prev.style.display = 'block'; } else prev.style.display = 'none';
   document.getElementById('modal-ganhador-bg').classList.add('aberto');
 }
 
-function fecharModalGanhador() {
-  document.getElementById('modal-ganhador-bg').classList.remove('aberto');
-}
+function fecharModalGanhador() { document.getElementById('modal-ganhador-bg').classList.remove('aberto'); }
 
 function previewFotoGanhador() {
-  const url = document.getElementById('g-foto').value;
+  const url  = document.getElementById('g-foto').value;
   const prev = document.getElementById('g-foto-preview');
-  if (url) { prev.src = url; prev.style.display = 'block'; }
-  else prev.style.display = 'none';
+  if (url) { prev.src = url; prev.style.display = 'block'; } else prev.style.display = 'none';
 }
 
 async function salvarGanhador() {
   const btn = document.getElementById('btn-salvar-ganhador');
   btn.disabled = true; btn.textContent = 'Salvando...';
-
-  const participante_id   = document.getElementById('g-participante-id').value;
-  const modalidade_id     = parseInt(document.getElementById('g-inscricao-mod-id').value);
-  const editId            = document.getElementById('g-edit-id').value;
-  const nome              = document.getElementById('g-nome').value.trim();
-  const posicao           = parseInt(document.getElementById('g-posicao').value);
-  const cidade            = document.getElementById('g-cidade').value.trim();
-  const parceiro          = document.getElementById('g-parceiro').value.trim();
-  const equipe            = document.getElementById('g-equipe').value.trim();
-  const premio_descricao  = document.getElementById('g-premio').value.trim();
-  const foto_url          = document.getElementById('g-foto').value.trim();
-  const publicado         = document.getElementById('g-publicado').checked;
-
+  const participante_id  = document.getElementById('g-participante-id').value;
+  const modalidade_id    = parseInt(document.getElementById('g-inscricao-mod-id').value);
+  const editId           = document.getElementById('g-edit-id').value;
+  const nome             = document.getElementById('g-nome').value.trim();
+  const posicao          = parseInt(document.getElementById('g-posicao').value);
+  const cidade           = document.getElementById('g-cidade').value.trim();
+  const parceiro         = document.getElementById('g-parceiro').value.trim();
+  const equipe           = document.getElementById('g-equipe').value.trim();
+  const resultado_tecnico = document.getElementById('g-resultado-tecnico').value.trim();
+  const premio_descricao = document.getElementById('g-premio').value.trim();
+  const foto_url         = document.getElementById('g-foto').value.trim();
+  const publicado        = document.getElementById('g-publicado').checked;
   if (!nome) { toast('Informe o nome.', 'erro'); btn.disabled = false; btn.textContent = '💾 Salvar Ganhador'; return; }
-
-  // Verifica conflito de posição
-  const conflito = todosGanhadores.find(g =>
-    g.modalidade_id == modalidade_id && g.posicao == posicao && g.id !== editId);
+  const conflito = todosGanhadores.find(g => g.modalidade_id == modalidade_id && g.posicao == posicao && g.id !== editId);
   if (conflito) {
-    if (!confirm(`Já existe um ${posicao}º lugar nesta modalidade (${conflito.nome_exibicao}). Substituir?`)) {
+    if (!confirm(`Já existe ${posicao}º lugar (${conflito.nome_exibicao}). Substituir?`)) {
       btn.disabled = false; btn.textContent = '💾 Salvar Ganhador'; return;
     }
-    // Remove o conflitante
     await apiPost('ganhadores', null, 'deletar', conflito.id).catch(() => {});
     todosGanhadores = todosGanhadores.filter(g => g.id !== conflito.id);
   }
-
   const dados = { participante_id: participante_id || null, modalidade_id, posicao,
     nome_exibicao: nome, cidade, parceiro: parceiro || null, equipe: equipe || null,
-    premio_descricao: premio_descricao || null, foto_url: foto_url || null, publicado };
-
+    resultado_tecnico: resultado_tecnico || null, premio_descricao: premio_descricao || null,
+    foto_url: foto_url || null, publicado };
   try {
-    let resultado;
     if (editId) {
-      resultado = await apiPost('ganhadores', dados, 'atualizar', editId);
+      await apiPost('ganhadores', dados, 'atualizar', editId);
       todosGanhadores = todosGanhadores.map(g => g.id === editId ? { ...g, ...dados, id: editId } : g);
     } else {
-      resultado = await apiPost('ganhadores', dados, 'inserir');
-      if (resultado?.id) todosGanhadores.push({ ...dados, id: resultado.id });
-      else if (Array.isArray(resultado) && resultado[0]) todosGanhadores.push({ ...dados, id: resultado[0].id });
+      const res = await apiPost('ganhadores', dados, 'inserir');
+      if (res?.id) todosGanhadores.push({ ...dados, id: res.id });
+      else if (Array.isArray(res) && res[0]) todosGanhadores.push({ ...dados, id: res[0].id });
     }
     fecharModalGanhador();
-    toast('✅ Ganhador salvo com sucesso!');
+    toast('✅ Ganhador salvo!');
     atualizarPainelMod(modalidade_id);
     renderGridModalidades();
-  } catch(e) {
-    toast('Erro ao salvar. Verifique o console.', 'erro');
-    console.error(e);
-  }
-
+  } catch(e) { toast('Erro ao salvar.', 'erro'); console.error(e); }
   btn.disabled = false; btn.textContent = '💾 Salvar Ganhador';
 }
 
@@ -907,10 +2028,9 @@ async function togglePublicar(id, publicar, modId) {
   try {
     await apiPost('ganhadores', { publicado: publicar }, 'atualizar', id);
     todosGanhadores = todosGanhadores.map(g => g.id === id ? { ...g, publicado: publicar } : g);
-    toast(publicar ? '🌐 Publicado no portal!' : '🔒 Ocultado do portal.');
-    atualizarPainelMod(modId);
-    renderGridModalidades();
-  } catch(e) { toast('Erro ao atualizar.', 'erro'); }
+    toast(publicar ? '🌐 Publicado!' : '🔒 Ocultado.');
+    atualizarPainelMod(modId); renderGridModalidades();
+  } catch(e) { toast('Erro.', 'erro'); }
 }
 
 async function excluirGanhador(id, nome, modId) {
@@ -918,45 +2038,17 @@ async function excluirGanhador(id, nome, modId) {
   try {
     await apiPost('ganhadores', null, 'deletar', id);
     todosGanhadores = todosGanhadores.filter(g => g.id !== id);
-    toast('🗑️ Ganhador excluído.');
-    atualizarPainelMod(modId);
-    renderGridModalidades();
-  } catch(e) { toast('Erro ao excluir.', 'erro'); }
+    toast('🗑️ Excluído.'); atualizarPainelMod(modId); renderGridModalidades();
+  } catch(e) { toast('Erro.', 'erro'); }
 }
 
 function atualizarPainelMod(modId) {
-  const painel = document.getElementById('painel-mod-' + modId);
-  if (!painel) return;
-  // Re-render apenas a lista de ganhadores
-  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
   const listaGanhs = document.getElementById('lista-ganhs-' + modId);
   if (!listaGanhs) return;
+  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId);
   listaGanhs.innerHTML = ganhs.length === 0
-    ? '<div class="vazio" style="padding:12px;">Nenhum ganhador cadastrado ainda.</div>'
-    : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => {
-        const emoji = g.posicao === 1 ? '🥇' : g.posicao === 2 ? '🥈' : '🥉';
-        return `<div class="ganhador-item">
-          <div class="ganhador-medal">${emoji}</div>
-          <div class="ganhador-dados">
-            <div class="ganhador-nome">${g.nome_exibicao || '—'}</div>
-            <div class="ganhador-detalhe">${g.cidade || '—'} ${g.parceiro ? '· Parceiro: '+g.parceiro : ''} ${g.equipe ? '· '+g.equipe : ''}</div>
-            ${g.premio_descricao ? `<div class="ganhador-detalhe" style="color:#fbbf24;">🎁 ${g.premio_descricao}</div>` : ''}
-            <div style="margin-top:4px;">
-              <span class="pub-dot ${g.publicado ? 'verde' : 'cinza'}"></span>
-              <span style="font-size:10px;color:${g.publicado ? '#22c55e' : '#64748b'};">${g.publicado ? 'Publicado' : 'Rascunho'}</span>
-            </div>
-          </div>
-          ${g.foto_url ? `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">` : `<div class="ganhador-foto-vazia">📷</div>`}
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <button class="btn-sm btn-edit" onclick="editarGanhador('${g.id}', ${modId})">✏️ Editar</button>
-            <button class="btn-sm ${g.publicado ? 'btn-unpub' : 'btn-pub'}"
-              onclick="togglePublicar('${g.id}', ${!g.publicado}, ${modId})">
-              ${g.publicado ? '🔒 Ocultar' : '🌐 Publicar'}
-            </button>
-            <button class="btn-sm btn-danger" onclick="excluirGanhador('${g.id}', '${g.nome_exibicao}', ${modId})">🗑️ Excluir</button>
-          </div>
-        </div>`;
-      }).join('');
+    ? '<div class="vazio" style="padding:12px;">Nenhum ganhador.</div>'
+    : ganhs.sort((a,b) => a.posicao - b.posicao).map(g => renderGanhadorItem(g, modId)).join('');
 }
 
 // ================================================================
@@ -965,17 +2057,14 @@ function atualizarPainelMod(modId) {
 function previewGaleriaFoto() {
   const url  = document.getElementById('gal-url').value;
   const prev = document.getElementById('gal-preview');
-  if (url) { prev.src = url; prev.style.display = 'block'; }
-  else prev.style.display = 'none';
+  if (url) { prev.src = url; prev.style.display = 'block'; } else prev.style.display = 'none';
 }
 
 async function salvarFotoGaleria() {
-  const url      = document.getElementById('gal-url').value.trim();
-  const legenda  = document.getElementById('gal-legenda').value.trim();
+  const url       = document.getElementById('gal-url').value.trim();
+  const legenda   = document.getElementById('gal-legenda').value.trim();
   const categoria = document.getElementById('gal-categoria').value;
-
   if (!url) { toast('Informe a URL da foto.', 'erro'); return; }
-
   const dados = { url, legenda: legenda || null, categoria, publicado: false, ordem: todasFotos.length };
   try {
     const res = await apiPost('galeria_fotos', dados, 'inserir');
@@ -985,34 +2074,29 @@ async function salvarFotoGaleria() {
     document.getElementById('gal-legenda').value = '';
     document.getElementById('gal-preview').style.display = 'none';
     renderGaleria();
-    toast('📸 Foto adicionada à galeria!');
-  } catch(e) { toast('Erro ao salvar foto.', 'erro'); console.error(e); }
+    toast('📸 Foto adicionada!');
+  } catch(e) { toast('Erro.', 'erro'); }
 }
 
 function renderGaleria() {
   const cont = document.getElementById('cont-galeria');
-  cont.textContent = `(${todasFotos.length} foto${todasFotos.length !== 1 ? 's' : ''})`;
-
+  if (cont) cont.textContent = `(${todasFotos.length})`;
   const lista = document.getElementById('galeria-lista');
-  if (todasFotos.length === 0) {
-    lista.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhuma foto cadastrada.</div>';
-    return;
-  }
-
+  if (!lista) return;
+  if (todasFotos.length === 0) { lista.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhuma foto.</div>'; return; }
   lista.innerHTML = todasFotos.map(f => `
     <div class="galeria-card">
-      <img src="${f.url}" alt="${f.legenda || ''}" onerror="this.style.background='#334155';this.style.height='80px';">
+      <img src="${f.url}" alt="${f.legenda||''}" onerror="this.style.background='#334155';this.style.height='60px';">
       <div class="galeria-card-body">
         <div class="cat-badge">${f.categoria}</div>
-        <div class="galeria-legenda">${f.legenda || '(sem legenda)'}</div>
+        <div class="galeria-legenda">${f.legenda||'(sem legenda)'}</div>
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
-          <span class="pub-dot ${f.publicado ? 'verde' : 'cinza'}"></span>
-          <span style="font-size:10px;color:${f.publicado ? '#22c55e' : '#64748b'};">${f.publicado ? 'Publicado' : 'Rascunho'}</span>
+          <span class="pub-dot ${f.publicado?'verde':'cinza'}"></span>
+          <span style="font-size:10px;color:${f.publicado?'#22c55e':'#64748b'};">${f.publicado?'Publicado':'Rascunho'}</span>
         </div>
         <div class="galeria-actions">
-          <button class="btn-sm ${f.publicado ? 'btn-unpub' : 'btn-pub'}"
-            onclick="togglePublicarFoto('${f.id}', ${!f.publicado})">
-            ${f.publicado ? '🔒' : '🌐'} ${f.publicado ? 'Ocultar' : 'Publicar'}
+          <button class="btn-sm ${f.publicado?'btn-unpub':'btn-pub'}" onclick="togglePublicarFoto('${f.id}',${!f.publicado})">
+            ${f.publicado?'🔒':'🌐'} ${f.publicado?'Ocultar':'Publicar'}
           </button>
           <button class="btn-sm btn-danger" onclick="excluirFoto('${f.id}')">🗑️</button>
         </div>
@@ -1025,7 +2109,7 @@ async function togglePublicarFoto(id, publicar) {
     await apiPost('galeria_fotos', { publicado: publicar }, 'atualizar', id);
     todasFotos = todasFotos.map(f => f.id === id ? { ...f, publicado: publicar } : f);
     renderGaleria();
-    toast(publicar ? '🌐 Foto publicada no portal!' : '🔒 Foto ocultada.');
+    toast(publicar ? '🌐 Publicado!' : '🔒 Ocultado.');
   } catch(e) { toast('Erro.', 'erro'); }
 }
 
@@ -1035,20 +2119,15 @@ async function excluirFoto(id) {
     await apiPost('galeria_fotos', null, 'deletar', id);
     todasFotos = todasFotos.filter(f => f.id !== id);
     renderGaleria();
-    toast('🗑️ Foto excluída.');
-  } catch(e) { toast('Erro ao excluir.', 'erro'); }
+    toast('🗑️ Excluída.');
+  } catch(e) { toast('Erro.', 'erro'); }
 }
 
 // ================================================================
 // FOTOS DE ALIMENTOS
 // ================================================================
-let credenciadosFiltrados = [];
-
 function renderCredenciados() {
-  // Pega participantes presentes com foto do alimento já capturada no check-in
   const presentes = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
-
-  // Monta lista com kg por participante (conta parceiro/membro3/membro4)
   const lista = [];
   const visto = new Set();
   for (const p of todosParticipantes) {
@@ -1057,13 +2136,10 @@ function renderCredenciados() {
     const inscsPart = todasInscricoes.filter(i => i.participante_id === p.id);
     const modalidade_id = inscsPart[0]?.modalidade_id;
     const kg = inscsPart.reduce((s, i) =>
-      s + (i.parceiro_nome ? 1 : 0) + (i.membro3_nome ? 1 : 0) + (i.membro4_nome ? 1 : 0), 1);
+      s + (i.parceiro_nome?1:0) + (i.membro3_nome?1:0) + (i.membro4_nome?1:0), 1);
     lista.push({ ...p, modalidade_id, kg, inscricoes: inscsPart });
   }
-
   credenciadosFiltrados = lista;
-
-  // Stats
   const totalKg  = lista.reduce((s, c) => s + c.kg, 0);
   const comFoto  = lista.filter(c => c.foto_alimento).length;
   document.getElementById('alim-stats').innerHTML = `
@@ -1083,57 +2159,46 @@ function renderCredenciados() {
       <div style="font-size:26px;font-weight:800;color:#f87171;">${lista.length - comFoto}</div>
       <div style="font-size:11px;color:#94a3b8;">sem foto</div>
     </div>`;
-
   renderListaCredenciados(lista);
 }
 
 function filtrarCredenciados() {
-  const busca    = document.getElementById('busca-cred').value.toLowerCase();
-  const mod      = document.getElementById('filtro-mod-cred').value;
-  const foto     = document.getElementById('filtro-foto-cred').value;
-
-  const filtrado = credenciadosFiltrados.filter(c => {
-    const nomeBate  = !busca || c.nome_completo.toLowerCase().includes(busca);
-    const modBate   = !mod  || c.modalidade_id == mod;
-    const fotoBate  = !foto || (foto === 'com' ? !!c.foto_alimento : !c.foto_alimento);
-    return nomeBate && modBate && fotoBate;
+  const busca  = document.getElementById('busca-cred').value.toLowerCase();
+  const mod    = document.getElementById('filtro-mod-cred').value;
+  const foto   = document.getElementById('filtro-foto-cred').value;
+  const fil    = credenciadosFiltrados.filter(c => {
+    const nb = !busca || c.nome_completo.toLowerCase().includes(busca);
+    const mb = !mod   || c.modalidade_id == mod;
+    const fb = !foto  || (foto==='com' ? !!c.foto_alimento : !c.foto_alimento);
+    return nb && mb && fb;
   });
-  renderListaCredenciados(filtrado);
+  renderListaCredenciados(fil);
 }
 
 function renderListaCredenciados(lista) {
   document.getElementById('cont-credenciados').textContent = `(${lista.length})`;
-
   const div = document.getElementById('lista-credenciados');
-  if (lista.length === 0) {
-    div.innerHTML = '<div class="vazio">Nenhum credenciado encontrado.</div>';
-    return;
-  }
-
+  if (lista.length === 0) { div.innerHTML = '<div class="vazio">Nenhum encontrado.</div>'; return; }
   div.innerHTML = lista.map(c => {
-    const mod     = MODALIDADES[c.modalidade_id];
-    const modNome = mod ? mod.nome + ' — ' + mod.sub : '—';
-    const hora    = c.foto_alimento_em
-      ? new Date(c.foto_alimento_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+    const mod  = MODALIDADES[c.modalidade_id];
+    const hora = c.foto_alimento_em
+      ? new Date(c.foto_alimento_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : null;
-
     return `<div class="credenciado-item">
       <div class="credenciado-dados">
         <div class="credenciado-nome">${c.nome_completo}</div>
-        <div class="credenciado-mod">${modNome} · ${c.cidade || '—'}/${c.uf || 'RO'} · <strong>${c.kg} kg</strong></div>
-        ${hora ? `<div style="font-size:11px;color:#64748b;margin-top:2px;">📷 Foto registrada em ${hora}</div>` : ''}
+        <div class="credenciado-mod">${mod?mod.nome+' — '+mod.sub:'—'} · ${c.cidade||'—'}/${c.uf||'RO'} · <strong>${c.kg} kg</strong></div>
+        ${hora?`<div style="font-size:11px;color:#64748b;">📷 ${hora}</div>`:''}
       </div>
       ${c.foto_alimento
-        ? `<img src="${c.foto_alimento}" class="foto-alimento-thumb" style="display:block;cursor:zoom-in;"
-             alt="Alimento" onclick="window.open('${c.foto_alimento}','_blank')">`
-        : `<div style="width:80px;height:80px;background:#0f172a;border:2px dashed #334155;border-radius:8px;
-             display:flex;align-items:center;justify-content:center;font-size:24px;color:#475569;flex-shrink:0;">📷</div>`}
+        ? `<img src="${c.foto_alimento}" class="foto-alimento-thumb" style="cursor:zoom-in;" onclick="window.open('${c.foto_alimento}','_blank')">`
+        : `<div style="width:44px;height:44px;background:#0f172a;border:2px dashed #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#475569;flex-shrink:0;">📷</div>`}
     </div>`;
   }).join('');
 }
 
 // ================================================================
-// UPLOAD DE ARQUIVOS — Supabase Storage
+// UPLOAD — Supabase Storage
 // ================================================================
 async function uploadArquivo(file, bucket) {
   const ext  = file.name.split('.').pop().toLowerCase();
@@ -1145,9 +2210,7 @@ async function uploadArquivo(file, bucket) {
     r.readAsDataURL(file);
   });
   const resp = await fetch('/api/upload', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + localStorage.getItem('premiacao_token') },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ base64: b64, nome, tipo: file.type, bucket })
   });
   const d = await resp.json();
@@ -1156,7 +2219,7 @@ async function uploadArquivo(file, bucket) {
 }
 
 async function uploadFotoGanhador() {
-  const file = document.getElementById('g-foto-file').files[0];
+  const file   = document.getElementById('g-foto-file').files[0];
   if (!file) return;
   const status = document.getElementById('g-foto-upload-status');
   status.textContent = '⏳ Enviando...';
@@ -1165,13 +2228,11 @@ async function uploadFotoGanhador() {
     document.getElementById('g-foto').value = url;
     previewFotoGanhador();
     status.textContent = '✅ Upload concluído!';
-  } catch(e) {
-    status.textContent = '❌ Erro: ' + e.message;
-  }
+  } catch(e) { status.textContent = '❌ Erro: ' + e.message; }
 }
 
 async function uploadGaleriaArquivo() {
-  const file = document.getElementById('gal-file').files[0];
+  const file   = document.getElementById('gal-file').files[0];
   if (!file) return;
   const status = document.getElementById('gal-upload-status');
   status.textContent = '⏳ Enviando...';
@@ -1179,21 +2240,26 @@ async function uploadGaleriaArquivo() {
     const url = await uploadArquivo(file, 'galeria');
     document.getElementById('gal-url').value = url;
     previewGaleriaFoto();
-    status.textContent = '✅ Upload concluído! Preencha a legenda e clique em "Adicionar à Galeria".';
-  } catch(e) {
-    status.textContent = '❌ Erro: ' + e.message;
-  }
+    status.textContent = '✅ Pronto! Preencha a legenda e clique em "Adicionar à Galeria".';
+  } catch(e) { status.textContent = '❌ Erro: ' + e.message; }
 }
 
 // ================================================================
-// INICIALIZAR
+// KEYBOARD SHORTCUTS
 // ================================================================
 window.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('auth-overlay').classList.contains('show'))
     fazerLogin();
-  if (e.key === 'Escape') fecharModalGanhador();
+  if (e.key === 'Escape') {
+    fecharModalGanhador();
+    fecharModalPesca();
+    fecharModalPlacar();
+  }
 });
 
+// ================================================================
+// INICIALIZAR
+// ================================================================
 verificarAuth();
 </script>
 </body>
