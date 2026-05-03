@@ -285,12 +285,16 @@
   <!-- Modo busca manual -->
   <div id="modo-busca" style="display:none;">
     <div class="busca-wrap">
-      <label class="busca-label">Número da ficha (FI-XXXX) ou CPF</label>
+      <label class="busca-label">🔍 Digite o nome, ficha (FI-XXXX) ou CPF</label>
       <input type="text" id="busca-input" class="busca-input"
-             placeholder="FI-1234"
-             oninput="formatarBusca(this)"
-             onkeydown="if(event.key==='Enter') buscar()">
-      <button class="busca-btn" id="busca-btn" onclick="buscar()">🔍 Buscar participante</button>
+             placeholder="Ex: João, FI-1234 ou CPF..."
+             oninput="buscarLive(this)"
+             autocomplete="off"
+             autocorrect="off"
+             spellcheck="false"
+             onkeydown="if(event.key==='Enter') buscarEnter()">
+      <div id="busca-resultados" class="busca-resultados"></div>
+      <div class="busca-hint" id="busca-hint">Digite ao menos 2 letras para filtrar por nome</div>
     </div>
   </div>
 
@@ -509,7 +513,15 @@ function mudarModo(modo) {
   document.getElementById('tab-busca').classList.toggle('ativo', modo === 'busca');
   document.getElementById('resultado').style.display = 'none';
   if (modo !== 'qr') pararCamera();
-  if (modo === 'busca') setTimeout(() => document.getElementById('busca-input').focus(), 100);
+  if (modo === 'busca') {
+    setTimeout(() => document.getElementById('busca-input').focus(), 100);
+    carregarCacheParticipantes(); // pré-carrega em background para busca instantânea
+  }
+  // Limpa resultados ao trocar de tab
+  const resDiv = document.getElementById('busca-resultados');
+  if (resDiv) resDiv.style.display = 'none';
+  const inp = document.getElementById('busca-input');
+  if (inp && modo !== 'busca') inp.value = '';
 }
 
 // ================================================================
@@ -956,30 +968,136 @@ function mostrarStatus(msg, tipo) {
 }
 
 // ================================================================
-// BUSCA MANUAL
+// BUSCA AO VIVO — por nome, ficha ou CPF
 // ================================================================
-function formatarBusca(el) {
-  let v = el.value.toUpperCase().replace(/\s/g, '');
-  // Se começa com letra assume ficha FI-
-  if (/^[A-Z]/.test(v) && !v.startsWith('FI-') && v.startsWith('FI')) {
-    v = 'FI-' + v.slice(2);
+let todosParticipantesCache = null;
+let buscaTimeout = null;
+
+// Pré-carrega todos participantes + inscrições em memória
+async function carregarCacheParticipantes() {
+  if (todosParticipantesCache) return todosParticipantesCache;
+  try {
+    const [partic, inscr] = await Promise.all([
+      apiGet('participantes', 'select=id,nome_completo,cpf,cidade,uf,telefone&order=nome_completo.asc'),
+      apiGet('inscricoes', 'select=participante_id,numero_ficha,modalidade_id,status,presenca')
+    ]);
+    if (!Array.isArray(partic)) return [];
+    const inscMap = {};
+    (Array.isArray(inscr) ? inscr : []).forEach(i => {
+      if (!inscMap[i.participante_id]) inscMap[i.participante_id] = [];
+      inscMap[i.participante_id].push(i);
+    });
+    todosParticipantesCache = partic.map(p => ({
+      ...p,
+      inscricoes: inscMap[p.id] || []
+    }));
+    return todosParticipantesCache;
+  } catch(e) {
+    return [];
   }
-  el.value = v;
 }
 
-async function buscar() {
-  const inp = document.getElementById('busca-input').value.trim();
-  if (!inp) return;
-  const btn = document.getElementById('busca-btn');
-  btn.disabled = true; btn.textContent = 'Buscando...';
+// Remove acentos para busca
+function semAcentos(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
-  const fi = inp.toUpperCase().replace(/^FI\-?(\d+)$/, 'FI-$1');
-  if (/^FI-\d+$/.test(fi)) {
-    await buscarPorFicha(fi);
-  } else {
-    await buscarPorCPF(inp);
+async function buscarLive(input) {
+  const q = input.value.trim();
+  const resDiv  = document.getElementById('busca-resultados');
+  const hintDiv = document.getElementById('busca-hint');
+
+  if (!q) {
+    resDiv.style.display = 'none';
+    hintDiv.style.display = 'block';
+    return;
   }
-  btn.disabled = false; btn.textContent = '🔍 Buscar participante';
+
+  // FI- → busca por ficha imediatamente
+  const fiMatch = q.toUpperCase().match(/^FI-?(\d+)$/);
+  if (fiMatch) {
+    resDiv.style.display = 'none';
+    hintDiv.style.display = 'none';
+    buscarPorFicha('FI-' + fiMatch[1]);
+    return;
+  }
+
+  // CPF (11+ dígitos) → busca por CPF
+  const digitos = q.replace(/\D/g, '');
+  if (digitos.length >= 11) {
+    resDiv.style.display = 'none';
+    hintDiv.style.display = 'none';
+    buscarPorCPF(q);
+    return;
+  }
+
+  // Mínimo 2 caracteres para busca por nome
+  if (q.length < 2) {
+    resDiv.style.display = 'none';
+    hintDiv.style.display = 'block';
+    return;
+  }
+
+  hintDiv.style.display = 'none';
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div class="busca-carregando">🔍 Buscando...</div>';
+
+  clearTimeout(buscaTimeout);
+  buscaTimeout = setTimeout(async () => {
+    const cache  = await carregarCacheParticipantes();
+    const termos = semAcentos(q).split(/\s+/).filter(Boolean);
+
+    const filtrados = cache.filter(p => {
+      const nome = semAcentos(p.nome_completo);
+      return termos.every(t => nome.includes(t));
+    }).slice(0, 10);
+
+    if (filtrados.length === 0) {
+      resDiv.innerHTML = '<div class="busca-vazio">Nenhum participante encontrado para "' + q + '"</div>';
+      return;
+    }
+
+    resDiv.innerHTML = filtrados.map(p => {
+      const insc   = p.inscricoes[0];
+      const ficha  = insc?.numero_ficha || '—';
+      const modId  = insc?.modalidade_id;
+      const mod    = modId ? MODALIDADES[modId] : null;
+      const modStr = mod ? mod.nome + ' ' + mod.sub : '—';
+      const cred   = p.inscricoes.some(i => i.presenca === true);
+      return '<div class="busca-item" onclick="selecionarDaBusca(\'' + p.id + '\')">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="busca-item-nome">' + p.nome_completo + (cred ? ' <span class="busca-item-cred">✅</span>' : '') + '</div>' +
+          '<div class="busca-item-detalhe">' + (p.cidade || '—') + '/' + (p.uf || 'RO') + ' · ' + modStr + '</div>' +
+        '</div>' +
+        '<div class="busca-item-ficha">' + ficha + '</div>' +
+      '</div>';
+    }).join('');
+  }, 180);
+}
+
+async function selecionarDaBusca(participanteId) {
+  document.getElementById('busca-resultados').style.display = 'none';
+  document.getElementById('busca-input').value = '';
+  document.getElementById('busca-hint').style.display = 'block';
+  await buscarParticipante(participanteId);
+}
+
+function buscarEnter() {
+  const q = document.getElementById('busca-input').value.trim();
+  if (!q) return;
+  // Se é ficha ou CPF, busca direto
+  const fi = q.toUpperCase().match(/^FI-?(\d+)$/);
+  if (fi) { buscarPorFicha('FI-' + fi[1]); return; }
+  const d = q.replace(/\D/g,'');
+  if (d.length >= 11) { buscarPorCPF(q); return; }
+  // Nome: seleciona o primeiro resultado da lista se houver
+  const primeiro = document.querySelector('.busca-item');
+  if (primeiro) primeiro.click();
+}
+
+// Mantido para compatibilidade com QR
+async function buscar() {
+  buscarEnter();
 }
 
 async function buscarPorFicha(ficha) {
