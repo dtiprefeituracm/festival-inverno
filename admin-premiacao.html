@@ -401,8 +401,8 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <button class="mod-sel-btn" id="aqbtn-9" onclick="selecionarAquatica(9, this)">🚣 Caiaque ♀ Fem.</button>
     </div>
     <div class="fase-row">
-      <button class="fase-btn ativo" id="fasebtn-classificatoria" onclick="selecionarFaseAquatica('classificatoria', this)">📋 Classificatória (todos)</button>
-      <button class="fase-btn" id="fasebtn-final" onclick="selecionarFaseAquatica('final', this)">🏁 Final (Top 4)</button>
+      <button class="fase-btn ativo" id="fasebtn-classificatoria" onclick="selecionarFaseAquatica('classificatoria', this)">📋 Classificatória (todos os inscritos)</button>
+      <button class="fase-btn" id="fasebtn-final" onclick="selecionarFaseAquatica('final', this)">🏁 Final (Top 4 credenciados)</button>
     </div>
     <div id="aquatica-content"><div class="loading-txt">Carregando...</div></div>
   </div>
@@ -1216,23 +1216,27 @@ function imprimirPesca(modId) {
 
 function imprimirPremiacao(modId) {
   const m     = MODALIDADES[modId];
-  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId && g.publicado).sort((a,b) => a.posicao - b.posicao);
+  // Imprime todos os ganhadores (publicados e rascunho), ordenados por posição
+  const ganhs = todosGanhadores.filter(g => g.modalidade_id == modId).sort((a,b) => a.posicao - b.posicao);
   const medals = ['🥇','🥈','🥉'];
 
   let linhas = '';
   ganhs.forEach(g => {
-    const medal = medals[g.posicao - 1] || g.posicao + 'º';
-    const res   = g.resultado_tecnico ? `<br><small style="color:#555;">${g.resultado_tecnico}</small>` : '';
-    const eq    = [g.parceiro, g.equipe].filter(Boolean).join(' · ');
+    const medal  = medals[g.posicao - 1] || g.posicao + 'º';
+    // Prêmio: usa o cadastrado ou, se vazio, puxa do regulamento (MODALIDADES)
+    const premioFinal = g.premio_descricao || m.premio?.[g.posicao] || '—';
+    const res    = g.resultado_tecnico ? `<br><small style="color:#555;">${g.resultado_tecnico}</small>` : '';
+    const eq     = [g.parceiro, g.equipe].filter(Boolean).join(' · ');
+    const pubTag = g.publicado ? '' : `<br><small style="color:#999;font-style:italic;">(rascunho)</small>`;
     linhas += `<tr>
       <td style="text-align:center;font-size:24px;">${medal}</td>
-      <td><strong>${g.nome_exibicao || '—'}</strong>${res}${eq ? '<br><small>' + eq + '</small>' : ''}</td>
+      <td><strong>${g.nome_exibicao || '—'}</strong>${res}${eq ? '<br><small>' + eq + '</small>' : ''}${pubTag}</td>
       <td>${g.cidade || '—'}</td>
-      <td style="color:#b45309;font-weight:700;">${g.premio_descricao || '—'}</td>
+      <td style="color:#b45309;font-weight:700;">${premioFinal}</td>
     </tr>`;
   });
 
-  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum ganhador publicado.</td></tr>`;
+  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum ganhador cadastrado. Use "Sincronizar com Premiação" primeiro.</td></tr>`;
 
   const win = window.open('', '_blank', 'width=800,height=550');
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
@@ -1240,17 +1244,20 @@ function imprimirPremiacao(modId) {
   <style>
     body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
     h1 { font-size: 20px; margin-bottom: 4px; color: #1a56a0; }
-    .sub { font-size: 12px; color: #666; margin-bottom: 20px; }
+    .sub { font-size: 12px; color: #666; margin-bottom: 8px; }
+    .regra { font-size: 12px; color: #444; background: #f0f9ff; border-left: 3px solid #1a56a0; padding: 8px 12px; margin-bottom: 20px; border-radius: 4px; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #1a56a0; color: white; padding: 10px 12px; font-size: 13px; text-align: left; }
     td { padding: 12px; border-bottom: 1px solid #ddd; font-size: 14px; vertical-align: middle; }
     tr:nth-child(1) td { background: #fffde7; }
     tr:nth-child(2) td { background: #f8f8f8; }
+    tr:nth-child(3) td { background: #fdf6ee; }
     .rodape { margin-top: 24px; font-size: 11px; color: #999; text-align: right; }
     @media print { body { padding: 16px; } }
   </style></head><body>
   <h1>${m.emoji} Premiação — ${m.nome} (${m.sub})</h1>
   <div class="sub">Festival de Inverno 2026 — SEMESP · Costa Marques/RO &nbsp;|&nbsp; Impresso em ${new Date().toLocaleString('pt-BR')}</div>
+  <div class="regra">📋 Premiação conforme Regulamento do Festival de Inverno 2026 · SEMESP</div>
   <table>
     <thead><tr><th>Lugar</th><th>Atleta / Equipe</th><th>Cidade</th><th>Prêmio</th></tr></thead>
     <tbody>${linhas}</tbody>
@@ -1304,8 +1311,8 @@ function renderAquatica() {
   const inscritos    = todasInscricoes.filter(i => i.modalidade_id == modId);
   const credenciados = inscritos.filter(i => i.presenca);
 
-  if (credenciados.length === 0) {
-    el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Nenhum credenciado</strong>Nenhum participante fez check-in nesta modalidade ainda.</div>`;
+  if (inscritos.length === 0) {
+    el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Nenhum inscrito</strong>Nenhum participante inscrito nesta modalidade ainda.</div>`;
     return;
   }
 
@@ -1314,9 +1321,14 @@ function renderAquatica() {
   const rankingClass = [...temposClass].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
   const idsTop4      = new Set(rankingClass.slice(0, 4).map(r => r.inscricao_id));
 
-  // Para fase final, só mostrar os top 4 da classificatória
-  let credParaExibir = credenciados;
+  // Classificatória (todos) = todos os inscritos, mesmo sem check-in ainda
+  // Final = apenas credenciados que estão no top 4 da classificatória
+  let credParaExibir = fase === 'classificatoria' ? inscritos : credenciados;
   if (fase === 'final') {
+    if (credenciados.length === 0) {
+      el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Nenhum credenciado</strong>Nenhum participante fez check-in nesta modalidade. O check-in é obrigatório para a fase Final.</div>`;
+      return;
+    }
     if (rankingClass.length < 1) {
       el.innerHTML = `<div class="aviso aviso-warn"><strong>⚠️ Fase Classificatória pendente</strong>Registre os tempos da fase classificatória primeiro para identificar os 4 finalistas.</div>`;
       return;
@@ -1912,6 +1924,62 @@ async function sincronizarPescaPremiacao(modId) {
     renderGridModalidades();
     setTimeout(() => togglePainelMod(modId), 100);
   } catch(e) { toast('Erro ao sincronizar.', 'erro'); console.error(e); }
+}
+
+// ================================================================
+// AQUÁTICAS — Sincronizar Premiação (Canoagem / Caiaque)
+// ================================================================
+async function sincronizarAguaPremiacao(modId) {
+  const m = MODALIDADES[modId];
+  // Prefere dados da Final, senão usa Classificatória
+  const temposFinal = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'final' && !r.desclassificado && r.tempo_segundos);
+  const temposClass = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado && r.tempo_segundos);
+  const usarFinal   = temposFinal.length > 0;
+  const base        = usarFinal ? temposFinal : temposClass;
+  const ranking     = [...base].sort((a, b) => a.tempo_segundos - b.tempo_segundos);
+
+  if (ranking.length < 1) { toast('Nenhum resultado de tempo para sincronizar. Registre os tempos na aba Pontuação → Aquáticas.', 'erro'); return; }
+
+  const btn = document.querySelector(`#painel-mod-${modId} button[onclick*="sincronizarAgua"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando...'; }
+
+  try {
+    const top3 = ranking.slice(0, 3);
+    for (let i = 0; i < top3.length; i++) {
+      const r       = top3[i];
+      const posicao = i + 1;
+      // Tenta encontrar cidade do participante via inscrição
+      const insc  = todasInscricoes.find(ins => ins.id === r.inscricao_id);
+      const part  = insc ? todosParticipantes.find(p => p.id === insc.participante_id) : null;
+      const dados = {
+        participante_id:   r.participante_id || part?.id || null,
+        modalidade_id:     modId,
+        posicao,
+        nome_exibicao:     r.nome_exibicao,
+        cidade:            part?.cidade || '',
+        parceiro:          insc?.parceiro_nome || '',
+        equipe:            '',
+        premio_descricao:  m.premio?.[posicao] || '',
+        resultado_tecnico: `Tempo ${usarFinal ? 'Final' : 'Classificatória'}: ${formatTempo(r.tempo_segundos)}`,
+        publicado:         true,
+      };
+      const existente = todosGanhadores.find(g => g.modalidade_id == modId && g.posicao == posicao);
+      if (existente) {
+        await apiPost('ganhadores', dados, 'atualizar', existente.id);
+        todosGanhadores = todosGanhadores.map(g => g.id === existente.id ? { ...g, ...dados } : g);
+      } else {
+        const res = await apiPost('ganhadores', dados, 'inserir');
+        const newId = res?.id || (Array.isArray(res) && res[0]?.id);
+        if (newId) todosGanhadores.push({ ...dados, id: newId });
+      }
+    }
+    toast(`✅ Premiação de ${m.nome} (${m.sub}) sincronizada! ${top3.length} lugar(es) publicados.`);
+    const painel = document.getElementById('painel-mod-' + modId);
+    if (painel) painel.remove();
+    renderGridModalidades();
+    setTimeout(() => togglePainelMod(modId), 100);
+  } catch(e) { toast('Erro ao sincronizar. Verifique a conexão.', 'erro'); console.error(e); }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Sincronizar com Premiação'; }
 }
 
 async function publicarGanhadoresPesca(modId) {
@@ -2858,6 +2926,92 @@ function renderPainelMod(modId) {
     }
   }
 
+  // Para aquáticas: monta bloco de ranking automático (canoagem/caiaque)
+  let blocoRankingAgua = '';
+  if (m.tipo === 'agua') {
+    // Usa dados da Final se existirem, senão usa Classificatória
+    const temposFinal = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'final' && !r.desclassificado && r.tempo_segundos);
+    const temposClass2 = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado && r.tempo_segundos);
+    const usarFinal  = temposFinal.length > 0;
+    const base       = usarFinal ? temposFinal : temposClass2;
+    const rankAgua   = [...base].sort((a, b) => a.tempo_segundos - b.tempo_segundos);
+    const medals     = ['🥇','🥈','🥉'];
+    const faseLabel  = usarFinal ? 'Final' : 'Classificatória';
+
+    if (rankAgua.length > 0) {
+      let rows = rankAgua.slice(0, 3).map((r, idx) => {
+        const pos    = idx + 1;
+        const medal  = medals[idx] || pos + 'º';
+        const premio = m.premio?.[pos] || '';
+        const jaSync = ganhs.some(g => g.posicao == pos && g.nome_exibicao === r.nome_exibicao);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;
+                    background:#0f172a;border-radius:8px;margin-bottom:6px;
+                    border-left:4px solid ${pos===1?'#ffd700':pos===2?'#c0c0c0':pos===3?'#cd7f32':'#334155'};">
+          <div style="font-size:${pos<=3?'22':'14'}px;flex-shrink:0;">${medal}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${r.nome_exibicao}</div>
+            <div style="font-size:11px;color:#64748b;">Fase: ${faseLabel}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:18px;font-weight:800;color:#60a5fa;font-family:monospace;">${formatTempo(r.tempo_segundos)}</div>
+            ${premio ? `<div style="font-size:10px;color:#fbbf24;font-weight:700;">${premio}</div>` : ''}
+            ${jaSync ? `<div style="font-size:10px;color:#22c55e;">✅ Sincronizado</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      // Também mostra 4º lugar se houver (classificatória)
+      if (rankAgua.length > 3) {
+        const r4 = rankAgua[3];
+        rows += `<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;
+                    background:#0f172a;border-radius:8px;margin-bottom:6px;opacity:0.7;
+                    border-left:4px solid #334155;">
+          <div style="font-size:13px;flex-shrink:0;">4º</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#94a3b8;">${r4.nome_exibicao}</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#64748b;font-family:monospace;">${formatTempo(r4.tempo_segundos)}</div>
+        </div>`;
+      }
+
+      const todosSynced = ganhs.filter(g => g.posicao <= 3).length >= Math.min(rankAgua.length, 3);
+      blocoRankingAgua = `
+        <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);
+                    border-radius:10px;padding:14px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#60a5fa;">📊 Ranking da Pontuação (${m.nome} — ${m.sub})</div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px;">${usarFinal ? '🏁 Dados da Final' : '📋 Dados da Classificatória'} · ${rankAgua.length} atleta(s) com tempo</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="imprimirAquatica(${modId},'${usarFinal?'final':'classificatoria'}')"
+                style="padding:7px 13px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;
+                       border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                🖨️ Imprimir Ranking
+              </button>
+              <button onclick="sincronizarAguaPremiacao(${modId})"
+                style="padding:7px 13px;background:linear-gradient(135deg,#1e3a8a,#1d4ed8);
+                       color:#bfdbfe;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                🔄 Sincronizar com Premiação
+              </button>
+            </div>
+          </div>
+          ${rows}
+          ${!todosSynced ? `<div style="font-size:11px;color:#fbbf24;margin-top:8px;">⚠️ Clique em "Sincronizar" para puxar os resultados automaticamente para a seção de ganhadores e habilitar o botão de impressão da premiação.</div>` : ''}
+        </div>`;
+    } else {
+      blocoRankingAgua = `
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);
+                    border-radius:10px;padding:14px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#fbbf24;">⚠️ Sem resultados na Pontuação</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+            Acesse a aba <strong>🌊 Pontuação → Aquáticas</strong>, selecione <strong>${m.nome} ${m.sub}</strong> e registre os tempos.
+            Os resultados aparecerão aqui automaticamente após a Fase Final (ou Classificatória se não houver Final ainda).
+          </div>
+        </div>`;
+    }
+  }
+
   // Botão imprimir premiação (para todas as modalidades)
   const btnImprimirPremiacao = ganhs.length > 0
     ? `<button onclick="imprimirPremiacao(${modId})"
@@ -2875,6 +3029,7 @@ function renderPainelMod(modId) {
     <div class="painel-mod-header"><div class="painel-mod-titulo">${m.emoji} ${m.nome} — ${m.sub}</div></div>
     <div class="painel-mod-body">
       ${blocoRankingPesca}
+      ${blocoRankingAgua}
       <div class="secao-titulo" style="margin-bottom:10px;">✅ Credenciados presentes</div>
       <div id="lista-parts-${modId}">${listaParticipantes}</div>
       <hr class="divider">
