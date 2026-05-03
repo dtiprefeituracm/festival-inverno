@@ -3029,7 +3029,7 @@ async function publicarGanhadoresVolei(modId) {
         parceiro:          insc?.parceiro_nome || '',
         equipe:            '',
         premio_descricao:  m.premio?.[r.posicao] || '',
-        patrocinador:      getPatrocinadorMod(modId, posicao) || null,
+        patrocinador:      getPatrocinadorMod(modId, r.posicao) || null,
         resultado_tecnico: r.placar ? `Placar final: ${r.placar}` : '',
         publicado:         true,
       };
