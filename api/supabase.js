@@ -45,6 +45,23 @@ export default async function handler(req, res) {
       return res.status(r.status).json(data);
     }
 
+    // Upsert: insere ou atualiza com base em colunas de conflito
+    if (acao === 'upsert') {
+      const conflito = req.body.conflito || 'id';
+      const upsertHeaders = {
+        ...headers,
+        'Prefer': 'resolution=merge-duplicates,return=representation',
+      };
+      const url = baseUrl + '?on_conflict=' + encodeURIComponent(conflito);
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: upsertHeaders,
+        body: JSON.stringify(Array.isArray(dados) ? dados : [dados])
+      });
+      const data = await r.json().catch(() => []);
+      return res.status(r.ok ? 200 : r.status).json(data);
+    }
+
     if (acao === 'atualizar') {
       const url = `${baseUrl}?id=eq.${id}`;
       const r = await fetch(url, {
