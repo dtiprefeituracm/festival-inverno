@@ -657,26 +657,55 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     <input type="hidden" id="pl-modalidade-id">
     <input type="hidden" id="pl-inscricao-a">
     <input type="hidden" id="pl-inscricao-b">
-    <div style="background:#0f172a;border-radius:10px;padding:16px;margin-bottom:14px;text-align:center;">
-      <div style="font-size:13px;font-weight:700;color:#e2e8f0;" id="pl-nome-a">—</div>
-      <div style="font-size:11px;color:#475569;margin:8px 0;">VS</div>
-      <div style="font-size:13px;font-weight:700;color:#e2e8f0;" id="pl-nome-b">—</div>
+    <input type="hidden" id="pl-max-pontos">
+
+    <!-- Regra da fase em destaque -->
+    <div id="pl-regra-box" style="background:#162032;border:1px solid #3b82f6;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Regra desta fase</div>
+      <div id="pl-regra-pontos" style="font-size:28px;font-weight:800;color:#60a5fa;"></div>
+      <div id="pl-regra-desc" style="font-size:12px;color:#93c5fd;margin-top:4px;"></div>
     </div>
-    <div id="pl-info-fase" style="font-size:12px;color:#94a3b8;margin-bottom:14px;padding:8px 12px;background:rgba(96,165,250,0.1);border-radius:8px;"></div>
-    <div class="form-row">
-      <div class="form-group">
-        <label id="pl-label-a">Pontos Equipe A</label>
-        <input type="number" id="pl-pontos-a" min="0" max="25" placeholder="0"
-          style="font-size:24px;font-weight:800;color:#60a5fa;text-align:center;">
-      </div>
-      <div class="form-group">
-        <label id="pl-label-b">Pontos Equipe B</label>
-        <input type="number" id="pl-pontos-b" min="0" max="25" placeholder="0"
-          style="font-size:24px;font-weight:800;color:#60a5fa;text-align:center;">
+
+    <!-- Duplas -->
+    <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Equipe A</div>
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0;" id="pl-nome-a">—</div>
+        </div>
+        <div style="font-size:16px;font-weight:800;color:#334155;">VS</div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Equipe B</div>
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0;" id="pl-nome-b">—</div>
+        </div>
       </div>
     </div>
+
+    <!-- Placar -->
+    <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:14px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label id="pl-label-a" style="text-align:center;display:block;">Pontos A</label>
+        <input type="number" id="pl-pontos-a" min="0" max="99" placeholder="0"
+          oninput="validarPlacar()"
+          style="font-size:32px;font-weight:800;color:#60a5fa;text-align:center;padding:12px;">
+      </div>
+      <div style="font-size:24px;font-weight:800;color:#334155;padding-bottom:12px;">×</div>
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label id="pl-label-b" style="text-align:center;display:block;">Pontos B</label>
+        <input type="number" id="pl-pontos-b" min="0" max="99" placeholder="0"
+          oninput="validarPlacar()"
+          style="font-size:32px;font-weight:800;color:#60a5fa;text-align:center;padding:12px;">
+      </div>
+    </div>
+
+    <!-- Aviso de validação -->
+    <div id="pl-aviso-placar" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:8px;padding:10px 12px;font-size:12px;color:#fca5a5;margin-bottom:12px;"></div>
+
+    <!-- Preview do vencedor -->
+    <div id="pl-preview-vencedor" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 12px;font-size:13px;color:#86efac;font-weight:600;text-align:center;margin-bottom:12px;"></div>
+
     <div class="form-group" style="display:flex;align-items:center;gap:10px;">
-      <input type="checkbox" id="pl-encerrada" style="width:auto;accent-color:#22c55e;transform:scale(1.3);" checked>
+      <input type="checkbox" id="pl-encerrada" style="width:auto;accent-color:#22c55e;transform:scale(1.3);" checked onchange="validarPlacar()">
       <label for="pl-encerrada" style="text-transform:none;font-size:13px;cursor:pointer;color:#e2e8f0;">
         Partida encerrada (define vencedor automaticamente)
       </label>
@@ -1677,23 +1706,88 @@ async function gerarEliminatorias(modId) {
 
 // Modal Placar
 function abrirModalPlacar(partidaId, modId, nomeA, nomeB, inscA, inscB, fase) {
-  const partida = todasPartidas.find(p => p.id === partidaId);
-  const faseLabel = { classificatoria:'Classificatória — set de 12 pontos', semi:'Semi-Final — set de 18 pontos (virada aos 9)',
-    quartas:'Quartas — set de 18 pontos', final:'Final — set de 18 pontos', terceiro:'3º Lugar — set de 18 pontos' };
-  document.getElementById('pl-partida-id').value  = partidaId;
+  const partida  = todasPartidas.find(p => p.id === partidaId);
+  const maxPts   = fase === 'classificatoria' ? 12 : 18;
+  const faseDesc = {
+    classificatoria: 'Classificatória',
+    semi:   'Semi-Final',
+    quartas:'Quartas de Final',
+    final:  'Final',
+    terceiro:'3º Lugar',
+  };
+  const regraDesc = {
+    classificatoria: 'Vence quem atingir 12 pts primeiro · Sem necessidade de 2 de diferença',
+    semi:    'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
+    quartas: 'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
+    final:   'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
+    terceiro:'Vence quem atingir 18 pts primeiro · Virada de quadra aos 9 pontos',
+  };
+
+  document.getElementById('pl-partida-id').value   = partidaId;
   document.getElementById('pl-modalidade-id').value = modId;
-  document.getElementById('pl-inscricao-a').value = inscA || '';
-  document.getElementById('pl-inscricao-b').value = inscB || '';
-  document.getElementById('pl-nome-a').textContent = nomeA;
-  document.getElementById('pl-nome-b').textContent = nomeB;
+  document.getElementById('pl-inscricao-a').value   = inscA || '';
+  document.getElementById('pl-inscricao-b').value   = inscB || '';
+  document.getElementById('pl-max-pontos').value    = maxPts;
+  document.getElementById('pl-nome-a').textContent  = nomeA;
+  document.getElementById('pl-nome-b').textContent  = nomeB;
   document.getElementById('pl-label-a').textContent = nomeA;
   document.getElementById('pl-label-b').textContent = nomeB;
-  document.getElementById('pl-info-fase').textContent = faseLabel[fase] || fase;
-  document.getElementById('placar-titulo').textContent = `⚽ Registrar Placar — ${faseLabel[fase] || fase}`;
+  document.getElementById('placar-titulo').textContent = `⚽ Placar — ${faseDesc[fase] || fase}`;
+  document.getElementById('pl-regra-pontos').textContent = maxPts + ' pontos';
+  document.getElementById('pl-regra-desc').textContent   = regraDesc[fase] || '';
   document.getElementById('pl-pontos-a').value = partida?.pontos_a ?? '';
   document.getElementById('pl-pontos-b').value = partida?.pontos_b ?? '';
   document.getElementById('pl-encerrada').checked = partida?.encerrada ?? true;
+  document.getElementById('pl-aviso-placar').style.display = 'none';
+  document.getElementById('pl-preview-vencedor').style.display = 'none';
   document.getElementById('modal-placar-bg').classList.add('aberto');
+  validarPlacar();
+}
+
+function validarPlacar() {
+  const maxPts   = parseInt(document.getElementById('pl-max-pontos').value) || 12;
+  const nomeA    = document.getElementById('pl-nome-a').textContent;
+  const nomeB    = document.getElementById('pl-nome-b').textContent;
+  const ptA      = parseInt(document.getElementById('pl-pontos-a').value) || 0;
+  const ptB      = parseInt(document.getElementById('pl-pontos-b').value) || 0;
+  const encerrada = document.getElementById('pl-encerrada').checked;
+  const aviso    = document.getElementById('pl-aviso-placar');
+  const preview  = document.getElementById('pl-preview-vencedor');
+  const btn      = document.getElementById('btn-salvar-placar');
+
+  let avisoMsg = '';
+
+  // Valida limite de pontos
+  if (ptA > maxPts || ptB > maxPts) {
+    avisoMsg = `⚠️ Atenção: o placar máximo nesta fase é ${maxPts} pontos (set único). ` +
+      `Você digitou ${ptA}×${ptB}. Corrija se necessário.`;
+  }
+
+  // Valida que o vencedor bateu o limite
+  if (encerrada && (ptA > 0 || ptB > 0)) {
+    if (ptA !== maxPts && ptB !== maxPts) {
+      avisoMsg = (avisoMsg ? avisoMsg + '\n' : '') +
+        `⚠️ Em uma partida encerrada, um dos times deve ter exatamente ${maxPts} pontos.`;
+    }
+  }
+
+  if (avisoMsg) {
+    aviso.style.display = 'block';
+    aviso.textContent   = avisoMsg;
+  } else {
+    aviso.style.display = 'none';
+  }
+
+  // Preview do vencedor
+  if (encerrada && ptA > 0 && ptB > 0 && ptA !== ptB) {
+    const venc = ptA > ptB ? nomeA : nomeB;
+    preview.style.display = 'block';
+    preview.textContent   = `🏆 Vencedor: ${venc}`;
+  } else {
+    preview.style.display = 'none';
+  }
+
+  btn.disabled = false;
 }
 
 function fecharModalPlacar() {
