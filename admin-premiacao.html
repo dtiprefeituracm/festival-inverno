@@ -946,25 +946,59 @@ function mascaraTempo(input) {
 // Impressão da tabela de classificados / final
 function imprimirAquatica(modId, fase) {
   const m          = MODALIDADES[modId];
-  const temposFase = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === fase);
-  const ranking    = [...temposFase].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+  const inscritos    = todasInscricoes.filter(i => i.modalidade_id == modId);
+  const credenciados = inscritos.filter(i => i.presenca);
+  const temposFase   = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === fase);
 
-  const titulo = `${m.emoji} ${m.nome} — ${m.sub} · ${fase === 'classificatoria' ? 'Classificatória — Top 4 para a Final' : 'Resultado Final'}`;
-  const medals = ['🥇','🥈','🥉'];
+  // Para fase final, pegar os top 4 da classificatória
+  let atletasParaImprimir = credenciados;
+  if (fase === 'final') {
+    const temposClass  = todosResultadosTempo.filter(r => r.modalidade_id == modId && r.fase === 'classificatoria' && !r.desclassificado && r.tempo_segundos);
+    const rankingClass = [...temposClass].sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+    const idsTop4      = new Set(rankingClass.slice(0,4).map(r => r.inscricao_id));
+    atletasParaImprimir = credenciados.filter(i => idsTop4.has(i.id));
+  }
 
+  const titulo = `${m.emoji} ${m.nome} — ${m.sub} · ${fase === 'classificatoria' ? 'Classificatória — Top 4 para a Final' : 'Finalistas — Resultado Final'}`;
+  const medals = ['🥇','🥈','🥉','4º'];
+
+  // Monta grupos iguais ao ranking da tela
+  const idsComReg   = new Set(temposFase.map(r => r.inscricao_id));
+  const grp1        = temposFase.filter(r => r.tempo_segundos && !r.desclassificado).sort((a,b) => a.tempo_segundos - b.tempo_segundos);
+  const grp2        = temposFase.filter(r => r.desclassificado);
+  const grp3        = temposFase.filter(r => !r.tempo_segundos && !r.desclassificado);
+  const grp4        = atletasParaImprimir
+    .filter(insc => !idsComReg.has(insc.id))
+    .map(insc => {
+      const part = todosParticipantes.find(p => p.id === insc.participante_id);
+      return { nome_exibicao: nomeDupla(insc, part), _dns: true };
+    });
+
+  const todos = [...grp1, ...grp2, ...grp3, ...grp4];
+
+  let posValida = 0;
   let linhas = '';
-  ranking.forEach((r, idx) => {
-    const pos     = idx + 1;
-    const medal   = medals[idx] || pos + 'º';
-    const declass = r.desclassificado;
-    const top4    = fase === 'classificatoria' && pos <= 4;
-    linhas += `<tr class="${declass ? 'declass' : ''} ${top4 ? 'top4' : ''}">
-      <td style="text-align:center;font-size:18px;">${medal}</td>
-      <td>${r.nome_exibicao}${r.observacao ? `<br><small style="color:#888;">${r.observacao}</small>` : ''}</td>
-      <td style="text-align:center;font-family:monospace;font-size:16px;font-weight:700;">${declass ? '<s>'+formatTempo(r.tempo_segundos)+'</s>' : formatTempo(r.tempo_segundos)}</td>
-      <td style="text-align:center;">${declass ? '⛔ Desclassificado' : (top4 ? '✅ → Final' : '')}</td>
+  todos.forEach((r) => {
+    const isDQL    = r.desclassificado;
+    const isDNS    = r._dns || (!r.tempo_segundos && !isDQL);
+    const isValido = r.tempo_segundos && !isDQL;
+    if (isValido) posValida++;
+    const isTop4   = fase === 'classificatoria' && isValido && posValida <= 4;
+
+    let posLabel, rowClass, situacao;
+    if (isDQL)        { posLabel = 'DQL'; rowClass = 'declass'; situacao = '⛔ Desclassificado'; }
+    else if (isDNS)   { posLabel = 'DNS'; rowClass = 'dns';     situacao = r.observacao || 'Não registrado'; }
+    else              { posLabel = medals[posValida-1] || posValida+'º'; rowClass = isTop4 ? 'top4' : ''; situacao = isTop4 ? '✅ → Final' : ''; }
+
+    linhas += `<tr class="${rowClass}">
+      <td style="text-align:center;font-size:${posValida<=3&&isValido?'18':'13'}px;">${posLabel}</td>
+      <td>${r.nome_exibicao}${r.observacao&&!isDNS?`<br><small style="color:#888;">${r.observacao}</small>`:''}</td>
+      <td style="text-align:center;font-family:monospace;font-size:15px;font-weight:700;">${isDQL?'<s>'+formatTempo(r.tempo_segundos)+'</s>':r.tempo_segundos?formatTempo(r.tempo_segundos):'—'}</td>
+      <td style="text-align:center;">${situacao}</td>
     </tr>`;
   });
+
+  if (!linhas) linhas = `<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">Nenhum dado registrado.</td></tr>`;
 
   const win = window.open('', '_blank', 'width=800,height=600');
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
@@ -977,7 +1011,8 @@ function imprimirAquatica(modId, fase) {
     th { background: #1a56a0; color: white; padding: 10px 12px; font-size: 13px; text-align: left; }
     td { padding: 9px 12px; border-bottom: 1px solid #ddd; font-size: 13px; vertical-align: middle; }
     tr.top4 td { background: #f0fdf4; font-weight: 600; }
-    tr.declass td { color: #999; background: #fafafa; }
+    tr.declass td { color: #aaa; text-decoration: line-through; background: #fafafa; }
+    tr.dns td { color: #999; font-style: italic; background: #f8f8f8; }
     .rodape { margin-top: 24px; font-size: 11px; color: #999; text-align: right; }
     @media print { body { padding: 16px; } }
   </style></head><body>
@@ -1090,9 +1125,9 @@ function renderAquatica() {
         <div><span class="ranking-titulo">🏅 Ranking — ${fase === 'classificatoria' ? 'Classificatória' : 'Final'}</span></div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="ranking-sub">${totalComTempo} com tempo · ${grp4SemReg.length + grp3SemTempo.length} DNS · ${grp2Declass.length} DQL</span>
-          ${totalComTempo > 0 ? `<button onclick="imprimirAquatica(${modId},'${fase}')"
+          ${rankingCompleto.length > 0 ? `<button onclick="imprimirAquatica(${modId},'${fase}')"
             style="padding:5px 11px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
-            🖨️ ${fase === 'classificatoria' ? 'Imprimir Top 4' : 'Imprimir Resultado'}
+            🖨️ ${fase === 'classificatoria' ? 'Imprimir Top 4' : 'Imprimir Finalistas'}
           </button>` : ''}
         </div>
       </div>`;
