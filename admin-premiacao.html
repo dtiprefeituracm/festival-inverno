@@ -358,6 +358,11 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
   <div class="header-actions">
     <a href="portal-transparencia.html" target="_blank" class="btn-back">👁️ Portal</a>
     <button onclick="voltarAdmin()" class="btn-back">← Admin</button>
+    <button onclick="rodarSetupCompleto()" class="btn-back"
+      title="Cria bucket videos-pesca e executa migrations automaticamente"
+      style="background:#1e3a5f;border:1px solid #3b82f6;color:#60a5fa;font-size:11px;">
+      ⚙️ Setup DB
+    </button>
   </div>
 </div>
 
@@ -613,14 +618,18 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     <input type="hidden" id="p-inscricao-id">
     <input type="hidden" id="p-participante-id">
     <input type="hidden" id="p-modalidade-id">
+
+    <!-- Equipe / Capitão -->
     <div class="form-group">
       <label>Equipe / Capitão</label>
       <input type="text" id="p-nome" readonly style="color:#60a5fa;font-weight:600;">
     </div>
     <div class="form-group">
-      <label>Nome da Equipe</label>
-      <input type="text" id="p-nome-equipe" placeholder="Nome da equipe (opcional)">
+      <label>Nome da Equipe <span style="color:#94a3b8;font-weight:400;">(preenchido automaticamente)</span></label>
+      <input type="text" id="p-nome-equipe" placeholder="Nome da equipe">
     </div>
+
+    <!-- Medição e espécie -->
     <div class="form-row">
       <div class="form-group">
         <label>📏 Medição do Peixe (cm) *</label>
@@ -632,21 +641,62 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
         <input type="text" id="p-especie" placeholder="Ex: Dourado">
       </div>
     </div>
+
+    <!-- Upload de vídeo -->
     <div class="form-group">
-      <label>🎬 URL do Vídeo (obrigatório pelo regulamento)</label>
-      <input type="url" id="p-video-url" placeholder="https://youtube.com/... ou link direto">
-      <div style="font-size:11px;color:#94a3b8;margin-top:5px;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;">
-        📋 O vídeo deve mostrar: <strong>captura</strong> → <strong>medição</strong> → <strong>soltura</strong> do peixe (Art. 15, IV do regulamento)
+      <label>🎬 Vídeo da Captura <span style="color:#ef4444;">*</span> <span style="color:#94a3b8;font-weight:400;">(obrigatório pelo regulamento)</span></label>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Opção 1: Upload direto -->
+        <div style="background:rgba(0,0,0,0.3);border:1px dashed #334155;border-radius:8px;padding:10px;">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">📤 Opção 1 — Enviar arquivo de vídeo</div>
+          <input type="file" id="p-video-file" accept="video/*,video/mp4,video/mov,video/avi,video/quicktime"
+            style="font-size:12px;color:#cbd5e1;width:100%;" onchange="previewVideoUpload(this)">
+          <div id="p-upload-progress" style="display:none;margin-top:6px;">
+            <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+              <div id="p-upload-bar" style="height:100%;background:#3b82f6;width:0%;transition:width 0.3s;"></div>
+            </div>
+            <div id="p-upload-status" style="font-size:11px;color:#60a5fa;margin-top:4px;">Enviando...</div>
+          </div>
+        </div>
+        <!-- Opção 2: URL externa -->
+        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">🔗 Opção 2 — Colar URL do vídeo (YouTube, Drive, etc.)</div>
+          <input type="url" id="p-video-url" placeholder="https://youtube.com/... ou link direto"
+            oninput="atualizarPreviewVideo(this.value)" style="margin-bottom:0;">
+        </div>
+        <!-- Preview -->
+        <div id="p-video-preview" style="display:none;background:rgba(52,211,153,0.08);border:1px solid #34d399;border-radius:8px;padding:8px;font-size:12px;color:#34d399;">
+          ✅ <span id="p-video-preview-txt"></span>
+        </div>
+        <div style="font-size:10px;color:#64748b;padding:4px 8px;background:rgba(0,0,0,0.2);border-radius:6px;">
+          📋 O vídeo deve mostrar: <strong style="color:#e2e8f0;">captura → medição → soltura</strong> do peixe (Art. 15, IV)
+        </div>
       </div>
     </div>
+
+    <!-- Observação c/ envio WhatsApp -->
     <div class="form-group">
-      <label>🔑 Código de Validação da Organização</label>
-      <input type="text" id="p-codigo" placeholder="Código fornecido pela organização (Art. 15, V)">
+      <label>📝 Observação para Fiscalização</label>
+      <textarea id="p-obs" rows="2" placeholder="Ex: Capturado às 14h30 na margem norte. Peixe medido na lancha.&#10;Desclassificado por espécie fora da categoria..."></textarea>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">📱 Enviar observação + link vídeo para fiscalização:</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span style="font-size:12px;color:#64748b;white-space:nowrap;">📞 69-9</span>
+            <input type="tel" id="p-whatsapp-num" placeholder="xxxx-xxxx" maxlength="9"
+              oninput="mascaraWhats(this)"
+              style="flex:1;padding:6px 10px;font-size:13px;letter-spacing:1px;font-family:monospace;">
+          </div>
+        </div>
+        <button type="button" onclick="enviarWhatsApp()"
+          style="padding:8px 14px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.862L.057 23.486a.5.5 0 0 0 .614.614l5.604-1.474A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.372l-.358-.212-3.724.979.993-3.63-.234-.374A9.818 9.818 0 0 1 12 2.182c5.427 0 9.818 4.391 9.818 9.818 0 5.428-4.391 9.818-9.818 9.818z"/></svg>
+          Enviar WhatsApp
+        </button>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Observação</label>
-      <textarea id="p-obs" rows="2" placeholder="Observações adicionais..."></textarea>
-    </div>
+
+    <!-- Desclassificar -->
     <div class="form-group" style="display:flex;align-items:center;gap:10px;">
       <input type="checkbox" id="p-desclassificado" style="width:auto;accent-color:#ef4444;transform:scale(1.3);">
       <label for="p-desclassificado" style="text-transform:none;font-size:13px;cursor:pointer;color:#f87171;">
@@ -813,6 +863,79 @@ async function apiPost(tabela, dados, metodo = 'inserir', id = null) {
   });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
+}
+
+// ================================================================
+// SETUP AUTOMÁTICO — Bucket + Migrations
+// ================================================================
+async function rodarSetupCompleto() {
+  if (!confirm(
+    '⚙️ Setup Automático\n\n' +
+    'Isso irá:\n' +
+    '• Criar bucket "videos-pesca" no Supabase Storage\n' +
+    '• Adicionar coluna "observacao" nas tabelas\n' +
+    '• Inserir modalidades 8 e 9 (Aquáticas Feminino)\n\n' +
+    'Operação segura — não apaga dados existentes.\n' +
+    'Continuar?'
+  )) return;
+
+  toast('⚙️ Executando setup...', 'sucesso');
+
+  try {
+    // 1. Migrations de banco
+    const r1 = await fetch('/api/run-migrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: sessionStorage.getItem('adminToken') })
+    });
+    const d1 = await r1.json();
+
+    // 2. Setup de Storage
+    const r2 = await fetch('/api/setup-storage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: sessionStorage.getItem('adminToken') })
+    });
+    const d2 = await r2.json();
+
+    // Monta relatório completo
+    const linhas = [
+      '=== MIGRATIONS ===',
+      ...(d1.log || []),
+      '',
+      '=== STORAGE ===',
+      ...(d2.log || []),
+      '',
+      '=== PRÓXIMOS PASSOS ===',
+      ...((d1.proximosPassos || []).concat(d2.proximosPassos || [])),
+    ].join('\n');
+
+    console.log('[Setup]', linhas);
+
+    const ok = (d1.ok !== false) && (d2.ok !== false);
+    if (ok) {
+      toast('✅ Setup concluído! Verifique o console para detalhes.', 'sucesso');
+    } else {
+      toast('⚠️ Setup parcialmente concluído. Verifique o console.', 'erro');
+    }
+
+    // Mostra resultado em popup
+    const win = window.open('', '_blank', 'width=700,height=600');
+    if (win) {
+      win.document.write(`<html><head><title>Setup — Festival de Inverno 2026</title>
+        <style>body{background:#0f172a;color:#e2e8f0;font-family:monospace;font-size:13px;padding:20px;white-space:pre-wrap;}
+        h2{color:#60a5fa;} .ok{color:#34d399;} .err{color:#ef4444;} .warn{color:#fbbf24;}</style></head>
+        <body><h2>⚙️ Setup — Festival de Inverno 2026</h2>
+        <pre>${linhas.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        <hr style="border-color:#334155;margin:20px 0;">
+        <p style="color:#94a3b8;font-size:11px;">Feche esta janela após verificar. Se houver SQLs manuais, copie e execute no Supabase SQL Editor.</p>
+        </body></html>`);
+    }
+
+  } catch(e) {
+    toast('❌ Erro no setup: ' + e.message, 'erro');
+    console.error('[Setup] Erro:', e);
+  }
 }
 
 // ================================================================
@@ -1365,8 +1488,7 @@ function renderPesca() {
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;color:#e2e8f0;">${r.nome_exibicao}</div>
           <div style="font-size:11px;color:#64748b;">${r.nome_equipe || ''} ${r.especie ? '· ' + r.especie : ''}</div>
-          ${r.codigo_validacao ? `<span class="validacao-badge">🔑 Cód: ${r.codigo_validacao}</span>` : ''}
-        </div>
+          </div>
         <div style="text-align:right;">
           <div style="font-size:20px;font-weight:800;color:#34d399;">${r.tamanho_cm ? r.tamanho_cm.toFixed(1) + ' cm' : '—'}</div>
           ${r.video_url ? `<a href="${r.video_url}" target="_blank" class="pesca-video">🎬 Vídeo</a>` : '<div style="font-size:10px;color:#ef4444;">⚠️ Sem vídeo</div>'}
@@ -1397,12 +1519,11 @@ function renderPesca() {
           ${res && !res.desclassificado ? `<div class="pesca-medida">${res.tamanho_cm?.toFixed(1)} cm</div>` : ''}
           ${res?.desclassificado ? '<span class="declass-badge">⛔ Desclassificada</span>' : ''}
           ${res?.video_url ? `<a href="${res.video_url}" target="_blank" class="pesca-video">🎬 Ver vídeo</a>` : ''}
-          <button class="btn-pesca-registrar" onclick="abrirModalPesca('${insc.id}','${insc.participante_id}','${nome.replace(/'/g,"\\'")}',${modId})">
+          <button class="btn-pesca-registrar" onclick="abrirModalPesca('${insc.id}','${insc.participante_id}','${nome.replace(/'/g,"\\'")}',${modId},'${(insc.nome_equipe||'').replace(/'/g,"\\'")}')">
             ${res ? '✏️ Editar' : '➕ Registrar'}
           </button>
         </div>
       </div>
-      ${res?.codigo_validacao ? `<div style="margin-top:8px;"><span class="validacao-badge">🔑 Código: ${res.codigo_validacao}</span></div>` : ''}
       ${res?.observacao ? `<div style="font-size:11px;color:#94a3b8;margin-top:6px;">📝 ${res.observacao}</div>` : ''}
     </div>`;
   });
@@ -1418,26 +1539,151 @@ function renderPesca() {
 }
 
 // Modal Pesca
-function abrirModalPesca(inscricaoId, participanteId, nome, modId) {
+function abrirModalPesca(inscricaoId, participanteId, nome, modId, nomeEquipeInscricao) {
   const res = todosResultadosPesca.find(r => r.inscricao_id === inscricaoId);
   document.getElementById('p-resultado-id').value  = res?.id || '';
   document.getElementById('p-inscricao-id').value  = inscricaoId;
   document.getElementById('p-participante-id').value = participanteId;
   document.getElementById('p-modalidade-id').value = modId;
   document.getElementById('p-nome').value          = nome;
-  document.getElementById('p-nome-equipe').value   = res?.nome_equipe || '';
+  // Preenche nome da equipe: prioriza resultado salvo, depois inscrição
+  document.getElementById('p-nome-equipe').value   = res?.nome_equipe || nomeEquipeInscricao || '';
   document.getElementById('p-tamanho').value       = res?.tamanho_cm || '';
   document.getElementById('p-especie').value       = res?.especie || '';
   document.getElementById('p-video-url').value     = res?.video_url || '';
-  document.getElementById('p-codigo').value        = res?.codigo_validacao || '';
+  // Campo código de validação removido — não utilizado neste sistema
   document.getElementById('p-obs').value           = res?.observacao || '';
   document.getElementById('p-desclassificado').checked = res?.desclassificado || false;
+  // Mostra preview do vídeo se já houver URL salva
+  atualizarPreviewVideo(res?.video_url || '');
   document.getElementById('modal-pesca-bg').classList.add('aberto');
 }
 
 function fecharModalPesca() {
   document.getElementById('modal-pesca-bg').classList.remove('aberto');
 }
+
+// ── Helpers de vídeo e WhatsApp ──────────────────────────────────
+
+function atualizarPreviewVideo(url) {
+  const prev = document.getElementById('p-video-preview');
+  const txt  = document.getElementById('p-video-preview-txt');
+  if (!prev || !txt) return;
+  if (url && url.startsWith('http')) {
+    txt.textContent = url.length > 60 ? url.substring(0, 60) + '...' : url;
+    prev.style.display = 'block';
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+function previewVideoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const mb = (file.size / 1024 / 1024).toFixed(1);
+  toast(`📹 Arquivo selecionado: ${file.name} (${mb} MB) — será enviado ao salvar.`);
+}
+
+function mascaraWhats(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 8);
+  if (v.length > 4) v = v.substring(0, 4) + '-' + v.substring(4);
+  input.value = v;
+}
+
+function enviarWhatsApp() {
+  const num  = (document.getElementById('p-whatsapp-num')?.value || '').replace(/\D/g, '');
+  const nome = document.getElementById('p-nome')?.value || '';
+  const equipe = document.getElementById('p-nome-equipe')?.value || '';
+  const tam  = document.getElementById('p-tamanho')?.value || '';
+  const esp  = document.getElementById('p-especie')?.value || '';
+  const url  = document.getElementById('p-video-url')?.value || '';
+  const obs  = document.getElementById('p-obs')?.value || '';
+
+  if (num.length < 8) { toast('Informe o número do WhatsApp (8 dígitos após 69-9).', 'erro'); return; }
+
+  const fone = '69 9' + num; // formato exibição
+  const waNum = '559' + num; // DDI + DDD 69 + 9 + número
+
+  let msg = `🎣 *Festival de Inverno 2026 — Registro de Pesca*
+
+`;
+  msg += `👤 Capitão: *${nome}*
+`;
+  if (equipe) msg += `🏷️ Equipe: *${equipe}*
+`;
+  if (tam)    msg += `📏 Medição: *${tam} cm*${esp ? ` (${esp})` : ''}
+`;
+  if (url)    msg += `🎬 Vídeo: ${url}
+`;
+  if (obs)    msg += `📝 Obs: ${obs}
+`;
+  msg += `
+_Enviado pela equipe de fiscalização — ${new Date().toLocaleString('pt-BR')}_`;
+
+  const link = `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
+  window.open(link, '_blank');
+}
+
+// Upload de vídeo para Supabase Storage
+async function uploadVideoSupabase(file, inscricaoId) {
+  const ext    = file.name.split('.').pop().toLowerCase();
+  const nome   = `pesca/${inscricaoId}_${Date.now()}.${ext}`;
+  const bar    = document.getElementById('p-upload-bar');
+  const status = document.getElementById('p-upload-status');
+  const prog   = document.getElementById('p-upload-progress');
+
+  prog.style.display  = 'block';
+  status.textContent  = 'Convertendo vídeo para envio...';
+  status.style.color  = '#60a5fa';
+  bar.style.width     = '5%';
+
+  try {
+    // Converte para base64 (mesmo padrão do api/upload.js existente)
+    const base64 = await toBase64(file);
+    bar.style.width    = '30%';
+    status.textContent = 'Enviando para o servidor...';
+
+    const r = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base64,
+        nome,                            // caminho dentro do bucket
+        tipo: file.type || 'video/mp4',
+        bucket: 'videos-pesca',
+      })
+    });
+
+    bar.style.width = '90%';
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.erro || 'Upload falhou: HTTP ' + r.status);
+    }
+
+    const data = await r.json();
+    bar.style.width    = '100%';
+    status.textContent = '✅ Vídeo enviado com sucesso!';
+    status.style.color = '#34d399';
+
+    // api/upload.js retorna { ok: true, url: '...' }
+    return data.url || data.publicUrl || '';
+  } catch(e) {
+    status.textContent = '❌ Falha no upload: ' + e.message;
+    status.style.color = '#ef4444';
+    throw e;
+  }
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ── Salvar Pesca ─────────────────────────────────────────────────
 
 async function salvarPesca() {
   const btn          = document.getElementById('btn-salvar-pesca');
@@ -1449,16 +1695,27 @@ async function salvarPesca() {
   const nomeEquipe   = document.getElementById('p-nome-equipe').value.trim();
   const tamanho      = parseFloat(document.getElementById('p-tamanho').value);
   const especie      = document.getElementById('p-especie').value.trim();
-  const videoUrl     = document.getElementById('p-video-url').value.trim();
-  const codigo       = document.getElementById('p-codigo').value.trim();
   const obs          = document.getElementById('p-obs').value.trim();
   const declass      = document.getElementById('p-desclassificado').checked;
+  const videoFile    = document.getElementById('p-video-file')?.files[0];
+  let   videoUrl     = document.getElementById('p-video-url').value.trim();
 
   if (!declass && (!tamanho || tamanho <= 0)) {
     toast('Informe a medição do peixe em cm.', 'erro'); return;
   }
 
   btn.disabled = true; btn.textContent = 'Salvando...';
+
+  // Se há arquivo selecionado, faz upload primeiro
+  if (videoFile) {
+    try {
+      btn.textContent = 'Enviando vídeo...';
+      const uploadedUrl = await uploadVideoSupabase(videoFile, inscricaoId);
+      if (uploadedUrl) videoUrl = uploadedUrl;
+    } catch(e) {
+      toast('Erro no upload do vídeo. Salvando sem vídeo...', 'erro');
+    }
+  }
 
   const dados = {
     modalidade_id:    modId,
@@ -1469,7 +1726,6 @@ async function salvarPesca() {
     tamanho_cm:       declass ? null : tamanho,
     especie:          especie || null,
     video_url:        videoUrl || null,
-    codigo_validacao: codigo || null,
     observacao:       obs || null,
     desclassificado:  declass,
   };
