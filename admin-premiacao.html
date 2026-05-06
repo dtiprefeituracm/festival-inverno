@@ -4174,39 +4174,49 @@ function renderListaCredenciados(lista) {
 
 // ================================================================
 // UPLOAD — Supabase Storage
-// Arquivos pequenos (<2MB): via /api/upload  (base64, caminho antigo)
-// Vídeos / arquivos grandes: via /api/upload-signed → PUT direto ao Supabase
+// Fotos pequenas (<2MB) : base64 via /api/upload  (caminho antigo)
+// Vídeos / arquivos grandes: upload direto browser→Supabase com progresso
 // ================================================================
+let _storageConfig = null; // cache { url, key }
+
+async function _getStorageConfig() {
+  if (_storageConfig) return _storageConfig;
+  const r = await fetch('/api/storage-config');
+  if (!r.ok) throw new Error('Não foi possível obter configuração de storage');
+  _storageConfig = await r.json();
+  return _storageConfig;
+}
+
 async function uploadArquivo(file, bucket, onProgress) {
   const ext  = file.name.split('.').pop().toLowerCase();
   const nome = `${bucket}_${Date.now()}.${ext}`;
 
-  // ── Vídeo ou arquivo > 2 MB: upload direto via signed URL ──
+  // ── Vídeo ou arquivo > 2 MB: upload direto browser → Supabase ──
   if (_isVideoFile(file) || file.size > 2 * 1024 * 1024) {
-    // 1. Pedir URL assinada à nossa API (payload pequeno, só nome/bucket)
-    const signRes = await fetch('/api/upload-signed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, bucket }),
-    });
-    const signData = await signRes.json();
-    if (!signData.ok) throw new Error(signData.erro || 'Falha ao obter URL assinada');
+    const { url: sbUrl, key: sbKey } = await _getStorageConfig();
 
-    // 2. Upload direto do browser ao Supabase com progresso via XHR
+    const endpoint = `${sbUrl}/storage/v1/object/${bucket}/${nome}`;
+
     await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('PUT', signData.signedURL);
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.open('POST', endpoint);
+      xhr.setRequestHeader('apikey',        sbKey);
+      xhr.setRequestHeader('Authorization', `Bearer ${sbKey}`);
+      xhr.setRequestHeader('Content-Type',  file.type || 'application/octet-stream');
+      xhr.setRequestHeader('x-upsert',      'true');
+
       xhr.upload.onprogress = e => {
-        if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+        if (e.lengthComputable && onProgress)
+          onProgress(Math.round(e.loaded / e.total * 100));
       };
-      xhr.onload  = () => xhr.status >= 200 && xhr.status < 300
-        ? resolve() : reject(new Error(`Upload falhou: HTTP ${xhr.status}`));
-      xhr.onerror = () => reject(new Error('Falha de rede no upload direto'));
+      xhr.onload  = () => (xhr.status >= 200 && xhr.status < 300)
+        ? resolve()
+        : reject(new Error(`Supabase recusou o arquivo (HTTP ${xhr.status})`));
+      xhr.onerror = () => reject(new Error('Falha de rede — verifique sua conexão'));
       xhr.send(file);
     });
 
-    return signData.publicUrl;
+    return `${sbUrl}/storage/v1/object/public/${bucket}/${nome}`;
   }
 
   // ── Foto pequena: caminho base64 existente ──
