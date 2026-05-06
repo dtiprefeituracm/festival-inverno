@@ -167,7 +167,48 @@
   .galeria-fil-btn:hover { border-color: #94a3b8; color: #1e293b; }
   .galeria-fil-btn.ativo { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
-  /* ── Card Instagram na galeria ── */
+  /* ── Aba alimentos ── */
+  .alim-hero { background: linear-gradient(135deg,#052e16,#14532d,#166534);
+    border-radius: 16px; padding: 28px 24px; text-align: center; margin: 20px 0 24px; }
+  .alim-hero-num { font-size: 72px; font-weight: 900; color: #4ade80;
+    line-height: 1; letter-spacing: -2px; }
+  .alim-hero-label { font-size: 20px; font-weight: 700; color: #bbf7d0; margin-top: 4px; }
+  .alim-hero-sub { font-size: 13px; color: #6ee7b7; margin-top: 8px; }
+  .alim-hero-stats { display: flex; justify-content: center; gap: 32px; margin-top: 18px;
+    flex-wrap: wrap; }
+  .alim-hero-stat { text-align: center; }
+  .alim-hero-stat-val { font-size: 28px; font-weight: 800; color: #4ade80; }
+  .alim-hero-stat-label { font-size: 11px; color: #6ee7b7; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; margin-top: 2px; }
+
+  .alim-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .alim-card { background: white; border-radius: 12px; overflow: hidden;
+    border: 1px solid #dcfce7; box-shadow: 0 2px 8px rgba(22,101,52,0.07);
+    transition: transform 0.15s, box-shadow 0.15s; }
+  .alim-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(22,101,52,0.15); }
+  .alim-card img { width: 100%; height: 180px; object-fit: cover; display: block; cursor: zoom-in; }
+  .alim-card-body { padding: 10px 12px; }
+  .alim-card-nome { font-size: 13px; font-weight: 700; color: #1e293b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .alim-card-cidade { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .alim-card-hora { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+  .alim-card-kg { display: inline-flex; align-items: center; gap: 3px; margin-top: 6px;
+    background: #dcfce7; color: #166534; border-radius: 8px; padding: 2px 8px;
+    font-size: 11px; font-weight: 700; }
+
+  .alim-sem-foto { background: #f0fdf4; border: 1.5px dashed #86efac; border-radius: 12px;
+    height: 180px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 6px; color: #4ade80; font-size: 32px; }
+  .alim-sem-foto-label { font-size: 11px; color: #86efac; font-weight: 600; }
+
+  .alim-filtro-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    align-items: center; }
+  .alim-busca { flex: 1; min-width: 200px; padding: 9px 14px; border: 1px solid #e2e8f0;
+    border-radius: 8px; font-size: 13px; outline: none; }
+  .alim-busca:focus { border-color: #4ade80; }
+  .alim-toggle { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; }
+  .alim-toggle.ativo { background: #dcfce7; border-color: #4ade80; color: #166534; }
   .galeria-ig-card { height: 140px; position: relative; overflow: hidden; cursor: pointer;
     background: linear-gradient(160deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F56040, #F77737, #FCAF45);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
@@ -242,11 +283,12 @@
     </div>
   </div>
   <div class="header-nav">
-    <button class="nav-btn ativo" onclick="mostrarAba('visao-geral')">📊 Visão Geral</button>
+    <button class="nav-btn" onclick="mostrarAba('visao-geral')">📊 Visão Geral</button>
     <button class="nav-btn" onclick="mostrarAba('participantes')">👥 Participantes</button>
     <button class="nav-btn" onclick="mostrarAba('ganhadores')">🏆 Ganhadores</button>
     <button class="nav-btn" onclick="mostrarAba('historico')">📖 Histórico</button>
     <button class="nav-btn" onclick="mostrarAba('galeria')">🎬 Galeria</button>
+    <button class="nav-btn" onclick="mostrarAba('alimentos')" style="color:#bbf7d0;">🥦 Alimentos</button>
     <button class="nav-btn" onclick="window.print()">🖨️ Imprimir</button>
   </div>
 </div>
@@ -288,10 +330,11 @@
       <div class="card-val" id="m-campeoes">—</div>
       <div class="card-sub">modalidades premiadas</div>
     </div>
-    <div class="card" style="border-color:#86efac;">
+    <div class="card" style="border-color:#86efac;cursor:pointer;" onclick="mostrarAbaAlimentos()" title="Ver galeria de alimentos">
       <div class="card-label" style="color:#166534;">🥦 Alimentos arrecadados</div>
       <div class="card-val" id="m-alimentos" style="color:#16a34a;">—</div>
       <div class="card-sub" id="m-alimentos-sub">kg doados</div>
+      <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600;">Ver galeria →</div>
     </div>
   </div>
 
@@ -449,6 +492,49 @@
         <div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento.</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: ALIMENTOS                          -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-alimentos">
+
+  <!-- Hero com total destacado -->
+  <div class="alim-hero">
+    <div class="alim-hero-num" id="alim-total-kg">—</div>
+    <div class="alim-hero-label">kg de alimentos arrecadados</div>
+    <div class="alim-hero-sub">Festival de Inverno 2026 · Costa Marques / RO</div>
+    <div class="alim-hero-stats">
+      <div class="alim-hero-stat">
+        <div class="alim-hero-stat-val" id="alim-stat-participantes">—</div>
+        <div class="alim-hero-stat-label">participantes doadores</div>
+      </div>
+      <div class="alim-hero-stat">
+        <div class="alim-hero-stat-val" id="alim-stat-fotos">—</div>
+        <div class="alim-hero-stat-label">fotos registradas</div>
+      </div>
+      <div class="alim-hero-stat">
+        <div class="alim-hero-stat-val" id="alim-stat-cidades">—</div>
+        <div class="alim-hero-stat-label">cidades representadas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="alim-filtro-row">
+    <input type="text" class="alim-busca" id="alim-busca" placeholder="🔍 Buscar por nome..."
+      oninput="filtrarAlimentos()">
+    <button class="alim-toggle ativo" id="alim-btn-todos"    onclick="setAlimFiltro('todos')">Todos</button>
+    <button class="alim-toggle"       id="alim-btn-com-foto" onclick="setAlimFiltro('com-foto')">📷 Com foto</button>
+    <button class="alim-toggle"       id="alim-btn-sem-foto" onclick="setAlimFiltro('sem-foto')">Sem foto</button>
+  </div>
+
+  <div class="secao-titulo" style="margin-bottom:14px;">
+    🥦 Galeria de Alimentos <span class="secao-sub" id="alim-contador"></span>
+  </div>
+  <div class="alim-grid" id="alim-grid">
+    <div class="loading">Carregando...</div>
   </div>
 </div>
 
@@ -630,6 +716,7 @@ async function carregarDados() {
     renderGanhadores();
     renderHistorico();
     renderGaleria();
+    _renderHeroAlimentos();
   } catch (e) {
     console.error('Erro ao carregar:', e);
     document.getElementById('tbody-part').innerHTML =
@@ -786,6 +873,83 @@ function renderParticipantes(lista) {
   }).join('');
 }
 
+// ================================================================
+// ABA ALIMENTOS
+// ================================================================
+let _alimFiltro = 'todos';
+
+function mostrarAbaAlimentos() {
+  mostrarAba('alimentos');
+  // Sincronizar botão nav
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  const btnAlim = [...document.querySelectorAll('.nav-btn')].find(b => b.textContent.includes('Alimentos'));
+  if (btnAlim) btnAlim.classList.add('ativo');
+}
+
+function setAlimFiltro(tipo) {
+  _alimFiltro = tipo;
+  ['todos','com-foto','sem-foto'].forEach(t => {
+    document.getElementById('alim-btn-' + t)?.classList.toggle('ativo', t === tipo);
+  });
+  filtrarAlimentos();
+}
+
+function filtrarAlimentos() {
+  const busca = (document.getElementById('alim-busca')?.value || '').toLowerCase().trim();
+  const credenciadosIds = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
+  let lista = todosParticipantes.filter(p => credenciadosIds.has(p.id));
+  if (busca)              lista = lista.filter(p => p.nome_completo.toLowerCase().includes(busca));
+  if (_alimFiltro === 'com-foto') lista = lista.filter(p => p.foto_alimento);
+  if (_alimFiltro === 'sem-foto') lista = lista.filter(p => !p.foto_alimento);
+  renderAlimentos(lista);
+}
+
+function renderAlimentos(lista) {
+  const grid = document.getElementById('alim-grid');
+  const cont = document.getElementById('alim-contador');
+  if (cont) cont.textContent = `(${lista.length} doador${lista.length !== 1 ? 'es' : ''})`;
+  if (!lista.length) {
+    grid.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhum registro encontrado.</div>';
+    return;
+  }
+  grid.innerHTML = lista.map(p => {
+    const hora = p.foto_alimento_em
+      ? new Date(p.foto_alimento_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : null;
+    const foto = p.foto_alimento
+      ? `<img src="${p.foto_alimento}" alt="Alimento de ${p.nome_completo}" loading="lazy"
+           onclick="window.open('${p.foto_alimento}','_blank')" title="Clique para ampliar">`
+      : `<div class="alim-sem-foto">🥦<div class="alim-sem-foto-label">Sem foto registrada</div></div>`;
+    return `<div class="alim-card">
+      ${foto}
+      <div class="alim-card-body">
+        <div class="alim-card-nome" title="${p.nome_completo}">${p.nome_completo}</div>
+        <div class="alim-card-cidade">${p.cidade || '—'} / ${p.uf || 'RO'}</div>
+        ${hora ? `<div class="alim-card-hora">📅 ${hora}</div>` : ''}
+        <div class="alim-card-kg">🥦 1 kg doado</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _renderHeroAlimentos() {
+  const credenciadosIds = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
+  const doadores  = todosParticipantes.filter(p => credenciadosIds.has(p.id));
+  const totalKg   = doadores.length;
+  const comFoto   = doadores.filter(p => p.foto_alimento).length;
+  const cidades   = new Set(doadores.map(p => (p.cidade||'').trim().toLowerCase()).filter(Boolean)).size;
+
+  const el = id => document.getElementById(id);
+  if (el('alim-total-kg'))          el('alim-total-kg').textContent          = totalKg || '0';
+  if (el('alim-stat-participantes')) el('alim-stat-participantes').textContent = totalKg;
+  if (el('alim-stat-fotos'))        el('alim-stat-fotos').textContent        = comFoto;
+  if (el('alim-stat-cidades'))      el('alim-stat-cidades').textContent      = cidades;
+  renderAlimentos(doadores);
+}
+
+// ================================================================
+// MODAL — PARTICIPANTE
+// ================================================================
 function abrirModalPart(dados) {
   document.getElementById('mp-nome').textContent = dados.nome;
 
@@ -1172,6 +1336,11 @@ function mostrarAba(id) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
   document.getElementById('aba-' + id)?.classList.add('ativa');
   event.target.classList.add('ativo');
+  if (id === 'alimentos') {
+    document.getElementById('alim-busca').value = '';
+    _alimFiltro = 'todos';
+    setAlimFiltro('todos');
+  }
 }
 
 // ================================================================
