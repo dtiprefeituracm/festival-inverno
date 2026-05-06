@@ -305,30 +305,34 @@
 
   <!-- Métricas gerais -->
   <div class="cards" id="cards-metricas">
-    <div class="card">
+    <div class="card" style="cursor:pointer;" onclick="mostrarAba('participantes')" title="Ver lista de participantes">
       <div class="card-label">Total de inscritos</div>
       <div class="card-val" id="m-total">—</div>
       <div class="card-sub">participantes</div>
+      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver lista →</div>
     </div>
-    <div class="card">
+    <div class="card" style="cursor:pointer;" onclick="mostrarAba('participantes')" title="Ver participantes por cidade">
       <div class="card-label">Cidades participantes</div>
       <div class="card-val" id="m-cidades">—</div>
       <div class="card-sub">municípios</div>
+      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver participantes →</div>
     </div>
     <div class="card">
       <div class="card-label">Modalidades</div>
       <div class="card-val">7</div>
       <div class="card-sub">esportes</div>
     </div>
-    <div class="card">
+    <div class="card" style="cursor:pointer;" onclick="mostrarAbaFiltrado('participantes','sim')" title="Ver credenciados">
       <div class="card-label">Credenciados</div>
       <div class="card-val" id="m-credenciados">—</div>
       <div class="card-sub">presença confirmada</div>
+      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver credenciados →</div>
     </div>
-    <div class="card">
+    <div class="card" style="cursor:pointer;" onclick="mostrarAba('ganhadores')" title="Ver ganhadores">
       <div class="card-label">Campeões publicados</div>
       <div class="card-val" id="m-campeoes">—</div>
-      <div class="card-sub">modalidades premiadas</div>
+      <div class="card-sub" id="m-campeoes-sub">modalidades premiadas</div>
+      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;" id="m-campeoes-link">Ver ganhadores →</div>
     </div>
     <div class="card" style="border-color:#86efac;cursor:pointer;" onclick="mostrarAbaAlimentos()" title="Ver galeria de alimentos">
       <div class="card-label" style="color:#166534;">🥦 Alimentos arrecadados</div>
@@ -739,10 +743,32 @@ function renderVisaoGeral() {
   const credenciados = new Set(i.filter(x => x.presenca).map(x => x.participante_id)).size;
   document.getElementById('m-credenciados').textContent = credenciados;
 
-  // Modalidades com pelo menos 1 campeão publicado
-  const modsPremiadasSet = new Set(GANHADORES.map(g => g.modalidade_id));
-  document.getElementById('m-campeoes').textContent =
-    GANHADORES.length === 0 ? '—' : `${modsPremiadasSet.size}/${Object.keys(MODALIDADES).length}`;
+  // Campeões — contar apenas modalidade_id válidas (presentes em MODALIDADES)
+  const modsValidas = new Set(Object.keys(MODALIDADES).map(Number));
+  const ganhadoresValidos = GANHADORES.filter(g => modsValidas.has(Number(g.modalidade_id)));
+  const modsPremiadasSet  = new Set(ganhadoresValidos.map(g => g.modalidade_id));
+  const totalMods         = modsValidas.size;
+  const premiadasCount    = modsPremiadasSet.size;
+  const faltando          = [...modsValidas].filter(id => !modsPremiadasSet.has(String(id)) && !modsPremiadasSet.has(id));
+
+  const campoesEl  = document.getElementById('m-campeoes');
+  const campoesLnk = document.getElementById('m-campeoes-link');
+  if (campoesEl) campoesEl.textContent = GANHADORES.length === 0 ? '—' : `${premiadasCount}/${totalMods}`;
+  if (campoesLnk) {
+    if (faltando.length > 0 && GANHADORES.length > 0) {
+      const nomesF = faltando.map(id => {
+        const m = MODALIDADES[id];
+        return m ? `${m.nome} ${m.sub}` : `Mod.${id}`;
+      }).join(', ');
+      campoesLnk.innerHTML = `⚠️ Faltando: ${nomesF}`;
+      campoesLnk.style.color = '#dc2626';
+      campoesLnk.style.fontWeight = '700';
+      campoesLnk.style.whiteSpace = 'normal';
+    } else {
+      campoesLnk.textContent = premiadasCount === totalMods ? '✅ Todas premiadas' : 'Ver ganhadores →';
+      campoesLnk.style.color = premiadasCount === totalMods ? '#16a34a' : '#1a56a0';
+    }
+  }
 
   // Alimentos arrecadados — 1 kg por participante credenciado
   const credenciadosIds = new Set(i.filter(x => x.presenca).map(x => x.participante_id));
@@ -878,12 +904,28 @@ function renderParticipantes(lista) {
 // ================================================================
 let _alimFiltro = 'todos';
 
-function mostrarAbaAlimentos() {
-  mostrarAba('alimentos');
-  // Sincronizar botão nav
+function mostrarAbaFiltrado(abaId, filtroCredVal) {
+  // Vai para a aba e aplica filtro
+  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('aba-' + abaId)?.classList.add('ativa');
+  const btn = [...document.querySelectorAll('.nav-btn')].find(b => b.onclick?.toString().includes(abaId));
+  if (btn) btn.classList.add('ativo');
+  if (filtroCredVal !== undefined) {
+    const sel = document.getElementById('filtro-cred');
+    if (sel) { sel.value = filtroCredVal; filtrarParticipantes(); }
+  }
+}
+
+function mostrarAbaAlimentos() {
+  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('aba-alimentos')?.classList.add('ativa');
   const btnAlim = [...document.querySelectorAll('.nav-btn')].find(b => b.textContent.includes('Alimentos'));
   if (btnAlim) btnAlim.classList.add('ativo');
+  document.getElementById('alim-busca').value = '';
+  _alimFiltro = 'todos';
+  setAlimFiltro('todos');
 }
 
 function setAlimFiltro(tipo) {
