@@ -111,6 +111,29 @@
   .modal-val { color: #1e293b; font-weight: 600; text-align: right; max-width: 60%; }
   .modal-foto-grande { width: 100%; max-height: 280px; object-fit: cover; border-radius: 10px; margin: 12px 0; border: 2px solid #e2e8f0; }
 
+  /* ── Modal participante ── */
+  .part-modal-foto { width: 100%; max-height: 260px; object-fit: cover; border-radius: 10px;
+    margin: 10px 0; border: 2px solid #e2e8f0; cursor: zoom-in; }
+  .part-modal-no-foto { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 10px;
+    height: 100px; display: flex; align-items: center; justify-content: center;
+    color: #94a3b8; font-size: 13px; margin: 10px 0; }
+
+  /* ── Miniatura alimento na tabela ── */
+  .alim-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 6px;
+    border: 1px solid #e2e8f0; cursor: pointer; display: block; flex-shrink: 0; }
+  .alim-thumb-vazio { width: 36px; height: 36px; border-radius: 6px; border: 1.5px dashed #e2e8f0;
+    display: flex; align-items: center; justify-content: center; color: #cbd5e1;
+    font-size: 16px; flex-shrink: 0; }
+
+  /* ── Destaque ganhador na tabela ── */
+  .badge-ganhador { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px;
+    background: linear-gradient(135deg,#fef9c3,#fde68a); border: 1px solid #f59e0b;
+    border-radius: 8px; font-size: 10px; font-weight: 800; color: #92400e; margin-left: 5px;
+    white-space: nowrap; vertical-align: middle; }
+  tr.row-ganhador td:nth-child(2) { color: #1a56a0; font-weight: 700; }
+  tr.row-clickable { cursor: pointer; }
+  tr.row-clickable:hover td { background: #f8fafc; }
+
   /* ── Timeline evento ── */
   .timeline { position: relative; padding-left: 24px; }
   .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
@@ -265,6 +288,11 @@
       <div class="card-val" id="m-campeoes">—</div>
       <div class="card-sub">modalidades premiadas</div>
     </div>
+    <div class="card" style="border-color:#86efac;">
+      <div class="card-label" style="color:#166534;">🥦 Alimentos arrecadados</div>
+      <div class="card-val" id="m-alimentos" style="color:#16a34a;">—</div>
+      <div class="card-sub" id="m-alimentos-sub">kg doados</div>
+    </div>
   </div>
 
   <!-- Participação por modalidade -->
@@ -338,11 +366,12 @@
             <th>Participante</th>
             <th>Cidade/UF</th>
             <th>Modalidade</th>
+            <th style="text-align:center;">🥦</th>
             <th>Credenciado</th>
           </tr>
         </thead>
         <tbody id="tbody-part">
-          <tr><td colspan="5" class="loading">Carregando...</td></tr>
+          <tr><td colspan="6" class="loading">Carregando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -420,6 +449,21 @@
         <div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento.</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  MODAL — Participante (alimento)         -->
+<!-- ══════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-part-bg" onclick="fecharModalPart(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-titulo" id="mp-nome">Participante</span>
+      <button class="modal-fechar" onclick="fecharModalPartBtn()">×</button>
+    </div>
+    <div id="mp-medalhas" style="margin-bottom:10px;"></div>
+    <div id="mp-foto-wrap"></div>
+    <div id="mp-dados"></div>
   </div>
 </div>
 
@@ -613,6 +657,24 @@ function renderVisaoGeral() {
   document.getElementById('m-campeoes').textContent =
     GANHADORES.length === 0 ? '—' : `${modsPremiadasSet.size}/${Object.keys(MODALIDADES).length}`;
 
+  // Alimentos arrecadados — conta 1 kg por membro da equipe presente
+  const credenciadosIds = new Set(i.filter(x => x.presenca).map(x => x.participante_id));
+  let totalKg = 0;
+  credenciadosIds.forEach(partId => {
+    const inscsPart = i.filter(x => x.participante_id === partId && x.presenca);
+    // 1 kg pelo participante + 1 kg por cada membro adicional
+    const kg = inscsPart.reduce((s, x) =>
+      s + (x.parceiro_nome ? 1 : 0) + (x.membro3_nome ? 1 : 0) + (x.membro4_nome ? 1 : 0), 1);
+    totalKg += kg;
+  });
+  const comFoto = i.filter(x => x.presenca && x.foto_alimento_url).length;
+  const alimEl  = document.getElementById('m-alimentos');
+  const alimSub = document.getElementById('m-alimentos-sub');
+  if (alimEl) alimEl.textContent = totalKg > 0 ? totalKg : '—';
+  if (alimSub) alimSub.textContent = totalKg > 0
+    ? `kg doados · ${comFoto} foto${comFoto !== 1 ? 's' : ''}`
+    : 'kg doados';
+
   // Tabela por modalidade
   const porMod = {};
   Object.entries(MODALIDADES).forEach(([id, m]) => { porMod[id] = { mod: m, total: 0 }; });
@@ -678,31 +740,115 @@ function renderParticipantes(lista) {
   count.textContent = `${lista.length} participante${lista.length !== 1 ? 's' : ''} encontrado${lista.length !== 1 ? 's' : ''}`;
 
   if (lista.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="vazio">Nenhum participante encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="vazio">Nenhum participante encontrado.</td></tr>';
     return;
   }
 
+  // Mapa de ganhadores por participante_id → medalhas
+  const ganhadoresPorPart = {};
+  GANHADORES.forEach(g => {
+    if (!g.participante_id) return;
+    if (!ganhadoresPorPart[g.participante_id]) ganhadoresPorPart[g.participante_id] = [];
+    ganhadoresPorPart[g.participante_id].push(g);
+  });
+
   tbody.innerHTML = lista.map((p, idx) => {
-    const insc = todasInscricoes.filter(i => i.participante_id === p.id);
+    const insc        = todasInscricoes.filter(i => i.participante_id === p.id);
     const credenciado = insc.some(i => i.presenca);
-    const fotoAlimento = insc.find(i => i.foto_alimento_url)?.foto_alimento_url;
+    const fotoAlimento = insc.find(i => i.foto_alimento_url)?.foto_alimento_url || null;
+    const ganhs       = ganhadoresPorPart[p.id] || [];
+
     const mods = insc.map(i => {
       const m = MODALIDADES[i.modalidade_id];
       return m ? `<span class="badge badge-${m.tipo === 'agua' ? 'agua' : m.tipo === 'pesca' ? 'pesca' : 'areia'}" style="margin:1px;">${m.nome} ${m.sub}</span>` : '';
     }).join(' ');
 
-    return `<tr>
+    // Badge de ganhador no nome
+    const medalBadges = ganhs.map(g =>
+      `<span class="badge-ganhador">${g.posicao === 1 ? '🥇' : '🥈'} ${MODALIDADES[g.modalidade_id]?.nome || ''}</span>`
+    ).join(' ');
+
+    // Miniatura do alimento
+    const alimCell = fotoAlimento
+      ? `<img src="${fotoAlimento}" class="alim-thumb" title="Ver foto do alimento" onclick="event.stopPropagation();window.open('${fotoAlimento}','_blank')">`
+      : `<div class="alim-thumb-vazio" title="Sem foto">🥦</div>`;
+
+    const isGanhador = ganhs.length > 0;
+    const dataStr = JSON.stringify({ id:p.id, nome:p.nome_completo, cidade:p.cidade, uf:p.uf,
+      fotoAlimento, credenciado, ganhs: ganhs.map(g=>({posicao:g.posicao,mod:g.modalidade_id,premio:g.premio})) })
+      .replace(/"/g,'&quot;');
+
+    return `<tr class="row-clickable${isGanhador ? ' row-ganhador' : ''}" onclick="abrirModalPart(${dataStr})">
       <td style="color:#94a3b8;font-size:11px;">${idx + 1}</td>
-      <td style="font-weight:600;">${p.nome_completo}</td>
+      <td style="font-weight:600;">${p.nome_completo}${medalBadges ? ' ' + medalBadges : ''}</td>
       <td>${p.cidade || '—'} / ${p.uf || 'RO'}</td>
       <td>${mods || '<span style="color:#94a3b8;font-size:11px;">—</span>'}</td>
+      <td style="text-align:center;">${alimCell}</td>
       <td style="text-align:center;">
         ${credenciado
-          ? `<span class="badge badge-ok" title="${fotoAlimento ? 'Ver foto do alimento' : 'Credenciado'}">✅ Sim</span>${fotoAlimento ? `<br><a href="${fotoAlimento}" target="_blank" style="font-size:10px;color:#1a56a0;">📷 Alimento</a>` : ''}`
+          ? `<span class="badge badge-ok">✅ Sim</span>`
           : '<span style="color:#94a3b8;font-size:11px;">Não</span>'}
       </td>
     </tr>`;
   }).join('');
+}
+
+function abrirModalPart(dados) {
+  document.getElementById('mp-nome').textContent = dados.nome;
+
+  // Medalhas de ganhador
+  const medalDiv = document.getElementById('mp-medalhas');
+  if (dados.ganhs && dados.ganhs.length > 0) {
+    medalDiv.innerHTML = dados.ganhs.map(g => {
+      const mod = MODALIDADES[g.mod];
+      return `<span class="badge-ganhador" style="font-size:12px;padding:3px 10px;">
+        ${g.posicao === 1 ? '🥇 1º lugar' : '🥈 2º lugar'} — ${mod?.nome || ''} ${mod?.sub || ''}
+        ${g.premio ? `· <em style="font-weight:400;">${g.premio}</em>` : ''}
+      </span>`;
+    }).join(' ');
+    medalDiv.style.display = 'block';
+  } else {
+    medalDiv.innerHTML = '';
+    medalDiv.style.display = 'none';
+  }
+
+  // Foto do alimento
+  const fotoWrap = document.getElementById('mp-foto-wrap');
+  if (dados.fotoAlimento) {
+    fotoWrap.innerHTML = `
+      <div class="modal-section">🥦 Alimento doado na entrada</div>
+      <img src="${dados.fotoAlimento}" class="part-modal-foto" alt="Foto do alimento"
+        onclick="window.open('${dados.fotoAlimento}','_blank')" title="Clique para ampliar">`;
+  } else if (dados.credenciado) {
+    fotoWrap.innerHTML = `
+      <div class="modal-section">🥦 Alimento doado na entrada</div>
+      <div class="part-modal-no-foto">📷 Foto não registrada</div>`;
+  } else {
+    fotoWrap.innerHTML = '';
+  }
+
+  // Dados gerais
+  document.getElementById('mp-dados').innerHTML = `
+    <div class="modal-section">Dados do participante</div>
+    <div class="modal-row">
+      <span class="modal-label">Cidade/UF</span>
+      <span class="modal-val">${dados.cidade || '—'} / ${dados.uf || 'RO'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Credenciado</span>
+      <span class="modal-val">${dados.credenciado ? '✅ Sim' : '⭕ Não'}</span>
+    </div>`;
+
+  document.getElementById('modal-part-bg').classList.add('aberto');
+  document.body.style.overflow = 'hidden';
+}
+
+function fecharModalPart(e) {
+  if (e.target === document.getElementById('modal-part-bg')) fecharModalPartBtn();
+}
+function fecharModalPartBtn() {
+  document.getElementById('modal-part-bg').classList.remove('aberto');
+  document.body.style.overflow = '';
 }
 
 function filtrarParticipantes() {
@@ -1041,7 +1187,10 @@ function mostrarAba(id) {
 carregarDados();
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') fecharModalGanhadorBtn();
+  if (e.key === 'Escape') {
+    fecharModalPartBtn();
+    fecharModalGanhadorBtn();
+  }
 });
 </script>
 </body>
