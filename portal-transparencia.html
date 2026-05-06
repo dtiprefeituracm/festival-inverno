@@ -769,21 +769,32 @@ async function carregarDados() {
     todasInscricoes    = inscricoes;
     dadosFiltrados     = participantes;
 
-    // Carrega apenas ganhadores publicados (1º e 2º lugar — não há 3º lugar nas modalidades do festival)
+    // Índice de participantes por id para lookup rápido
+    const partMap = {};
+    participantes.forEach(p => { partMap[p.id] = p; });
+
+    // Carrega apenas ganhadores publicados (1º e 2º lugar)
     GANHADORES = (Array.isArray(ganhadores) ? ganhadores : [])
       .filter(g => g.publicado && g.posicao >= 1 && g.posicao <= 2)
-      .map(g => ({
-        posicao:        g.posicao,
-        modalidade_id:  g.modalidade_id,
-        nome:           g.nome_exibicao || '—',
-        cidade:         g.cidade || '',
-        parceiro:       g.parceiro || null,
-        equipe:         g.equipe  || null,
-        foto_url:       g.foto_url || null,
-        premio:         g.premio_descricao || null,
-        patrocinador:   g.patrocinador || null,
-        participante_id: g.participante_id || null,
-      }));
+      .map(g => {
+        const part   = g.participante_id ? partMap[g.participante_id] : null;
+        let cidade   = (g.cidade || '').trim();
+        if (!cidade && part) {
+          cidade = [part.cidade, part.uf].filter(Boolean).join('/');
+        }
+        return {
+          posicao:         g.posicao,
+          modalidade_id:   g.modalidade_id,
+          nome:            g.nome_exibicao || '—',
+          cidade,
+          parceiro:        g.parceiro  || null,
+          equipe:          g.equipe    || null,
+          foto_url:        g.foto_url  || null,
+          premio:          g.premio_descricao || null,
+          patrocinador:    g.patrocinador || null,
+          participante_id: g.participante_id || null,
+        };
+      });
 
     // Galeria: apenas fotos publicadas, ordenadas
     todasFotosGaleria = (Array.isArray(galeria) ? galeria : [])
