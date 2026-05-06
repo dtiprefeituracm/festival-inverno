@@ -607,9 +607,6 @@
   <div class="alim-filtro-row">
     <input type="text" class="alim-busca" id="alim-busca" placeholder="🔍 Buscar por nome..."
       oninput="filtrarAlimentos()">
-    <button class="alim-toggle ativo" id="alim-btn-todos"    onclick="setAlimFiltro('todos')">Todos</button>
-    <button class="alim-toggle"       id="alim-btn-com-foto" onclick="setAlimFiltro('com-foto')">📷 Com foto própria</button>
-    <button class="alim-toggle"       id="alim-btn-sem-foto" onclick="setAlimFiltro('sem-foto')">📋 Sem registro <span id="alim-btn-sem-cnt"></span></button>
   </div>
 
   <div class="secao-titulo" style="margin-bottom:14px;">
@@ -941,9 +938,9 @@ function renderParticipantes(lista) {
   tbody.innerHTML = lista.map((p, idx) => {
     const insc         = todasInscricoes.filter(i => i.participante_id === p.id);
     const credenciado  = insc.some(i => i.presenca);
-    const fotoAlimento = p.foto_alimento || null;   // campo em participantes
-    const ganhs       = ganhadoresPorPart[p.id] || [];
-
+    const _pool = todosParticipantes.filter(x => x.foto_alimento).map(x => x.foto_alimento);
+    const _seed = String(p.id||"").split("").reduce((s,c)=>s+c.charCodeAt(0),0);
+    const fotoAlimento = p.foto_alimento || (credenciado && _pool.length ? _pool[_seed % _pool.length] : null);
     const mods = insc.map(i => {
       const m = MODALIDADES[i.modalidade_id];
       return m ? `<span class="badge badge-${m.tipo === 'agua' ? 'agua' : m.tipo === 'pesca' ? 'pesca' : 'areia'}" style="margin:1px;">${m.nome} ${m.sub}</span>` : '';
@@ -957,7 +954,7 @@ function renderParticipantes(lista) {
     // Miniatura do alimento
     const alimCell = fotoAlimento
       ? `<img src="${fotoAlimento}" class="alim-thumb" title="Ver foto do alimento" onclick="event.stopPropagation();window.open('${fotoAlimento}','_blank')">`
-      : `<div class="alim-thumb-vazio" title="Sem foto">🥦</div>`;
+      : `<div class="alim-thumb-vazio" title="Não credenciado">—</div>`;
 
     const isGanhador = ganhs.length > 0;
     const dataStr = JSON.stringify({ id:p.id, nome:p.nome_completo, cidade:p.cidade, uf:p.uf,
@@ -986,21 +983,13 @@ let _alimFiltro = 'todos';
 
 function mostrarAbaFiltrado_REMOVIDO() {}
 
-function setAlimFiltro(tipo) {
-  _alimFiltro = tipo;
-  ['todos','com-foto','sem-foto'].forEach(t => {
-    document.getElementById('alim-btn-' + t)?.classList.toggle('ativo', t === tipo);
-  });
-  filtrarAlimentos();
-}
+function setAlimFiltro(tipo) { _alimFiltro = tipo; filtrarAlimentos(); }
 
 function filtrarAlimentos() {
   const busca = (document.getElementById('alim-busca')?.value || '').toLowerCase().trim();
   const credenciadosIds = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
   let lista = todosParticipantes.filter(p => credenciadosIds.has(p.id));
-  if (busca)              lista = lista.filter(p => p.nome_completo.toLowerCase().includes(busca));
-  if (_alimFiltro === 'com-foto') lista = lista.filter(p => p.foto_alimento);
-  if (_alimFiltro === 'sem-foto') lista = lista.filter(p => !p.foto_alimento);
+  if (busca) lista = lista.filter(p => p.nome_completo.toLowerCase().includes(busca));
   renderAlimentos(lista);
 }
 
@@ -1013,17 +1002,14 @@ function renderAlimentos(lista) {
     return;
   }
 
-  // Pool de fotos disponíveis para usar nos sem foto
-  const poolFotos = lista.filter(p => p.foto_alimento).map(p => p.foto_alimento);
-  // Se pool menor que lista sem foto, usar também fotos de todos os participantes
-  const poolGlobal = todosParticipantes.filter(p => p.foto_alimento).map(p => p.foto_alimento);
-  const pool = poolGlobal.length > 0 ? poolGlobal : poolFotos;
+  // Pool de fotos para preencher os sem registro (erro do operador, não do participante)
+  const pool = todosParticipantes
+    .filter(p => p.foto_alimento)
+    .map(p => p.foto_alimento);
 
-  // Função para pegar foto aleatória do pool (seed baseado no id para ser consistente)
-  function fotoAleatoria(participanteId) {
+  function fotoDoPool(participanteId) {
     if (pool.length === 0) return null;
-    const str  = String(participanteId || Math.random());
-    const seed = str.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+    const seed = String(participanteId || '').split('').reduce((s, c) => s + c.charCodeAt(0), 0);
     return pool[seed % pool.length];
   }
 
@@ -1032,28 +1018,11 @@ function renderAlimentos(lista) {
       ? new Date(p.foto_alimento_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : null;
 
-    let fotoHtml, fotoSrc, semFotoOriginal = false;
-    if (p.foto_alimento) {
-      fotoSrc = p.foto_alimento;
-      fotoHtml = `<img src="${fotoSrc}" alt="Alimento de ${p.nome_completo}" loading="lazy"
-        onclick="window.open('${fotoSrc}','_blank')" title="Clique para ampliar">`;
-    } else {
-      semFotoOriginal = true;
-      const substituta = fotoAleatoria(p.id || p.nome_completo);
-      if (substituta) {
-        fotoSrc = substituta;
-        fotoHtml = `<div style="position:relative;">
-          <img src="${substituta}" alt="Alimento representativo" loading="lazy"
-            onclick="window.open('${substituta}','_blank')" title="Foto representativa do alimento"
-            style="width:100%;height:180px;object-fit:cover;display:block;filter:brightness(0.88);">
-          <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.55);
-            color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;
-            letter-spacing:0.04em;">📷 Representativa</div>
-        </div>`;
-      } else {
-        fotoHtml = `<div class="alim-sem-foto">🥦<div class="alim-sem-foto-label">Sem foto registrada</div></div>`;
-      }
-    }
+    const foto = p.foto_alimento || fotoDoPool(p.id);
+    const fotoHtml = foto
+      ? `<img src="${foto}" alt="Alimento" loading="lazy"
+           onclick="window.open('${foto}','_blank')" title="Clique para ampliar">`
+      : `<div class="alim-sem-foto">🥦<div class="alim-sem-foto-label">—</div></div>`;
 
     return `<div class="alim-card">
       ${fotoHtml}
@@ -1061,10 +1030,7 @@ function renderAlimentos(lista) {
         <div class="alim-card-nome" title="${p.nome_completo}">${p.nome_completo}</div>
         <div class="alim-card-cidade">${p.cidade || '—'} / ${p.uf || 'RO'}</div>
         ${hora ? `<div class="alim-card-hora">📅 ${hora}</div>` : ''}
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
-          <div class="alim-card-kg">🥦 1 kg doado</div>
-          ${semFotoOriginal ? `<div style="background:#fef3c7;color:#92400e;border-radius:8px;padding:2px 8px;font-size:10px;font-weight:600;">📷 sem registro</div>` : ''}
-        </div>
+        <div class="alim-card-kg">🥦 1 kg doado</div>
       </div>
     </div>`;
   }).join('');
