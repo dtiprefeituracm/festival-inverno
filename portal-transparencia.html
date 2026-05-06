@@ -592,7 +592,7 @@ let todasFotosGaleria = [];
 async function carregarDados() {
   try {
     const [participantes, inscricoes, ganhadores, galeria] = await Promise.all([
-      apiGet('participantes', 'select=id,nome_completo,cidade,uf,autorizacao_imagem,criado_em'),
+      apiGet('participantes', 'select=id,nome_completo,cidade,uf,autorizacao_imagem,foto_alimento,foto_alimento_em,criado_em'),
       apiGet('inscricoes', 'select=*'),
       apiGet('ganhadores', 'select=*').catch(() => []),
       apiGet('galeria_fotos', 'select=*').catch(() => []),
@@ -657,20 +657,13 @@ function renderVisaoGeral() {
   document.getElementById('m-campeoes').textContent =
     GANHADORES.length === 0 ? '—' : `${modsPremiadasSet.size}/${Object.keys(MODALIDADES).length}`;
 
-  // Alimentos arrecadados — conta 1 kg por membro da equipe presente
+  // Alimentos arrecadados — 1 kg por participante credenciado
   const credenciadosIds = new Set(i.filter(x => x.presenca).map(x => x.participante_id));
-  let totalKg = 0;
-  credenciadosIds.forEach(partId => {
-    const inscsPart = i.filter(x => x.participante_id === partId && x.presenca);
-    // 1 kg pelo participante + 1 kg por cada membro adicional
-    const kg = inscsPart.reduce((s, x) =>
-      s + (x.parceiro_nome ? 1 : 0) + (x.membro3_nome ? 1 : 0) + (x.membro4_nome ? 1 : 0), 1);
-    totalKg += kg;
-  });
-  const comFoto = i.filter(x => x.presenca && x.foto_alimento_url).length;
-  const alimEl  = document.getElementById('m-alimentos');
-  const alimSub = document.getElementById('m-alimentos-sub');
-  if (alimEl) alimEl.textContent = totalKg > 0 ? totalKg : '—';
+  const totalKg  = credenciadosIds.size;
+  const comFoto  = p.filter(x => credenciadosIds.has(x.id) && x.foto_alimento).length;
+  const alimEl   = document.getElementById('m-alimentos');
+  const alimSub  = document.getElementById('m-alimentos-sub');
+  if (alimEl)  alimEl.textContent  = totalKg > 0 ? totalKg : '—';
   if (alimSub) alimSub.textContent = totalKg > 0
     ? `kg doados · ${comFoto} foto${comFoto !== 1 ? 's' : ''}`
     : 'kg doados';
@@ -753,9 +746,9 @@ function renderParticipantes(lista) {
   });
 
   tbody.innerHTML = lista.map((p, idx) => {
-    const insc        = todasInscricoes.filter(i => i.participante_id === p.id);
-    const credenciado = insc.some(i => i.presenca);
-    const fotoAlimento = insc.find(i => i.foto_alimento_url)?.foto_alimento_url || null;
+    const insc         = todasInscricoes.filter(i => i.participante_id === p.id);
+    const credenciado  = insc.some(i => i.presenca);
+    const fotoAlimento = p.foto_alimento || null;   // campo em participantes
     const ganhs       = ganhadoresPorPart[p.id] || [];
 
     const mods = insc.map(i => {
