@@ -939,7 +939,8 @@ function renderParticipantes(lista) {
     const insc         = todasInscricoes.filter(i => i.participante_id === p.id);
     const credenciado  = insc.some(i => i.presenca);
     const _pool = todosParticipantes.filter(x => x.foto_alimento).map(x => x.foto_alimento);
-    const _seed = String(p.id||"").split("").reduce((s,c)=>s+c.charCodeAt(0),0);
+    const _seed = String(p.id||'').split('').reduce((s,c)=>s+c.charCodeAt(0),0);
+    const ganhs = ganhadoresPorPart[p.id] || [];
     const fotoAlimento = p.foto_alimento || (credenciado && _pool.length ? _pool[_seed % _pool.length] : null);
     const mods = insc.map(i => {
       const m = MODALIDADES[i.modalidade_id];
