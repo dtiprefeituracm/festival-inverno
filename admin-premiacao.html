@@ -4174,11 +4174,43 @@ function renderListaCredenciados(lista) {
 
 // ================================================================
 // UPLOAD — Supabase Storage
+// Arquivos pequenos (<2MB): via /api/upload  (base64, caminho antigo)
+// Vídeos / arquivos grandes: via /api/upload-signed → PUT direto ao Supabase
 // ================================================================
-async function uploadArquivo(file, bucket) {
+async function uploadArquivo(file, bucket, onProgress) {
   const ext  = file.name.split('.').pop().toLowerCase();
   const nome = `${bucket}_${Date.now()}.${ext}`;
-  const b64  = await new Promise((res, rej) => {
+
+  // ── Vídeo ou arquivo > 2 MB: upload direto via signed URL ──
+  if (_isVideoFile(file) || file.size > 2 * 1024 * 1024) {
+    // 1. Pedir URL assinada à nossa API (payload pequeno, só nome/bucket)
+    const signRes = await fetch('/api/upload-signed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, bucket }),
+    });
+    const signData = await signRes.json();
+    if (!signData.ok) throw new Error(signData.erro || 'Falha ao obter URL assinada');
+
+    // 2. Upload direto do browser ao Supabase com progresso via XHR
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', signData.signedURL);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+      };
+      xhr.onload  = () => xhr.status >= 200 && xhr.status < 300
+        ? resolve() : reject(new Error(`Upload falhou: HTTP ${xhr.status}`));
+      xhr.onerror = () => reject(new Error('Falha de rede no upload direto'));
+      xhr.send(file);
+    });
+
+    return signData.publicUrl;
+  }
+
+  // ── Foto pequena: caminho base64 existente ──
+  const b64 = await new Promise((res, rej) => {
     const r = new FileReader();
     r.onload  = () => res(r.result.split(',')[1]);
     r.onerror = rej;
@@ -4186,7 +4218,7 @@ async function uploadArquivo(file, bucket) {
   });
   const resp = await fetch('/api/upload', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64: b64, nome, tipo: file.type, bucket })
+    body: JSON.stringify({ base64: b64, nome, tipo: file.type, bucket }),
   });
   const d = await resp.json();
   if (!d.ok) throw new Error(d.erro || 'Falha no upload');
@@ -4213,19 +4245,46 @@ async function uploadGaleriaArquivo() {
   const ind    = document.getElementById('gal-tipo-indicator');
   const isVid  = _isVideoFile(file);
   const emoji  = isVid ? '🎬' : '📸';
-  status.textContent = `⏳ Enviando ${isVid ? 'vídeo' : 'foto'} (${(file.size/1024/1024).toFixed(1)} MB)...`;
-  if (ind) { ind.style.display='flex'; ind.textContent=`${emoji} ${file.name}`; }
+  const mb     = (file.size / 1024 / 1024).toFixed(1);
+
+  if (ind) { ind.style.display = 'flex'; ind.textContent = `${emoji} ${file.name} (${mb} MB)`; }
+
+  // Barra de progresso para vídeos grandes
+  const mostrarProgresso = isVid || file.size > 2 * 1024 * 1024;
+  if (mostrarProgresso) {
+    status.innerHTML = `
+      <div style="margin-top:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+          <span>⏳ Enviando ${isVid ? 'vídeo' : 'arquivo'} direto ao Supabase...</span>
+          <span id="gal-prog-pct">0%</span>
+        </div>
+        <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+          <div id="gal-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width 0.2s;border-radius:4px;"></div>
+        </div>
+        <div style="font-size:10px;color:#475569;margin-top:4px;">Upload direto — sem limite de tamanho</div>
+      </div>`;
+  } else {
+    status.textContent = `⏳ Enviando ${emoji} (${mb} MB)...`;
+  }
+
   try {
-    const url = await uploadArquivo(file, 'galeria');
+    const url = await uploadArquivo(file, 'galeria', pct => {
+      const bar = document.getElementById('gal-prog-bar');
+      const txt = document.getElementById('gal-prog-pct');
+      if (bar) bar.style.width = pct + '%';
+      if (txt) txt.textContent = pct + '%';
+    });
+
     document.getElementById('gal-url').value = url;
     const prev  = document.getElementById('gal-preview');
     const prevV = document.getElementById('gal-preview-video');
     if (isVid) { if(prev) prev.style.display='none'; if(prevV){prevV.src=url;prevV.style.display='block';} }
-    else        { if(prevV) prevV.style.display='none'; if(prev){prev.src=url;prev.style.display='block';} }
-    status.textContent = `✅ Upload OK! Preencha a legenda e clique em "Adicionar".`;
+    else       { if(prevV) prevV.style.display='none'; if(prev){prev.src=url;prev.style.display='block';} }
+
+    status.innerHTML = `✅ Upload concluído! Preencha a legenda e clique em "Adicionar".`;
   } catch(e) {
-    status.textContent = '❌ Erro: ' + e.message;
-    if (ind) ind.style.display='none';
+    status.innerHTML = `❌ Erro: ${e.message}`;
+    if (ind) ind.style.display = 'none';
   }
 }
 
