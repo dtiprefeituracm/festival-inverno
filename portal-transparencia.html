@@ -88,6 +88,13 @@
   .ganhador-mod { font-size: 12px; color: #1a56a0; font-weight: 600; margin-top: 2px; }
   .ganhador-detalhe { font-size: 11px; color: #64748b; margin-top: 3px; }
   .ganhador-foto { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; flex-shrink: 0; }
+  .ganhador-foto-ig { width: 80px; height: 80px; border-radius: 8px; border: 2px solid rgba(131,58,180,.4);
+    background: linear-gradient(135deg,#3b1060,#6b1a1a);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    flex-shrink: 0; text-decoration: none; }
+  .ganhador-foto-ig-icon  { font-size: 22px; }
+  .ganhador-foto-ig-label { font-size: 8px; font-weight: 700; color: rgba(255,255,255,.65);
+    text-transform: uppercase; letter-spacing: .05em; }
   .sem-foto { width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; background: #f8fafc; }
 
   /* ── Modal de ganhador ── */
@@ -114,11 +121,28 @@
   .tl-body { font-size: 12px; color: #475569; line-height: 1.6; }
 
   /* ── Galeria ── */
-  .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-  .galeria-item { border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer; }
-  .galeria-item img { width: 100%; height: 130px; object-fit: cover; display: block; transition: transform 0.2s; }
-  .galeria-item:hover img { transform: scale(1.04); }
-  .galeria-legenda { padding: 6px 8px; font-size: 11px; color: #475569; background: #f8fafc; }
+  .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .galeria-item { border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; cursor: pointer;
+    background: white; transition: box-shadow 0.2s, transform 0.15s; }
+  .galeria-item:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.13); transform: translateY(-2px); }
+  .galeria-item img   { width: 100%; height: 140px; object-fit: cover; display: block; }
+  .galeria-item video { width: 100%; height: 140px; object-fit: cover; display: block; background: #0f172a; }
+  .galeria-item-ig    { height: 140px; background: linear-gradient(135deg,#3b1060,#6b1a1a,#3b2800);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .galeria-item-ig-icon  { font-size: 32px; }
+  .galeria-item-ig-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.7); letter-spacing: .08em; }
+  .galeria-item-ig-cta   { font-size: 10px; color: rgba(255,255,255,.4); }
+  .galeria-tipo-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px;
+    border-radius: 10px; font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+  .galeria-tipo-ig   { background: rgba(131,58,180,.12); color: #7c3aed; }
+  .galeria-tipo-vid  { background: rgba(239,68,68,.1);   color: #dc2626; }
+  .galeria-tipo-foto { background: rgba(59,130,246,.1);  color: #2563eb; }
+  .galeria-legenda { padding: 8px 10px 10px; font-size: 11px; color: #475569; background: #f8fafc; }
+  .galeria-filtros { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .galeria-fil-btn { padding: 7px 14px; background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 8px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; transition: all .15s; }
+  .galeria-fil-btn:hover { border-color: #94a3b8; color: #1e293b; }
+  .galeria-fil-btn.ativo { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
   /* ── LGPD notice ── */
   .lgpd-aviso { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 14px; font-size: 12px; color: #1e40af; margin-bottom: 16px; }
@@ -185,7 +209,7 @@
     <button class="nav-btn" onclick="mostrarAba('participantes')">👥 Participantes</button>
     <button class="nav-btn" onclick="mostrarAba('ganhadores')">🏆 Ganhadores</button>
     <button class="nav-btn" onclick="mostrarAba('historico')">📖 Histórico</button>
-    <button class="nav-btn" onclick="mostrarAba('galeria')">📸 Galeria</button>
+    <button class="nav-btn" onclick="mostrarAba('galeria')">🎬 Galeria</button>
     <button class="nav-btn" onclick="window.print()">🖨️ Imprimir</button>
   </div>
 </div>
@@ -368,10 +392,16 @@
 <div class="aba" id="aba-galeria">
   <div style="margin-top:16px;" class="secao">
     <div class="secao-header">
-      <div class="secao-titulo">📸 Galeria do Evento</div>
-      <div class="secao-sub">Fotos dos momentos do Festival de Inverno 2026</div>
+      <div class="secao-titulo">🎬 Galeria do Evento</div>
+      <div class="secao-sub">Fotos, vídeos e cobertura do Festival de Inverno 2026</div>
     </div>
     <div class="secao-body">
+      <div class="galeria-filtros" id="portal-gal-filtros">
+        <button class="galeria-fil-btn ativo" onclick="filtrarGaleriaPortal('todos',this)">Todos</button>
+        <button class="galeria-fil-btn" onclick="filtrarGaleriaPortal('foto',this)">📸 Fotos</button>
+        <button class="galeria-fil-btn" onclick="filtrarGaleriaPortal('video',this)">🎬 Vídeos</button>
+        <button class="galeria-fil-btn" onclick="filtrarGaleriaPortal('instagram',this)">📷 Instagram</button>
+      </div>
       <div id="galeria-container" class="galeria">
         <div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento.</div>
       </div>
@@ -390,6 +420,14 @@
     </div>
     <div id="mg-medal" style="text-align:center;font-size:48px;margin:8px 0;"></div>
     <img id="mg-foto" class="modal-foto-grande" style="display:none;" src="" alt="Foto com troféu">
+    <div id="mg-foto-ig" style="display:none;text-align:center;margin-bottom:12px;">
+      <a id="mg-foto-ig-link" href="#" target="_blank"
+        style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;
+        background:linear-gradient(135deg,rgba(131,58,180,.15),rgba(253,29,29,.08));
+        border:1px solid rgba(192,132,252,.35);border-radius:12px;text-decoration:none;color:#7c3aed;font-weight:700;font-size:13px;">
+        📷 Ver foto da premiação no Instagram ↗
+      </a>
+    </div>
     <div class="modal-section">Dados do participante</div>
     <div id="mg-dados"></div>
     <div class="modal-section" id="mg-inscricao-titulo" style="display:none;">Inscrição</div>
@@ -789,7 +827,12 @@ function renderGanhadores() {
       const medalCls   = g.posicao === 1 ? 'medal-1' : 'medal-2';
       const posLabel   = g.posicao === 1 ? '1º lugar' : '2º lugar';
       const fotoHtml   = g.foto_url
-        ? `<img src="${g.foto_url}" class="ganhador-foto" alt="Foto com troféu">`
+        ? (_isIgUrlPortal(g.foto_url)
+            ? `<a href="${g.foto_url}" target="_blank" class="ganhador-foto-ig" title="Ver no Instagram">
+                 <div class="ganhador-foto-ig-icon">📷</div>
+                 <div class="ganhador-foto-ig-label">Instagram</div>
+               </a>`
+            : `<img src="${g.foto_url}" class="ganhador-foto" alt="Foto com troféu">`)
         : `<div class="sem-foto">📷</div>`;
 
       html += `<div class="ganhador-card" onclick="abrirGanhador(${JSON.stringify(g).replace(/"/g,'&quot;')})">
@@ -823,11 +866,19 @@ function abrirGanhador(g) {
   document.getElementById('mg-medal').textContent = medalEmoji;
 
   const foto = document.getElementById('mg-foto');
-  if (g.foto_url) {
+  const fotoIg = document.getElementById('mg-foto-ig');
+  const fotoIgLink = document.getElementById('mg-foto-ig-link');
+  if (g.foto_url && _isIgUrlPortal(g.foto_url)) {
+    foto.style.display = 'none';
+    if (fotoIgLink) fotoIgLink.href = g.foto_url;
+    if (fotoIg) fotoIg.style.display = 'block';
+  } else if (g.foto_url) {
     foto.src = g.foto_url;
     foto.style.display = 'block';
+    if (fotoIg) fotoIg.style.display = 'none';
   } else {
     foto.style.display = 'none';
+    if (fotoIg) fotoIg.style.display = 'none';
   }
 
   document.getElementById('mg-dados').innerHTML = `
@@ -900,17 +951,65 @@ function renderHistorico() {
 // ================================================================
 // GALERIA — carregada do banco (galeria_fotos publicado=true)
 // ================================================================
+let _galeriaFiltroPortal = 'todos';
+
+function filtrarGaleriaPortal(tipo, btn) {
+  _galeriaFiltroPortal = tipo;
+  document.querySelectorAll('#portal-gal-filtros .galeria-fil-btn').forEach(b => b.classList.remove('ativo'));
+  if (btn) btn.classList.add('ativo');
+  renderGaleria();
+}
+function _igTipoPortal(url) {
+  if (!url) return 'Post';
+  if (/\/reel\//.test(url)) return '🎬 Reel';
+  if (/\/tv\//.test(url))   return '📺 IGTV';
+  return '🖼️ Post';
+}
+function _isIgUrlPortal(url) { return url && /instagram\.com\/(p|reel|tv|stories)\//.test(url); }
+
 function renderGaleria() {
   const container = document.getElementById('galeria-container');
   if (!todasFotosGaleria || todasFotosGaleria.length === 0) {
     container.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento. ⏳</div>';
     return;
   }
-  container.innerHTML = todasFotosGaleria.map(f => `
-    <div class="galeria-item" onclick="window.open('${f.url}','_blank')">
-      <img src="${f.url}" alt="${f.legenda || 'Foto do evento'}" loading="lazy">
-      ${f.legenda ? `<div class="galeria-legenda">${f.legenda}</div>` : ''}
-    </div>`).join('');
+  let lista = todasFotosGaleria;
+  if (_galeriaFiltroPortal==='foto')      lista = lista.filter(f=>!f.tipo||f.tipo==='foto');
+  if (_galeriaFiltroPortal==='video')     lista = lista.filter(f=>f.tipo==='video');
+  if (_galeriaFiltroPortal==='instagram') lista = lista.filter(f=>f.tipo==='instagram');
+  if (!lista.length) {
+    container.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhuma mídia nessa categoria ainda. ⏳</div>';
+    return;
+  }
+  container.innerHTML = lista.map(f => {
+    if (f.tipo==='instagram') {
+      const lb = _igTipoPortal(f.url);
+      return `<div class="galeria-item" onclick="window.open('${f.url}','_blank')" title="Abrir no Instagram">
+        <div class="galeria-item-ig">
+          <div class="galeria-item-ig-icon">📷</div>
+          <div class="galeria-item-ig-label">${lb} · Instagram</div>
+          <div class="galeria-item-ig-cta">Toque para abrir ↗</div>
+        </div>
+        <div class="galeria-legenda">
+          <span class="galeria-tipo-pill galeria-tipo-ig">📷 Instagram</span>
+          ${f.legenda ? `<br>${f.legenda}` : ''}
+        </div>
+      </div>`;
+    }
+    if (f.tipo==='video') {
+      return `<div class="galeria-item" onclick="window.open('${f.url}','_blank')" title="Abrir vídeo">
+        <video src="${f.url}" muted preload="metadata" loading="lazy" style="pointer-events:none;"></video>
+        <div class="galeria-legenda">
+          <span class="galeria-tipo-pill galeria-tipo-vid">🎬 Vídeo</span>
+          ${f.legenda ? `<br>${f.legenda}` : ''}
+        </div>
+      </div>`;
+    }
+    return `<div class="galeria-item" onclick="window.open('${f.url}','_blank')">
+      <img src="${f.url}" alt="${f.legenda||'Foto do evento'}" loading="lazy">
+      ${f.legenda ? `<div class="galeria-legenda"><span class="galeria-tipo-pill galeria-tipo-foto">📸 Foto</span><br>${f.legenda}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 function mostrarAba(id) {
   document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
