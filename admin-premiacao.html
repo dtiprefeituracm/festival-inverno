@@ -272,18 +272,57 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 .galeria-add { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
   padding: 18px; margin-bottom: 20px; }
 .galeria-add-titulo { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 14px; }
-.galeria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-.galeria-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-  overflow: hidden; }
-.galeria-card img { width: 100%; height: 140px; object-fit: cover; display: block; background: #0f172a; }
+.galeria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.galeria-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; overflow: hidden; }
+.galeria-card img { width: 100%; height: 150px; object-fit: cover; display: block; background: #0f172a; }
+.galeria-card video { width: 100%; height: 150px; object-fit: cover; display: block; background: #0f172a; }
+.galeria-card-thumb-video { position: relative; }
+.galeria-card-thumb-video::after { content: '▶'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); font-size: 28px; color: rgba(255,255,255,0.9);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7); pointer-events: none; }
+.galeria-tipo-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+  border-radius: 10px; font-size: 10px; font-weight: 700; margin-bottom: 4px; }
+.galeria-tipo-video { background: rgba(239,68,68,0.12); color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25); }
+.galeria-tipo-foto { background: rgba(96,165,250,0.12); color: #60a5fa;
+  border: 1px solid rgba(96,165,250,0.25); }
+.galeria-tipo-ig { background: rgba(131,58,180,0.15); color: #c084fc;
+  border: 1px solid rgba(192,132,252,0.3); }
 .galeria-card-body { padding: 10px; }
 .galeria-legenda { font-size: 12px; color: #94a3b8; margin-bottom: 8px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .galeria-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .cat-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px;
-  font-weight: 600; background: #1e3a5f; color: #60a5fa; margin-bottom: 6px; }
+  font-weight: 600; background: #1e3a5f; color: #60a5fa; margin-bottom: 4px; }
 
-/* ── Fotos Alimentos ── */
+/* ── Modo switcher (galeria + ganhador foto) ── */
+.modo-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.modo-btn { padding: 9px 16px; background: #1e293b; border: 1px solid #334155;
+  border-radius: 9px; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap; }
+.modo-btn:hover { border-color: #475569; color: #e2e8f0; }
+.modo-btn.ativo { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+.modo-btn.modo-ig.ativo { background: rgba(131,58,180,0.2);
+  border-color: rgba(192,132,252,0.5); color: #c084fc; }
+
+/* ── Painel Instagram ── */
+.ig-instrucoes { background: linear-gradient(135deg,rgba(131,58,180,0.12),rgba(253,29,29,0.08),rgba(252,176,69,0.1));
+  border: 1px solid rgba(131,58,180,0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.ig-instrucoes-titulo { font-size: 12px; font-weight: 700; color: #c084fc; margin-bottom: 5px; }
+.ig-instrucoes-corpo { font-size: 11px; color: #94a3b8; line-height: 1.65; }
+.ig-preview-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 8px; }
+.ig-preview-inner { display: flex; align-items: center; gap: 10px; }
+.ig-preview-icon { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.ig-preview-tipo { font-size: 12px; font-weight: 700; color: #c084fc; }
+.ig-preview-url  { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 240px; }
+.ig-preview-abrir { margin-left: auto; padding: 6px 12px; flex-shrink: 0; text-decoration: none;
+  background: rgba(192,132,252,0.12); color: #c084fc; border: 1px solid rgba(192,132,252,0.3);
+  border-radius: 8px; font-size: 11px; font-weight: 700; }
+
 .credenciado-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
   background: #1e293b; border: 1px solid #334155; border-radius: 8px; margin-bottom: 8px; }
 .credenciado-dados { flex: 1; min-width: 0; }
@@ -472,27 +511,76 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 <!-- ═══════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-galeria">
   <div class="aviso">
-    <strong>📸 Galeria do Evento</strong>
-    Fotos marcadas como "Publicado" aparecem na aba Galeria do Portal da Transparência.
+    <strong>🎬 Galeria do Evento</strong>
+    Mídia marcada como "Publicado" aparece na aba Galeria do Portal da Transparência. Suporte a fotos, vídeos e links do Instagram (Reels, Posts).
   </div>
   <div class="galeria-add">
-    <div class="galeria-add-titulo">➕ Adicionar foto</div>
-    <div class="form-group">
-      <label>📤 Upload direto</label>
-      <input type="file" id="gal-file" accept="image/*"
-        style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;"
-        onchange="uploadGaleriaArquivo()">
-      <div id="gal-upload-status" style="font-size:12px;color:#94a3b8;margin-top:4px;"></div>
+    <div class="galeria-add-titulo">➕ Adicionar mídia à Galeria</div>
+
+    <!-- Seletor de modo -->
+    <div class="modo-row">
+      <button id="gal-modo-upload"    onclick="setGalModo('upload')"    class="modo-btn ativo">📤 Upload</button>
+      <button id="gal-modo-url"       onclick="setGalModo('url')"       class="modo-btn">🔗 URL direta</button>
+      <button id="gal-modo-instagram" onclick="setGalModo('instagram')" class="modo-btn modo-ig">📷 Instagram</button>
     </div>
-    <div class="form-group">
-      <label>🔗 Ou cole uma URL</label>
-      <input type="url" id="gal-url" placeholder="https://..." oninput="previewGaleriaFoto()">
+
+    <!-- MODO: Upload -->
+    <div id="gal-panel-upload">
+      <div class="form-group">
+        <label>Selecione foto ou vídeo do dispositivo</label>
+        <input type="file" id="gal-file" accept="image/*,video/*,video/mp4,video/mov,video/quicktime,video/webm"
+          style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;"
+          onchange="uploadGaleriaArquivo()">
+        <div id="gal-upload-status" style="font-size:12px;color:#94a3b8;margin-top:4px;"></div>
+        <div id="gal-tipo-indicator" style="display:none;" class="gal-tipo-indicator"></div>
+      </div>
+      <img id="gal-preview" class="foto-preview" alt="Preview">
+      <video id="gal-preview-video" class="gal-preview-video" controls muted playsinline></video>
+      <input type="hidden" id="gal-url">
     </div>
-    <img id="gal-preview" class="foto-preview" alt="Preview">
-    <div class="form-row">
+
+    <!-- MODO: URL direta -->
+    <div id="gal-panel-url" style="display:none;">
+      <div class="form-group">
+        <label>🔗 URL da foto ou vídeo (Supabase, S3, CDN...)</label>
+        <input type="url" id="gal-url-direto" placeholder="https://..." oninput="previewGaleriaUrlDireta()">
+      </div>
+      <img id="gal-preview-url" class="foto-preview" alt="Preview">
+      <video id="gal-preview-video-url" class="gal-preview-video" controls muted playsinline></video>
+    </div>
+
+    <!-- MODO: Instagram -->
+    <div id="gal-panel-instagram" style="display:none;">
+      <div class="ig-instrucoes">
+        <div class="ig-instrucoes-titulo">📷 Como copiar o link do Instagram</div>
+        <div class="ig-instrucoes-corpo">
+          1. Abra o post, Reel ou IGTV no Instagram<br>
+          2. Toque nos <strong style="color:#e2e8f0;">três pontos ···</strong> do post<br>
+          3. Selecione <strong style="color:#e2e8f0;">"Copiar link"</strong> e cole abaixo ↓
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Link do post/Reel do Instagram</label>
+        <input type="url" id="gal-ig-url" placeholder="https://www.instagram.com/reel/..." oninput="validarLinkIg('gal-ig-url','gal-ig-status','gal-ig-preview')">
+        <div id="gal-ig-status" style="font-size:12px;margin-top:6px;"></div>
+      </div>
+      <div id="gal-ig-preview" class="ig-preview-card" style="display:none;">
+        <div class="ig-preview-inner">
+          <div class="ig-preview-icon">📷</div>
+          <div style="flex:1;min-width:0;">
+            <div id="gal-ig-tipo-label" class="ig-preview-tipo"></div>
+            <div id="gal-ig-url-label"  class="ig-preview-url"></div>
+          </div>
+          <a id="gal-ig-abrir" href="#" target="_blank" class="ig-preview-abrir">↗ Abrir</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legenda e categoria (comuns) -->
+    <div class="form-row" style="margin-top:12px;">
       <div class="form-group">
         <label>Legenda</label>
-        <input type="text" id="gal-legenda" placeholder="Ex: Abertura do festival">
+        <input type="text" id="gal-legenda" placeholder="Ex: Final do Futevôlei Masculino">
       </div>
       <div class="form-group">
         <label>Categoria</label>
@@ -505,9 +593,18 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
         </select>
       </div>
     </div>
-    <button class="btn-salvar" onclick="salvarFotoGaleria()" style="margin-top:0;">Adicionar à Galeria</button>
+    <button class="btn-salvar" onclick="salvarFotoGaleria()" style="margin-top:0;" id="btn-add-galeria">📸 Adicionar à Galeria</button>
   </div>
-  <div class="secao-titulo">📷 Fotos cadastradas <span class="secao-sub" id="cont-galeria"></span></div>
+
+  <div class="secao-titulo">🎬 Mídia cadastrada <span class="secao-sub" id="cont-galeria"></span></div>
+
+  <div class="modo-row" id="gal-filtros" style="margin-bottom:14px;">
+    <button onclick="filtrarGaleria('todos')"     id="gal-f-todos"     class="modo-btn ativo">Todos</button>
+    <button onclick="filtrarGaleria('foto')"      id="gal-f-foto"      class="modo-btn">📸 Fotos</button>
+    <button onclick="filtrarGaleria('video')"     id="gal-f-video"     class="modo-btn">🎬 Vídeos</button>
+    <button onclick="filtrarGaleria('instagram')" id="gal-f-instagram" class="modo-btn modo-ig">📷 Instagram</button>
+  </div>
+
   <div class="galeria-grid" id="galeria-lista"><div class="loading-txt">Carregando...</div></div>
 </div>
 
@@ -598,14 +695,47 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <div style="font-size:11px;color:#64748b;margin-top:4px;">Empresa ou pessoa que custeou este prêmio. Aparece no Portal da Transparência.</div>
     </div>
     <div class="form-group">
-      <label>📤 Upload da Foto com o Troféu</label>
-      <input type="file" id="g-foto-file" accept="image/*"
-        style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;margin-bottom:6px;"
-        onchange="uploadFotoGanhador()">
-      <div id="g-foto-upload-status" style="font-size:12px;color:#94a3b8;margin-bottom:6px;"></div>
-      <label style="margin-top:6px;">🔗 Ou cole uma URL</label>
-      <input type="url" id="g-foto" placeholder="https://..." oninput="previewFotoGanhador()">
-      <img id="g-foto-preview" class="foto-preview" alt="Preview da foto">
+      <label>📸 Foto com o Troféu</label>
+      <!-- Seletor de modo foto -->
+      <div class="modo-row" style="margin-top:6px;">
+        <button id="gfoto-modo-upload"    onclick="setGFotoModo('upload')"    class="modo-btn ativo" style="font-size:11px;padding:7px 13px;">📤 Upload / URL</button>
+        <button id="gfoto-modo-instagram" onclick="setGFotoModo('instagram')" class="modo-btn modo-ig" style="font-size:11px;padding:7px 13px;">📷 Link do Instagram</button>
+      </div>
+
+      <!-- Painel Upload/URL -->
+      <div id="gfoto-panel-upload">
+        <input type="file" id="g-foto-file" accept="image/*"
+          style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;margin-bottom:6px;"
+          onchange="uploadFotoGanhador()">
+        <div id="g-foto-upload-status" style="font-size:12px;color:#94a3b8;margin-bottom:6px;"></div>
+        <label style="margin-top:4px;font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">🔗 Ou cole uma URL de imagem</label>
+        <input type="url" id="g-foto" placeholder="https://..." oninput="previewFotoGanhador()">
+        <img id="g-foto-preview" class="foto-preview" alt="Preview da foto">
+      </div>
+
+      <!-- Painel Instagram -->
+      <div id="gfoto-panel-instagram" style="display:none;">
+        <div class="ig-instrucoes" style="margin-top:6px;">
+          <div class="ig-instrucoes-titulo">📷 Cole o link do post/reel com a foto da premiação</div>
+          <div class="ig-instrucoes-corpo">
+            No Instagram: abra o post → três pontos ··· → <strong style="color:#e2e8f0;">Copiar link</strong>
+          </div>
+        </div>
+        <input type="url" id="gfoto-ig-url" placeholder="https://www.instagram.com/p/... ou /reel/..."
+          style="width:100%;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;"
+          oninput="validarLinkIg('gfoto-ig-url','gfoto-ig-status','gfoto-ig-preview')">
+        <div id="gfoto-ig-status" style="font-size:12px;margin-top:6px;"></div>
+        <div id="gfoto-ig-preview" class="ig-preview-card" style="display:none;margin-top:8px;">
+          <div class="ig-preview-inner">
+            <div class="ig-preview-icon">📷</div>
+            <div style="flex:1;min-width:0;">
+              <div id="gfoto-ig-tipo-label" class="ig-preview-tipo"></div>
+              <div id="gfoto-ig-url-label"  class="ig-preview-url"></div>
+            </div>
+            <a id="gfoto-ig-abrir" href="#" target="_blank" class="ig-preview-abrir">↗ Abrir</a>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="form-group" style="display:flex;align-items:center;gap:10px;">
       <input type="checkbox" id="g-publicado" style="width:auto;accent-color:#22c55e;transform:scale(1.3);">
@@ -3484,7 +3614,14 @@ function renderGanhadorItem(g, modId) {
         <span style="font-size:10px;color:${g.publicado?'#22c55e':'#64748b'};">${g.publicado?'Publicado':'Rascunho'}</span>
       </div>
     </div>
-    ${g.foto_url ? `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">` : `<div class="ganhador-foto-vazia">📷</div>`}
+    ${g.foto_url
+      ? (_isIgUrl(g.foto_url)
+          ? `<a href="${g.foto_url}" target="_blank" title="Ver no Instagram"
+              style="display:flex;width:54px;height:54px;border-radius:6px;border:1px solid rgba(192,132,252,.4);
+              background:linear-gradient(135deg,#1a0533,#1a0f0f);align-items:center;justify-content:center;
+              font-size:24px;flex-shrink:0;text-decoration:none;">📷</a>`
+          : `<img src="${g.foto_url}" class="ganhador-foto-thumb" alt="">`)
+      : `<div class="ganhador-foto-vazia">📷</div>`}
     <div style="display:flex;flex-direction:column;gap:6px;">
       <button class="btn-sm btn-edit" onclick="editarGanhador('${g.id}',${modId})">✏️</button>
       <button class="btn-sm ${g.publicado?'btn-unpub':'btn-pub'}" onclick="togglePublicar('${g.id}',${!g.publicado},${modId})">
@@ -3516,10 +3653,7 @@ function abrirModalGanhador(participante, modId) {
   if (parseInt(selPosicao.value) > maxLugares) selPosicao.value = '1';
   const posicao = parseInt(selPosicao.value) || 1;
   document.getElementById('g-premio').value   = m.premio?.[posicao] || '';
-  document.getElementById('g-foto').value     = '';
-  const statusEl = document.getElementById('g-foto-upload-status');
-  if (statusEl) statusEl.textContent = '';
-  document.getElementById('g-foto-preview').style.display = 'none';
+  _limparGFoto();
   document.getElementById('g-publicado').checked = false;
   const avisoEl = document.getElementById('g-parceiro-aviso');
   if (avisoEl) {
@@ -3549,10 +3683,8 @@ function editarGanhador(id, modId) {
   document.getElementById('g-resultado-tecnico').value = g.resultado_tecnico || '';
   document.getElementById('g-premio').value   = g.premio_descricao || '';
   document.getElementById('g-patrocinador').value = g.patrocinador || getPatrocinadorMod(modId, g.posicao);
-  document.getElementById('g-foto').value     = g.foto_url || '';
+  _carregarFotoModal(g.foto_url);
   document.getElementById('g-publicado').checked = !!g.publicado;
-  const prev = document.getElementById('g-foto-preview');
-  if (g.foto_url) { prev.src = g.foto_url; prev.style.display = 'block'; } else prev.style.display = 'none';
   document.getElementById('modal-ganhador-bg').classList.add('aberto');
 }
 
@@ -3561,7 +3693,7 @@ function fecharModalGanhador() { document.getElementById('modal-ganhador-bg').cl
 function previewFotoGanhador() {
   const url  = document.getElementById('g-foto').value;
   const prev = document.getElementById('g-foto-preview');
-  if (url) { prev.src = url; prev.style.display = 'block'; } else prev.style.display = 'none';
+  if (prev) { prev.src = url||''; prev.style.display = url ? 'block' : 'none'; }
 }
 
 async function salvarGanhador() {
@@ -3578,7 +3710,7 @@ async function salvarGanhador() {
   const resultado_tecnico = document.getElementById('g-resultado-tecnico').value.trim();
   const premio_descricao = document.getElementById('g-premio').value.trim();
   const patrocinador     = document.getElementById('g-patrocinador').value.trim();
-  const foto_url         = document.getElementById('g-foto').value.trim();
+  const foto_url         = _getFotoUrl();
   const publicado        = document.getElementById('g-publicado').checked;
   if (!nome) { toast('Informe o nome.', 'erro'); btn.disabled = false; btn.textContent = '💾 Salvar Ganhador'; return; }
   // Persiste patrocinador no cache local da modalidade
@@ -3719,43 +3851,178 @@ function atualizarPainelMod(modId) {
 }
 
 // ================================================================
-// GALERIA
+// HELPERS INSTAGRAM + MÍDIA (usados pela galeria E pelos ganhadores)
 // ================================================================
-function previewGaleriaFoto() {
-  const url  = document.getElementById('gal-url').value;
-  const prev = document.getElementById('gal-preview');
-  if (url) { prev.src = url; prev.style.display = 'block'; } else prev.style.display = 'none';
+const _VIDEO_EXTS = ['mp4','mov','webm','mkv','avi','m4v','3gp'];
+const _VIDEO_MIME = ['video/mp4','video/quicktime','video/webm','video/x-matroska','video/avi','video/x-m4v'];
+
+function _isVideoUrl(url) {
+  if (!url) return false;
+  return _VIDEO_EXTS.includes(url.split('?')[0].split('.').pop().toLowerCase());
+}
+function _isVideoFile(file) {
+  if (!file) return false;
+  return _VIDEO_MIME.some(m => file.type.startsWith(m)) ||
+         _VIDEO_EXTS.includes(file.name.split('.').pop().toLowerCase());
+}
+function _parseIg(url) {
+  if (!url) return null;
+  const clean = url.trim().replace(/\?.*$/, '').replace(/\/$/, '');
+  const m = clean.match(/instagram\.com\/(p|reel|tv|stories)\/([A-Za-z0-9_-]+)/i);
+  if (!m) return null;
+  return { segmento: m[1], codigo: m[2],
+           url: `https://www.instagram.com/${m[1]}/${m[2]}/` };
+}
+function _igLabel(segmento) {
+  return segmento === 'reel' ? '🎬 Reel' : segmento === 'tv' ? '📺 IGTV'
+       : segmento === 'stories' ? '🔄 Stories' : '🖼️ Post';
+}
+function _isIgUrl(url) { return url && /instagram\.com\/(p|reel|tv|stories)\//.test(url); }
+
+// Validador genérico de link IG — usado em qualquer painel
+function validarLinkIg(inputId, statusId, previewId) {
+  const raw    = document.getElementById(inputId)?.value || '';
+  const status = document.getElementById(statusId);
+  const prev   = document.getElementById(previewId);
+  if (!raw) { if(status) status.textContent = ''; if(prev) prev.style.display='none'; return; }
+  const parsed = _parseIg(raw);
+  if (!parsed) {
+    if(status) status.innerHTML = '❌ <span style="color:#f87171;">Link inválido. Use um link de post (/p/…) ou reel (/reel/…)</span>';
+    if(prev) prev.style.display='none'; return;
+  }
+  const label = _igLabel(parsed.segmento);
+  if(status) status.innerHTML = `✅ <span style="color:#34d399;">Link válido — ${label}</span>`;
+  const baseId = previewId.replace('-preview','');
+  const tipoEl = document.getElementById(baseId + '-tipo-label') || document.getElementById(inputId.replace('-url','-tipo-label'));
+  const urlEl  = document.getElementById(baseId + '-url-label')  || document.getElementById(inputId.replace('-url','-url-label'));
+  const abrEl  = document.getElementById(baseId + '-abrir')      || document.getElementById(inputId.replace('-url','-abrir'));
+  if(tipoEl) tipoEl.textContent = label + ' do Instagram';
+  if(urlEl)  urlEl.textContent  = parsed.url;
+  if(abrEl)  abrEl.href        = parsed.url;
+  if(prev) prev.style.display = 'block';
 }
 
+// ================================================================
+// GALERIA — 3 MODOS: upload, url, instagram
+// ================================================================
+let galModoAtual = 'upload';
+let galFiltroAtual = 'todos';
+
+function setGalModo(modo) {
+  galModoAtual = modo;
+  ['upload','url','instagram'].forEach(m => {
+    document.getElementById('gal-modo-'+m)?.classList.toggle('ativo', m===modo);
+    const panel = document.getElementById('gal-panel-'+m);
+    if (panel) panel.style.display = m===modo ? '' : 'none';
+  });
+  const btn = document.getElementById('btn-add-galeria');
+  if (btn) btn.textContent = modo==='instagram' ? '📷 Adicionar do Instagram'
+                           : modo==='url'        ? '🔗 Adicionar à Galeria'
+                           :                       '📤 Adicionar à Galeria';
+}
+
+function previewGaleriaUrlDireta() {
+  const url = document.getElementById('gal-url-direto').value;
+  const img = document.getElementById('gal-preview-url');
+  const vid = document.getElementById('gal-preview-video-url');
+  if (!url) { img.style.display='none'; vid.style.display='none'; return; }
+  if (_isVideoUrl(url)) { img.style.display='none'; vid.src=url; vid.style.display='block'; }
+  else { vid.style.display='none'; img.src=url; img.style.display='block'; }
+}
+
+// compat para upload (hidden input preenchido por uploadGaleriaArquivo)
+function previewGaleriaFoto() {}
+
 async function salvarFotoGaleria() {
-  const url       = document.getElementById('gal-url').value.trim();
   const legenda   = document.getElementById('gal-legenda').value.trim();
   const categoria = document.getElementById('gal-categoria').value;
-  if (!url) { toast('Informe a URL da foto.', 'erro'); return; }
-  const dados = { url, legenda: legenda || null, categoria, publicado: false, ordem: todasFotos.length };
+  let url = '', tipo = 'foto';
+
+  if (galModoAtual === 'instagram') {
+    const raw = document.getElementById('gal-ig-url').value;
+    const p = _parseIg(raw);
+    if (!p) { toast('Link do Instagram inválido.', 'erro'); return; }
+    url = p.url; tipo = 'instagram';
+  } else if (galModoAtual === 'url') {
+    url = document.getElementById('gal-url-direto').value.trim();
+    if (!url) { toast('Informe a URL.', 'erro'); return; }
+    tipo = _isVideoUrl(url) ? 'video' : 'foto';
+  } else {
+    url = document.getElementById('gal-url').value.trim();
+    if (!url) { toast('Faça o upload primeiro.', 'erro'); return; }
+    tipo = _isVideoUrl(url) ? 'video' : 'foto';
+  }
+
+  const dados = { url, legenda: legenda||null, categoria, tipo, publicado: false, ordem: todasFotos.length };
   try {
     const res = await apiPost('galeria_fotos', dados, 'inserir');
     const id = res?.id || (Array.isArray(res) && res[0]?.id);
     if (id) todasFotos.push({ ...dados, id });
-    document.getElementById('gal-url').value = '';
-    document.getElementById('gal-legenda').value = '';
-    document.getElementById('gal-preview').style.display = 'none';
+    // limpar tudo
+    ['gal-url','gal-url-direto','gal-ig-url','gal-legenda'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});
+    ['gal-preview','gal-preview-url'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='none';});
+    ['gal-preview-video','gal-preview-video-url'].forEach(i=>{const e=document.getElementById(i);if(e){e.style.display='none';e.src='';}});
+    const igP=document.getElementById('gal-ig-preview'); if(igP) igP.style.display='none';
+    const igS=document.getElementById('gal-ig-status');  if(igS) igS.textContent='';
+    const ind=document.getElementById('gal-tipo-indicator'); if(ind) ind.style.display='none';
+    const ups=document.getElementById('gal-upload-status'); if(ups) ups.textContent='';
     renderGaleria();
-    toast('📸 Foto adicionada!');
-  } catch(e) { toast('Erro.', 'erro'); }
+    const em={foto:'📸',video:'🎬',instagram:'📷'};
+    toast(`${em[tipo]||'✅'} Adicionado à galeria!`);
+  } catch(e) { toast('Erro ao salvar.', 'erro'); }
+}
+
+function filtrarGaleria(tipo) {
+  galFiltroAtual = tipo;
+  ['todos','foto','video','instagram'].forEach(t =>
+    document.getElementById('gal-f-'+t)?.classList.toggle('ativo', t===tipo));
+  renderGaleria();
 }
 
 function renderGaleria() {
+  const nV = todasFotos.filter(f=>f.tipo==='video').length;
+  const nI = todasFotos.filter(f=>f.tipo==='instagram').length;
+  const nF = todasFotos.length - nV - nI;
   const cont = document.getElementById('cont-galeria');
-  if (cont) cont.textContent = `(${todasFotos.length})`;
-  const lista = document.getElementById('galeria-lista');
-  if (!lista) return;
-  if (todasFotos.length === 0) { lista.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhuma foto.</div>'; return; }
-  lista.innerHTML = todasFotos.map(f => `
-    <div class="galeria-card">
-      <img src="${f.url}" alt="${f.legenda||''}" onerror="this.style.background='#334155';this.style.height='60px';">
+  if (cont) cont.textContent = `(${todasFotos.length} total — 📸 ${nF} · 🎬 ${nV} · 📷 ${nI} IG)`;
+
+  let lista = todasFotos;
+  if (galFiltroAtual==='foto')      lista = lista.filter(f=>!f.tipo||f.tipo==='foto');
+  if (galFiltroAtual==='video')     lista = lista.filter(f=>f.tipo==='video');
+  if (galFiltroAtual==='instagram') lista = lista.filter(f=>f.tipo==='instagram');
+
+  const div = document.getElementById('galeria-lista');
+  if (!div) return;
+  if (!lista.length) { div.innerHTML='<div class="vazio" style="grid-column:1/-1;">Nenhuma mídia nessa categoria.</div>'; return; }
+
+  div.innerHTML = lista.map(f => {
+    let midia='', badge='';
+    if (f.tipo==='instagram') {
+      const p = _parseIg(f.url);
+      const lb = _igLabel(p?.segmento);
+      badge = `<span class="galeria-tipo-badge galeria-tipo-ig">📷 ${lb}</span>`;
+      midia = `<div style="height:150px;background:linear-gradient(135deg,#1a0533,#1a0f0f,#1a1000);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;"
+        onclick="window.open('${f.url}','_blank')">
+        <div style="font-size:36px;">📷</div>
+        <div style="font-size:10px;font-weight:700;color:#c084fc;letter-spacing:.05em;">${lb.toUpperCase()} DO INSTAGRAM</div>
+        <div style="font-size:10px;color:rgba(192,132,252,.55);">Clique para abrir ↗</div>
+      </div>`;
+    } else if (f.tipo==='video') {
+      badge = `<span class="galeria-tipo-badge galeria-tipo-video">🎬 Vídeo</span>`;
+      midia = `<div class="galeria-card-thumb-video">
+        <video src="${f.url}" muted preload="metadata"
+          style="width:100%;height:150px;object-fit:cover;display:block;background:#0f172a;cursor:pointer;"
+          onclick="window.open('${f.url}','_blank')"></video></div>`;
+    } else {
+      badge = `<span class="galeria-tipo-badge galeria-tipo-foto">📸 Foto</span>`;
+      midia = `<img src="${f.url}" alt="${f.legenda||''}" style="cursor:zoom-in;width:100%;height:150px;object-fit:cover;display:block;"
+        onclick="window.open('${f.url}','_blank')"
+        onerror="this.style.background='#334155';this.style.height='60px';">`;
+    }
+    return `<div class="galeria-card">${midia}
       <div class="galeria-card-body">
-        <div class="cat-badge">${f.categoria}</div>
+        ${badge}<div class="cat-badge">${f.categoria}</div>
         <div class="galeria-legenda">${f.legenda||'(sem legenda)'}</div>
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
           <span class="pub-dot ${f.publicado?'verde':'cinza'}"></span>
@@ -3763,31 +4030,82 @@ function renderGaleria() {
         </div>
         <div class="galeria-actions">
           <button class="btn-sm ${f.publicado?'btn-unpub':'btn-pub'}" onclick="togglePublicarFoto('${f.id}',${!f.publicado})">
-            ${f.publicado?'🔒':'🌐'} ${f.publicado?'Ocultar':'Publicar'}
-          </button>
+            ${f.publicado?'🔒':'🌐'} ${f.publicado?'Ocultar':'Publicar'}</button>
+          ${f.tipo==='instagram'?`<a href="${f.url}" target="_blank" class="btn-sm"
+            style="text-decoration:none;background:rgba(131,58,180,.15);color:#c084fc;border:1px solid rgba(192,132,252,.3);">↗ IG</a>`:''}
           <button class="btn-sm btn-danger" onclick="excluirFoto('${f.id}')">🗑️</button>
         </div>
-      </div>
-    </div>`).join('');
+      </div></div>`;
+  }).join('');
 }
 
 async function togglePublicarFoto(id, publicar) {
   try {
     await apiPost('galeria_fotos', { publicado: publicar }, 'atualizar', id);
-    todasFotos = todasFotos.map(f => f.id === id ? { ...f, publicado: publicar } : f);
+    todasFotos = todasFotos.map(f => f.id===id ? {...f, publicado:publicar} : f);
     renderGaleria();
     toast(publicar ? '🌐 Publicado!' : '🔒 Ocultado.');
   } catch(e) { toast('Erro.', 'erro'); }
 }
 
 async function excluirFoto(id) {
-  if (!confirm('Excluir esta foto?')) return;
+  const f = todasFotos.find(f=>f.id===id);
+  const labels = {video:'este vídeo',instagram:'este post do Instagram',foto:'esta foto'};
+  if (!confirm(`Excluir ${labels[f?.tipo]||'este item'}?`)) return;
   try {
     await apiPost('galeria_fotos', null, 'deletar', id);
-    todasFotos = todasFotos.filter(f => f.id !== id);
-    renderGaleria();
-    toast('🗑️ Excluída.');
+    todasFotos = todasFotos.filter(f=>f.id!==id);
+    renderGaleria(); toast('🗑️ Excluído.');
   } catch(e) { toast('Erro.', 'erro'); }
+}
+
+// ================================================================
+// FOTO DO GANHADOR — 2 MODOS: upload/url  ou  instagram
+// ================================================================
+let gFotoModo = 'upload';
+
+function setGFotoModo(modo) {
+  gFotoModo = modo;
+  ['upload','instagram'].forEach(m => {
+    document.getElementById('gfoto-modo-'+m)?.classList.toggle('ativo', m===modo);
+    const p = document.getElementById('gfoto-panel-'+m);
+    if (p) p.style.display = m===modo ? '' : 'none';
+  });
+}
+
+function _limparGFoto() {
+  const el = document.getElementById('g-foto'); if(el) el.value='';
+  const st = document.getElementById('g-foto-upload-status'); if(st) st.textContent='';
+  const pv = document.getElementById('g-foto-preview'); if(pv) pv.style.display='none';
+  const ig = document.getElementById('gfoto-ig-url'); if(ig) ig.value='';
+  const is = document.getElementById('gfoto-ig-status'); if(is) is.textContent='';
+  const ip = document.getElementById('gfoto-ig-preview'); if(ip) ip.style.display='none';
+  setGFotoModo('upload');
+}
+
+// Retorna a URL da foto/IG a ser salva
+function _getFotoUrl() {
+  if (gFotoModo === 'instagram') {
+    const raw = document.getElementById('gfoto-ig-url')?.value || '';
+    return _parseIg(raw)?.url || '';
+  }
+  return document.getElementById('g-foto')?.value.trim() || '';
+}
+
+// Carrega foto_url no modal (abertura/edição)
+function _carregarFotoModal(foto_url) {
+  if (_isIgUrl(foto_url)) {
+    setGFotoModo('instagram');
+    const el = document.getElementById('gfoto-ig-url'); if(el) el.value = foto_url;
+    validarLinkIg('gfoto-ig-url','gfoto-ig-status','gfoto-ig-preview');
+    const pv = document.getElementById('g-foto-preview'); if(pv) pv.style.display='none';
+    const gf = document.getElementById('g-foto'); if(gf) gf.value='';
+  } else {
+    setGFotoModo('upload');
+    const gf = document.getElementById('g-foto'); if(gf) gf.value = foto_url||'';
+    const pv = document.getElementById('g-foto-preview');
+    if (pv) { pv.src=foto_url||''; pv.style.display=foto_url?'block':'none'; }
+  }
 }
 
 // ================================================================
@@ -3902,13 +4220,23 @@ async function uploadGaleriaArquivo() {
   const file   = document.getElementById('gal-file').files[0];
   if (!file) return;
   const status = document.getElementById('gal-upload-status');
-  status.textContent = '⏳ Enviando...';
+  const ind    = document.getElementById('gal-tipo-indicator');
+  const isVid  = _isVideoFile(file);
+  const emoji  = isVid ? '🎬' : '📸';
+  status.textContent = `⏳ Enviando ${isVid ? 'vídeo' : 'foto'} (${(file.size/1024/1024).toFixed(1)} MB)...`;
+  if (ind) { ind.style.display='flex'; ind.textContent=`${emoji} ${file.name}`; }
   try {
     const url = await uploadArquivo(file, 'galeria');
     document.getElementById('gal-url').value = url;
-    previewGaleriaFoto();
-    status.textContent = '✅ Pronto! Preencha a legenda e clique em "Adicionar à Galeria".';
-  } catch(e) { status.textContent = '❌ Erro: ' + e.message; }
+    const prev  = document.getElementById('gal-preview');
+    const prevV = document.getElementById('gal-preview-video');
+    if (isVid) { if(prev) prev.style.display='none'; if(prevV){prevV.src=url;prevV.style.display='block';} }
+    else        { if(prevV) prevV.style.display='none'; if(prev){prev.src=url;prev.style.display='block';} }
+    status.textContent = `✅ Upload OK! Preencha a legenda e clique em "Adicionar".`;
+  } catch(e) {
+    status.textContent = '❌ Erro: ' + e.message;
+    if (ind) ind.style.display='none';
+  }
 }
 
 // ================================================================
