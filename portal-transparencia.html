@@ -144,6 +144,41 @@
   .galeria-fil-btn:hover { border-color: #94a3b8; color: #1e293b; }
   .galeria-fil-btn.ativo { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
+  /* ── Modal Instagram embed ── */
+  .ig-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82);
+    z-index: 300; align-items: center; justify-content: center; padding: 16px; }
+  .ig-modal-bg.aberto { display: flex; }
+  .ig-modal-box { background: #1a1a2e; border-radius: 18px; width: 100%;
+    max-width: 540px; max-height: 92vh; overflow-y: auto; position: relative;
+    border: 1px solid rgba(192,132,252,.25); }
+  .ig-modal-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 10px; }
+  .ig-modal-titulo { display: flex; align-items: center; gap: 8px; }
+  .ig-modal-titulo-icon { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+    display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .ig-modal-titulo-text { font-size: 14px; font-weight: 700; color: white; }
+  .ig-modal-titulo-sub { font-size: 11px; color: rgba(255,255,255,.5); }
+  .ig-modal-fechar { background: rgba(255,255,255,.1); border: none; width: 32px; height: 32px;
+    border-radius: 50%; color: white; font-size: 18px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0; }
+  .ig-modal-fechar:hover { background: rgba(255,255,255,.2); }
+  .ig-modal-body { padding: 0 18px 18px; }
+  .ig-embed-wrap { display: flex; justify-content: center; min-height: 200px;
+    align-items: flex-start; }
+  .ig-embed-wrap blockquote { margin: 0 auto !important; }
+  .ig-modal-loading { text-align: center; padding: 40px 20px; color: rgba(255,255,255,.5);
+    font-size: 13px; }
+  .ig-modal-loading-spinner { font-size: 32px; display: block; margin-bottom: 10px;
+    animation: spin 1.2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ig-modal-legenda { font-size: 12px; color: rgba(255,255,255,.55); padding: 10px 0 4px;
+    text-align: center; }
+  .ig-modal-open-btn { display: block; text-align: center; margin-top: 12px; padding: 10px;
+    background: rgba(131,58,180,.2); border: 1px solid rgba(192,132,252,.3);
+    border-radius: 10px; color: #c084fc; font-size: 12px; font-weight: 600;
+    text-decoration: none; }
+
   /* ── LGPD notice ── */
   .lgpd-aviso { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 14px; font-size: 12px; color: #1e40af; margin-bottom: 16px; }
   .lgpd-aviso strong { display: block; margin-bottom: 3px; }
@@ -405,6 +440,36 @@
       <div id="galeria-container" class="galeria">
         <div class="vazio" style="grid-column:1/-1;">Galeria em construção. As fotos serão publicadas durante e após o evento.</div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  MODAL — Instagram Embed               -->
+<!-- ══════════════════════════════════════════ -->
+<div class="ig-modal-bg" id="ig-modal-bg" onclick="fecharIgModal(event)">
+  <div class="ig-modal-box" onclick="event.stopPropagation()">
+    <div class="ig-modal-header">
+      <div class="ig-modal-titulo">
+        <div class="ig-modal-titulo-icon">📷</div>
+        <div>
+          <div class="ig-modal-titulo-text" id="ig-modal-tipo">Reel do Instagram</div>
+          <div class="ig-modal-titulo-sub">@prefeitura_costamarques</div>
+        </div>
+      </div>
+      <button class="ig-modal-fechar" onclick="fecharIgModalBtn()">×</button>
+    </div>
+    <div class="ig-modal-body">
+      <div class="ig-embed-wrap" id="ig-embed-wrap">
+        <div class="ig-modal-loading">
+          <span class="ig-modal-loading-spinner">⏳</span>
+          Carregando conteúdo do Instagram...
+        </div>
+      </div>
+      <div class="ig-modal-legenda" id="ig-modal-legenda"></div>
+      <a class="ig-modal-open-btn" id="ig-modal-open-btn" href="#" target="_blank">
+        ↗ Abrir no Instagram
+      </a>
     </div>
   </div>
 </div>
@@ -959,6 +1024,64 @@ function filtrarGaleriaPortal(tipo, btn) {
   if (btn) btn.classList.add('ativo');
   renderGaleria();
 }
+
+// ── Modal Instagram embed ──
+let _igEmbedScriptLoaded = false;
+
+function abrirIgModal(url, legenda) {
+  const tipoMap = { reel:'🎬 Reel', tv:'📺 IGTV', stories:'🔄 Stories', p:'🖼️ Post' };
+  const seg = (url.match(/instagram\.com\/(p|reel|tv|stories)\//i)||[])[1] || 'p';
+  const tipo = tipoMap[seg] || '📷 Post';
+
+  document.getElementById('ig-modal-tipo').textContent   = tipo + ' do Instagram';
+  document.getElementById('ig-modal-legenda').textContent = legenda || '';
+  document.getElementById('ig-modal-open-btn').href       = url;
+  document.getElementById('ig-modal-bg').classList.add('aberto');
+  document.body.style.overflow = 'hidden';
+
+  // Montar o embed
+  const wrap = document.getElementById('ig-embed-wrap');
+  wrap.innerHTML = `
+    <div class="ig-modal-loading">
+      <span class="ig-modal-loading-spinner">⏳</span>
+      Carregando conteúdo do Instagram...
+    </div>`;
+
+  // Pequeno delay para o modal aparecer antes de injetar o embed
+  setTimeout(() => {
+    wrap.innerHTML = `
+      <blockquote class="instagram-media"
+        data-instgrm-permalink="${url}"
+        data-instgrm-version="14"
+        style="background:#fff;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);
+               margin:0 auto;max-width:480px;min-width:280px;padding:0;width:calc(100% - 2px);">
+        <a href="${url}" target="_blank" style="display:block;padding:16px 16px 12px;text-align:center;color:#c084fc;font-size:13px;">
+          ⏳ Carregando post do Instagram...
+        </a>
+      </blockquote>`;
+
+    if (_igEmbedScriptLoaded && window.instgrm) {
+      window.instgrm.Embeds.process();
+    } else if (!_igEmbedScriptLoaded) {
+      _igEmbedScriptLoaded = true;
+      const s = document.createElement('script');
+      s.async = true;
+      s.src   = 'https://www.instagram.com/embed.js';
+      s.onload = () => window.instgrm?.Embeds?.process();
+      document.body.appendChild(s);
+    }
+  }, 80);
+}
+
+function fecharIgModal(e) {
+  if (e.target === document.getElementById('ig-modal-bg')) fecharIgModalBtn();
+}
+function fecharIgModalBtn() {
+  document.getElementById('ig-modal-bg').classList.remove('aberto');
+  document.body.style.overflow = '';
+  // Limpar embed para liberar memória
+  setTimeout(() => { document.getElementById('ig-embed-wrap').innerHTML = ''; }, 300);
+}
 function _igTipoPortal(url) {
   if (!url) return 'Post';
   if (/\/reel\//.test(url)) return '🎬 Reel';
@@ -984,11 +1107,12 @@ function renderGaleria() {
   container.innerHTML = lista.map(f => {
     if (f.tipo==='instagram') {
       const lb = _igTipoPortal(f.url);
-      return `<div class="galeria-item" onclick="window.open('${f.url}','_blank')" title="Abrir no Instagram">
+      const leg = (f.legenda||'').replace(/'/g,"\\'");
+      return `<div class="galeria-item" onclick="abrirIgModal('${f.url}','${leg}')" title="Ver ${lb} incorporado">
         <div class="galeria-item-ig">
-          <div class="galeria-item-ig-icon">📷</div>
+          <div class="galeria-item-ig-icon">▶</div>
           <div class="galeria-item-ig-label">${lb} · Instagram</div>
-          <div class="galeria-item-ig-cta">Toque para abrir ↗</div>
+          <div class="galeria-item-ig-cta">Toque para assistir ▶</div>
         </div>
         <div class="galeria-legenda">
           <span class="galeria-tipo-pill galeria-tipo-ig">📷 Instagram</span>
@@ -1022,6 +1146,13 @@ function mostrarAba(id) {
 // INICIALIZAÇÃO
 // ================================================================
 carregarDados();
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    fecharIgModalBtn();
+    fecharModalGanhadorBtn();
+  }
+});
 </script>
 </body>
 </html>
