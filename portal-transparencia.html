@@ -167,7 +167,52 @@
   .galeria-fil-btn:hover { border-color: #94a3b8; color: #1e293b; }
   .galeria-fil-btn.ativo { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
 
-  /* ── Aba alimentos ── */
+  /* ── Aba Cidades ── */
+  .cidade-card { background:white; border:1px solid #e2e8f0; border-radius:12px;
+    padding:16px 18px; display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .cidade-rank { width:32px; height:32px; border-radius:8px; background:#1a56a0;
+    color:white; font-size:13px; font-weight:800; display:flex; align-items:center;
+    justify-content:center; flex-shrink:0; }
+  .cidade-rank.top1 { background:linear-gradient(135deg,#f59e0b,#d97706); }
+  .cidade-rank.top2 { background:#64748b; }
+  .cidade-rank.top3 { background:#92400e; }
+  .cidade-nome { font-size:14px; font-weight:700; color:#1e293b; }
+  .cidade-uf   { font-size:11px; color:#64748b; }
+  .cidade-nums { margin-left:auto; text-align:right; flex-shrink:0; }
+  .cidade-num-inscritos  { font-size:20px; font-weight:800; color:#1a56a0; }
+  .cidade-num-cred       { font-size:11px; color:#16a34a; font-weight:600; }
+  .cidade-bar-wrap { flex:1; min-width:80px; max-width:180px; }
+  .cidade-bar { height:8px; border-radius:4px; background:#1a56a0; transition:width 0.4s; }
+
+  /* ── Aba Modalidades ── */
+  .mod-card { background:white; border:1px solid #e2e8f0; border-radius:14px;
+    overflow:hidden; margin-bottom:14px; }
+  .mod-card-header { padding:14px 18px; display:flex; align-items:center;
+    justify-content:space-between; gap:12px; }
+  .mod-card-header.agua   { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-bottom:2px solid #3b82f6; }
+  .mod-card-header.areia  { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-bottom:2px solid #f59e0b; }
+  .mod-card-header.pesca  { background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-bottom:2px solid #16a34a; }
+  .mod-card-titulo { font-size:15px; font-weight:800; color:#1e293b; }
+  .mod-card-sub    { font-size:12px; color:#64748b; margin-top:2px; }
+  .mod-card-body   { padding:14px 18px; display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; }
+  .mod-stat { text-align:center; padding:10px; background:#f8fafc;
+    border-radius:10px; border:1px solid #e2e8f0; }
+  .mod-stat-val   { font-size:24px; font-weight:800; color:#1a56a0; }
+  .mod-stat-label { font-size:10px; color:#64748b; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.05em; margin-top:3px; }
+  .mod-stat.verde .mod-stat-val { color:#16a34a; }
+  .mod-stat.roxo  .mod-stat-val { color:#7c3aed; }
+  .mod-stat.ouro  .mod-stat-val { color:#d97706; }
+  .mod-participantes-lista { padding:0 18px 14px; }
+  .mod-part-item { display:flex; align-items:center; gap:8px; padding:6px 0;
+    border-bottom:1px solid #f1f5f9; font-size:12px; }
+  .mod-part-item:last-child { border-bottom:none; }
+  .mod-part-nome { font-weight:600; color:#1e293b; flex:1; }
+  .mod-part-cidade { color:#64748b; }
+  .mod-part-status { font-size:11px; }
+
+  /* ── Aba Alimentos ── */
   .alim-hero { background: linear-gradient(135deg,#052e16,#14532d,#166534);
     border-radius: 16px; padding: 28px 24px; text-align: center; margin: 20px 0 24px; }
   .alim-hero-num { font-size: 72px; font-weight: 900; color: #4ade80;
@@ -283,8 +328,10 @@
     </div>
   </div>
   <div class="header-nav">
-    <button class="nav-btn" onclick="mostrarAba('visao-geral')">📊 Visão Geral</button>
+    <button class="nav-btn ativo" onclick="mostrarAba('visao-geral')">📊 Visão Geral</button>
     <button class="nav-btn" onclick="mostrarAba('participantes')">👥 Participantes</button>
+    <button class="nav-btn" onclick="mostrarAba('cidades')">🗺️ Cidades</button>
+    <button class="nav-btn" onclick="mostrarAba('modalidades')">🏅 Modalidades</button>
     <button class="nav-btn" onclick="mostrarAba('ganhadores')">🏆 Ganhadores</button>
     <button class="nav-btn" onclick="mostrarAba('historico')">📖 Histórico</button>
     <button class="nav-btn" onclick="mostrarAba('galeria')">🎬 Galeria</button>
@@ -305,36 +352,37 @@
 
   <!-- Métricas gerais -->
   <div class="cards" id="cards-metricas">
-    <div class="card" style="cursor:pointer;" onclick="mostrarAba('participantes')" title="Ver lista de participantes">
+    <div class="card" style="cursor:pointer;" onclick="irAba('participantes')" title="Ver lista de participantes">
       <div class="card-label">Total de inscritos</div>
       <div class="card-val" id="m-total">—</div>
       <div class="card-sub">participantes</div>
       <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver lista →</div>
     </div>
-    <div class="card" style="cursor:pointer;" onclick="mostrarAba('participantes')" title="Ver participantes por cidade">
+    <div class="card" style="cursor:pointer;" onclick="irAba('cidades')" title="Ver participantes por cidade">
       <div class="card-label">Cidades participantes</div>
       <div class="card-val" id="m-cidades">—</div>
       <div class="card-sub">municípios</div>
-      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver participantes →</div>
+      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver cidades →</div>
     </div>
-    <div class="card">
+    <div class="card" style="cursor:pointer;" onclick="irAba('modalidades')" title="Ver detalhes por modalidade">
       <div class="card-label">Modalidades</div>
       <div class="card-val">7</div>
       <div class="card-sub">esportes</div>
+      <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver modalidades →</div>
     </div>
-    <div class="card" style="cursor:pointer;" onclick="mostrarAbaFiltrado('participantes','sim')" title="Ver credenciados">
+    <div class="card" style="cursor:pointer;" onclick="irAbaCredenciados()" title="Ver credenciados">
       <div class="card-label">Credenciados</div>
       <div class="card-val" id="m-credenciados">—</div>
       <div class="card-sub">presença confirmada</div>
       <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;">Ver credenciados →</div>
     </div>
-    <div class="card" style="cursor:pointer;" onclick="mostrarAba('ganhadores')" title="Ver ganhadores">
+    <div class="card" style="cursor:pointer;" onclick="irAba('ganhadores')" title="Ver ganhadores">
       <div class="card-label">Campeões publicados</div>
       <div class="card-val" id="m-campeoes">—</div>
       <div class="card-sub" id="m-campeoes-sub">modalidades premiadas</div>
       <div style="font-size:10px;color:#1a56a0;margin-top:4px;font-weight:600;" id="m-campeoes-link">Ver ganhadores →</div>
     </div>
-    <div class="card" style="border-color:#86efac;cursor:pointer;" onclick="mostrarAbaAlimentos()" title="Ver galeria de alimentos">
+    <div class="card" style="border-color:#86efac;cursor:pointer;" onclick="irAba('alimentos')" title="Ver galeria de alimentos">
       <div class="card-label" style="color:#166534;">🥦 Alimentos arrecadados</div>
       <div class="card-val" id="m-alimentos" style="color:#16a34a;">—</div>
       <div class="card-sub" id="m-alimentos-sub">kg doados</div>
@@ -500,6 +548,36 @@
 </div>
 
 <!-- ══════════════════════════════════════════ -->
+<!--  ABA: CIDADES                            -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-cidades">
+  <div class="secao" style="margin-top:16px;">
+    <div class="secao-header">
+      <div>
+        <div class="secao-titulo">🗺️ Participantes por Cidade</div>
+        <div class="secao-sub">Representação geográfica do Festival de Inverno 2026</div>
+      </div>
+    </div>
+    <div class="secao-body">
+      <div class="busca-wrap" style="margin-bottom:14px;">
+        <input type="text" id="busca-cidade" placeholder="🔍 Buscar cidade..."
+          oninput="filtrarCidades()" style="max-width:340px;">
+      </div>
+      <div id="cidades-lista"><div class="loading">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  ABA: MODALIDADES                        -->
+<!-- ══════════════════════════════════════════ -->
+<div class="aba" id="aba-modalidades">
+  <div style="margin-top:16px;" id="modalidades-container">
+    <div class="loading">Carregando...</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
 <!--  ABA: ALIMENTOS                          -->
 <!-- ══════════════════════════════════════════ -->
 <div class="aba" id="aba-alimentos">
@@ -530,8 +608,8 @@
     <input type="text" class="alim-busca" id="alim-busca" placeholder="🔍 Buscar por nome..."
       oninput="filtrarAlimentos()">
     <button class="alim-toggle ativo" id="alim-btn-todos"    onclick="setAlimFiltro('todos')">Todos</button>
-    <button class="alim-toggle"       id="alim-btn-com-foto" onclick="setAlimFiltro('com-foto')">📷 Com foto</button>
-    <button class="alim-toggle"       id="alim-btn-sem-foto" onclick="setAlimFiltro('sem-foto')">Sem foto</button>
+    <button class="alim-toggle"       id="alim-btn-com-foto" onclick="setAlimFiltro('com-foto')">📷 Com foto própria</button>
+    <button class="alim-toggle"       id="alim-btn-sem-foto" onclick="setAlimFiltro('sem-foto')">📋 Sem registro <span id="alim-btn-sem-cnt"></span></button>
   </div>
 
   <div class="secao-titulo" style="margin-bottom:14px;">
@@ -721,6 +799,8 @@ async function carregarDados() {
     renderHistorico();
     renderGaleria();
     _renderHeroAlimentos();
+    _buildCidadesData();
+    renderModalidades();
   } catch (e) {
     console.error('Erro ao carregar:', e);
     document.getElementById('tbody-part').innerHTML =
@@ -904,29 +984,7 @@ function renderParticipantes(lista) {
 // ================================================================
 let _alimFiltro = 'todos';
 
-function mostrarAbaFiltrado(abaId, filtroCredVal) {
-  // Vai para a aba e aplica filtro
-  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
-  document.getElementById('aba-' + abaId)?.classList.add('ativa');
-  const btn = [...document.querySelectorAll('.nav-btn')].find(b => b.onclick?.toString().includes(abaId));
-  if (btn) btn.classList.add('ativo');
-  if (filtroCredVal !== undefined) {
-    const sel = document.getElementById('filtro-cred');
-    if (sel) { sel.value = filtroCredVal; filtrarParticipantes(); }
-  }
-}
-
-function mostrarAbaAlimentos() {
-  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
-  document.getElementById('aba-alimentos')?.classList.add('ativa');
-  const btnAlim = [...document.querySelectorAll('.nav-btn')].find(b => b.textContent.includes('Alimentos'));
-  if (btnAlim) btnAlim.classList.add('ativo');
-  document.getElementById('alim-busca').value = '';
-  _alimFiltro = 'todos';
-  setAlimFiltro('todos');
-}
+function mostrarAbaFiltrado_REMOVIDO() {}
 
 function setAlimFiltro(tipo) {
   _alimFiltro = tipo;
@@ -954,21 +1012,59 @@ function renderAlimentos(lista) {
     grid.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhum registro encontrado.</div>';
     return;
   }
+
+  // Pool de fotos disponíveis para usar nos sem foto
+  const poolFotos = lista.filter(p => p.foto_alimento).map(p => p.foto_alimento);
+  // Se pool menor que lista sem foto, usar também fotos de todos os participantes
+  const poolGlobal = todosParticipantes.filter(p => p.foto_alimento).map(p => p.foto_alimento);
+  const pool = poolGlobal.length > 0 ? poolGlobal : poolFotos;
+
+  // Função para pegar foto aleatória do pool (seed baseado no id para ser consistente)
+  function fotoAleatoria(participanteId) {
+    if (pool.length === 0) return null;
+    const str  = String(participanteId || Math.random());
+    const seed = str.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+    return pool[seed % pool.length];
+  }
+
   grid.innerHTML = lista.map(p => {
     const hora = p.foto_alimento_em
       ? new Date(p.foto_alimento_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : null;
-    const foto = p.foto_alimento
-      ? `<img src="${p.foto_alimento}" alt="Alimento de ${p.nome_completo}" loading="lazy"
-           onclick="window.open('${p.foto_alimento}','_blank')" title="Clique para ampliar">`
-      : `<div class="alim-sem-foto">🥦<div class="alim-sem-foto-label">Sem foto registrada</div></div>`;
+
+    let fotoHtml, fotoSrc, semFotoOriginal = false;
+    if (p.foto_alimento) {
+      fotoSrc = p.foto_alimento;
+      fotoHtml = `<img src="${fotoSrc}" alt="Alimento de ${p.nome_completo}" loading="lazy"
+        onclick="window.open('${fotoSrc}','_blank')" title="Clique para ampliar">`;
+    } else {
+      semFotoOriginal = true;
+      const substituta = fotoAleatoria(p.id || p.nome_completo);
+      if (substituta) {
+        fotoSrc = substituta;
+        fotoHtml = `<div style="position:relative;">
+          <img src="${substituta}" alt="Alimento representativo" loading="lazy"
+            onclick="window.open('${substituta}','_blank')" title="Foto representativa do alimento"
+            style="width:100%;height:180px;object-fit:cover;display:block;filter:brightness(0.88);">
+          <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.55);
+            color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;
+            letter-spacing:0.04em;">📷 Representativa</div>
+        </div>`;
+      } else {
+        fotoHtml = `<div class="alim-sem-foto">🥦<div class="alim-sem-foto-label">Sem foto registrada</div></div>`;
+      }
+    }
+
     return `<div class="alim-card">
-      ${foto}
+      ${fotoHtml}
       <div class="alim-card-body">
         <div class="alim-card-nome" title="${p.nome_completo}">${p.nome_completo}</div>
         <div class="alim-card-cidade">${p.cidade || '—'} / ${p.uf || 'RO'}</div>
         ${hora ? `<div class="alim-card-hora">📅 ${hora}</div>` : ''}
-        <div class="alim-card-kg">🥦 1 kg doado</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+          <div class="alim-card-kg">🥦 1 kg doado</div>
+          ${semFotoOriginal ? `<div style="background:#fef3c7;color:#92400e;border-radius:8px;padding:2px 8px;font-size:10px;font-weight:600;">📷 sem registro</div>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -986,6 +1082,9 @@ function _renderHeroAlimentos() {
   if (el('alim-stat-participantes')) el('alim-stat-participantes').textContent = totalKg;
   if (el('alim-stat-fotos'))        el('alim-stat-fotos').textContent        = comFoto;
   if (el('alim-stat-cidades'))      el('alim-stat-cidades').textContent      = cidades;
+  const semFoto   = doadores.filter(p => !p.foto_alimento).length;
+  const semCnt = document.getElementById('alim-btn-sem-cnt');
+  if (semCnt) semCnt.textContent = semFoto > 0 ? `(${semFoto})` : '';
   renderAlimentos(doadores);
 }
 
@@ -1373,16 +1472,173 @@ function renderGaleria() {
     </div>`;
   }).join('');
 }
-function mostrarAba(id) {
+// ================================================================
+// NAVEGAÇÃO
+// ================================================================
+function irAba(id) {
   document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
   document.getElementById('aba-' + id)?.classList.add('ativa');
-  event.target.classList.add('ativo');
+  const btn = [...document.querySelectorAll('.nav-btn')].find(b =>
+    b.getAttribute('onclick')?.includes(`'${id}'`));
+  if (btn) btn.classList.add('ativo');
   if (id === 'alimentos') {
     document.getElementById('alim-busca').value = '';
-    _alimFiltro = 'todos';
-    setAlimFiltro('todos');
+    _alimFiltro = 'todos'; setAlimFiltro('todos');
   }
+}
+
+function mostrarAba(id) {
+  irAba(id);
+  // compatibilidade com chamadas via event.target (botões do nav)
+  if (event?.target) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+    event.target.classList.add('ativo');
+  }
+  if (id === 'alimentos') {
+    document.getElementById('alim-busca').value = '';
+    _alimFiltro = 'todos'; setAlimFiltro('todos');
+  }
+}
+
+function irAbaCredenciados() {
+  irAba('participantes');
+  const sel = document.getElementById('filtro-cred');
+  if (sel) { sel.value = 'sim'; filtrarParticipantes(); }
+}
+
+function mostrarAbaAlimentos() { irAba('alimentos'); }
+function mostrarAbaFiltrado(id, cred) {
+  irAba(id);
+  if (cred) { const s = document.getElementById('filtro-cred'); if(s){s.value=cred;filtrarParticipantes();} }
+}
+
+// ================================================================
+// ABA CIDADES
+// ================================================================
+let _todasCidadesData = [];
+
+function renderCidades(lista) {
+  const div = document.getElementById('cidades-lista');
+  if (!lista.length) { div.innerHTML = '<div class="vazio">Nenhuma cidade encontrada.</div>'; return; }
+  const max = lista[0]?.inscritos || 1;
+  div.innerHTML = lista.map((c, idx) => {
+    const rankCls = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+    const pct = Math.round(c.inscritos / max * 100);
+    const pctCred = c.inscritos > 0 ? Math.round(c.credenciados / c.inscritos * 100) : 0;
+    return `<div class="cidade-card">
+      <div class="cidade-rank ${rankCls}">${idx + 1}º</div>
+      <div style="flex:1;min-width:0;">
+        <div class="cidade-nome">${c.cidade}</div>
+        <div class="cidade-uf">${c.uf}</div>
+        <div class="cidade-bar-wrap" style="margin-top:6px;">
+          <div class="cidade-bar" style="width:${pct}%;"></div>
+        </div>
+      </div>
+      <div class="cidade-nums">
+        <div class="cidade-num-inscritos">${c.inscritos}</div>
+        <div style="font-size:10px;color:#94a3b8;">inscritos</div>
+        <div class="cidade-num-cred">✅ ${c.credenciados} credenciados</div>
+        <div style="font-size:10px;color:#64748b;">${pctCred}% presença</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarCidades() {
+  const busca = (document.getElementById('busca-cidade')?.value || '').toLowerCase().trim();
+  const lista = busca
+    ? _todasCidadesData.filter(c => c.cidade.toLowerCase().includes(busca) || c.uf.toLowerCase().includes(busca))
+    : _todasCidadesData;
+  renderCidades(lista);
+}
+
+function _buildCidadesData() {
+  const credIds = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
+  const map = {};
+  todosParticipantes.forEach(p => {
+    const cidade = ((p.cidade || '').trim() || 'Não informada');
+    const uf     = (p.uf || 'RO').trim();
+    const chave  = `${cidade.toUpperCase()}|${uf.toUpperCase()}`;
+    if (!map[chave]) map[chave] = { cidade: cidade, uf: uf, inscritos: 0, credenciados: 0 };
+    map[chave].inscritos++;
+    if (credIds.has(p.id)) map[chave].credenciados++;
+  });
+  _todasCidadesData = Object.values(map).sort((a, b) => b.inscritos - a.inscritos);
+  renderCidades(_todasCidadesData);
+}
+
+// ================================================================
+// ABA MODALIDADES
+// ================================================================
+function renderModalidades() {
+  const credIds   = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
+  const ganMap    = {};
+  GANHADORES.forEach(g => {
+    if (!ganMap[g.modalidade_id]) ganMap[g.modalidade_id] = [];
+    ganMap[g.modalidade_id].push(g);
+  });
+
+  const html = Object.entries(MODALIDADES).map(([id, mod]) => {
+    const inscsMod = todasInscricoes.filter(i => i.modalidade_id == id);
+    const partIds  = [...new Set(inscsMod.map(i => i.participante_id))];
+    const credCount = partIds.filter(pid => credIds.has(pid)).length;
+    const gans  = ganMap[id] || [];
+    const g1    = gans.find(g => g.posicao === 1);
+    const g2    = gans.find(g => g.posicao === 2);
+    const tipoCor = mod.tipo === 'agua' ? 'agua' : mod.tipo === 'pesca' ? 'pesca' : 'areia';
+
+    // Lista de participantes desta modalidade
+    const parts = partIds.map(pid => {
+      const p   = todosParticipantes.find(x => x.id === pid);
+      const cred = credIds.has(pid);
+      return p ? `<div class="mod-part-item">
+        <span class="mod-part-nome">${p.nome_completo}</span>
+        <span class="mod-part-cidade">${p.cidade || '—'}/${p.uf || 'RO'}</span>
+        <span class="mod-part-status">${cred ? '✅' : '⭕'}</span>
+      </div>` : '';
+    }).join('');
+
+    return `<div class="mod-card">
+      <div class="mod-card-header ${tipoCor}">
+        <div>
+          <div class="mod-card-titulo">${mod.nome} — ${mod.sub}</div>
+          <div class="mod-card-sub">Modalidade ${id} · ${mod.tipo === 'agua' ? '💧 Aquática' : mod.tipo === 'pesca' ? '🎣 Pesca' : '🏖️ Areia'}</div>
+        </div>
+        ${g1 ? `<div style="text-align:right;">
+          <div style="font-size:11px;font-weight:700;color:#166534;">🥇 ${g1.nome}</div>
+          ${g2 ? `<div style="font-size:11px;color:#64748b;">🥈 ${g2.nome}</div>` : ''}
+        </div>` : '<div style="font-size:11px;color:#94a3b8;">Resultado pendente</div>'}
+      </div>
+      <div class="mod-card-body">
+        <div class="mod-stat">
+          <div class="mod-stat-val">${partIds.length}</div>
+          <div class="mod-stat-label">Inscritos</div>
+        </div>
+        <div class="mod-stat verde">
+          <div class="mod-stat-val">${credCount}</div>
+          <div class="mod-stat-label">Credenciados</div>
+        </div>
+        <div class="mod-stat roxo">
+          <div class="mod-stat-val">${partIds.length > 0 ? Math.round(credCount/partIds.length*100) : 0}%</div>
+          <div class="mod-stat-label">Presença</div>
+        </div>
+        <div class="mod-stat ouro">
+          <div class="mod-stat-val">${gans.length > 0 ? '✅' : '—'}</div>
+          <div class="mod-stat-label">Premiado</div>
+        </div>
+      </div>
+      <details style="padding:0 18px 14px;">
+        <summary style="font-size:12px;font-weight:700;color:#1a56a0;cursor:pointer;padding:4px 0;">
+          👥 Ver todos os ${partIds.length} participantes
+        </summary>
+        <div class="mod-participantes-lista" style="margin-top:8px;">${parts || '<div class="vazio">Nenhum inscrito.</div>'}</div>
+      </details>
+    </div>`;
+  }).join('');
+
+  const container = document.getElementById('modalidades-container');
+  if (container) container.innerHTML = html || '<div class="vazio">Nenhuma modalidade encontrada.</div>';
 }
 
 // ================================================================
