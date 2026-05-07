@@ -973,12 +973,22 @@ function renderVisaoGeral() {
     }
   }
 
-  // Alimentos arrecadados — 1 kg por participante credenciado
+  // Alimentos arrecadados — mesma lógica do admin:
+  // 1 kg por participante credenciado + 1 kg por membro adicional (parceiro, membro3, membro4)
   const credenciadosIds = new Set(i.filter(x => x.presenca).map(x => x.participante_id));
-  const totalKg  = credenciadosIds.size;
-  const comFoto  = p.filter(x => credenciadosIds.has(x.id) && x.foto_alimento).length;
-  const alimEl   = document.getElementById('m-alimentos');
-  const alimSub  = document.getElementById('m-alimentos-sub');
+  const visitosKg = new Set();
+  let totalKg = 0;
+  credenciadosIds.forEach(partId => {
+    if (visitosKg.has(partId)) return;
+    visitosKg.add(partId);
+    const inscsPart = i.filter(x => x.participante_id === partId);
+    const kg = inscsPart.reduce((s, x) =>
+      s + (x.parceiro_nome ? 1 : 0) + (x.membro3_nome ? 1 : 0) + (x.membro4_nome ? 1 : 0), 1);
+    totalKg += kg;
+  });
+  const comFoto = p.filter(x => credenciadosIds.has(x.id) && x.foto_alimento).length;
+  const alimEl  = document.getElementById('m-alimentos');
+  const alimSub = document.getElementById('m-alimentos-sub');
   if (alimEl)  alimEl.textContent  = totalKg > 0 ? totalKg : '—';
   if (alimSub) alimSub.textContent = totalKg > 0
     ? `kg doados · ${comFoto} foto${comFoto !== 1 ? 's' : ''}`
@@ -1165,10 +1175,22 @@ function renderAlimentos(lista) {
 
 function _renderHeroAlimentos() {
   const credenciadosIds = new Set(todasInscricoes.filter(i => i.presenca).map(i => i.participante_id));
-  const doadores  = todosParticipantes.filter(p => credenciadosIds.has(p.id));
-  const totalKg   = doadores.length;
-  const comFoto   = doadores.filter(p => p.foto_alimento).length;
-  const cidades   = new Set(doadores.map(p => (p.cidade||'').trim().toLowerCase()).filter(Boolean)).size;
+  const doadores = todosParticipantes.filter(p => credenciadosIds.has(p.id));
+
+  // 1 kg por participante + 1 por cada membro da equipe (mesma lógica do admin)
+  const visto = new Set();
+  let totalKg = 0;
+  credenciadosIds.forEach(partId => {
+    if (visto.has(partId)) return;
+    visto.add(partId);
+    const inscsPart = todasInscricoes.filter(x => x.participante_id === partId);
+    const kg = inscsPart.reduce((s, x) =>
+      s + (x.parceiro_nome ? 1 : 0) + (x.membro3_nome ? 1 : 0) + (x.membro4_nome ? 1 : 0), 1);
+    totalKg += kg;
+  });
+
+  const comFoto = doadores.filter(p => p.foto_alimento).length;
+  const cidades = new Set(doadores.map(p => (p.cidade||'').trim().toLowerCase()).filter(Boolean)).size;
 
   const el = id => document.getElementById(id);
   if (el('alim-total-kg'))          el('alim-total-kg').textContent          = totalKg || '0';
