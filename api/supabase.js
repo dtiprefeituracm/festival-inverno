@@ -130,6 +130,30 @@ export default async function handler(req, res) {
       return res.status(200).json(d2);
     }
 
+    // Deletar arquivo do Supabase Storage (galeria, alimentos, videos-pesca)
+    if (acao === 'deletarStorage') {
+      const { bucket, nome } = req.body;
+      const BUCKETS_OK = ['alimentos', 'galeria', 'trofeus', 'videos-pesca'];
+      if (!bucket || !nome)
+        return res.status(400).json({ erro: 'bucket e nome são obrigatórios' });
+      if (!BUCKETS_OK.includes(bucket))
+        return res.status(400).json({ erro: 'Bucket não permitido' });
+
+      const storageUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${nome}`;
+      const r = await fetch(storageUrl, {
+        method: 'DELETE',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      });
+
+      if (r.ok) return res.status(200).json({ ok: true });
+      let errData = {};
+      try { errData = await r.json(); } catch {}
+      return res.status(r.status).json({ erro: 'Falha ao deletar do storage', detalhe: errData });
+    }
+
     return res.status(400).json({ erro: 'Ação não reconhecida' });
 
   } catch (err) {
