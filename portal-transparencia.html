@@ -447,6 +447,26 @@
     .header-nav { padding: 0 6px; }
     .card-val { font-size: 30px; }
   }
+  /* ── Contador de acessos ── */
+  .acesso-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+    color: rgba(255,255,255,0.85); white-space: nowrap; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .acesso-badge:hover { background: rgba(255,255,255,0.18); }
+  .acesso-badge .acesso-num { color: var(--gold); font-size: 13px; font-weight: 800; }
+  .acesso-badge .acesso-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+    box-shadow: 0 0 6px #22c55e; animation: pulse-dot 2s infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .6; transform: scale(1.3); }
+  }
+
   /* ── Lightbox ── */
   .lb-overlay { display:none; position:fixed; inset:0; z-index:9000;
     background:rgba(5,12,30,0.96); align-items:center; justify-content:center;
@@ -518,7 +538,13 @@
       <p>Festival de Inverno 2026 — SEMESP · Costa Marques / RO</p>
     </div>
     <div class="lgpd-badge">🔒 LGPD</div>
-    <div style="display:flex;gap:8px;margin-left:12px;flex-shrink:0;">
+    <div style="display:flex;gap:8px;margin-left:12px;flex-shrink:0;align-items:center;">
+      <div class="acesso-badge" id="acesso-badge" title="Total de acessos ao Portal da Transparência">
+        <div class="acesso-dot"></div>
+        <span>👁️</span>
+        <span class="acesso-num" id="acesso-num">...</span>
+        <span style="font-size:10px;opacity:.75;">acessos</span>
+      </div>
       <a href="admin-premiacao.html" target="_blank"
          style="background:rgba(245,183,49,0.2);border:1px solid rgba(245,183,49,0.5);color:var(--gold);padding:7px 14px;border-radius:9px;font-size:13px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:800;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;">🏆 Premiação</a>
       <button onclick="voltarAdmin()"
@@ -916,7 +942,8 @@
   SEMESP — Prefeitura Municipal de Costa Marques / RO<br>
   <strong style="color:#1a56a0;">Desenvolvido por Ewerson Luiz de Oliveira — Gestor em Tecnologia da Informação</strong><br>
   © 2026 Prefeitura Municipal de Costa Marques / RO · Todos os direitos reservados<br>
-  <span style="color:#94a3b8;">Dados exibidos conforme Lei nº 13.709/2018 (LGPD)</span>
+  <span style="color:#94a3b8;">Dados exibidos conforme Lei nº 13.709/2018 (LGPD)</span><br>
+  <span id="footer-acessos" style="color:#94a3b8;font-size:11px;"></span>
 </div>
 
 <!-- ══════════════════════════════════════════ -->
@@ -1990,12 +2017,53 @@ function renderModalidades() {
 // ================================================================
 // INICIALIZAÇÃO
 // ================================================================
+// ================================================================
+// CONTADOR DE ACESSOS
+// ================================================================
+async function registrarAcesso() {
+  try {
+    // Usa sessionStorage para não contar recarregamentos da mesma sessão
+    const jaContou = sessionStorage.getItem('portal_acesso_contado');
+    let total = 0;
+
+    if (!jaContou) {
+      // Primeira visita desta sessão → incrementa
+      const r = await fetch('/api/visitas', { method: 'POST' });
+      const d = await r.json();
+      total = d.visitas || 0;
+      sessionStorage.setItem('portal_acesso_contado', '1');
+    } else {
+      // Já contou nesta sessão → só lê o total atual
+      const r = await fetch('/api/visitas');
+      const d = await r.json();
+      total = d.visitas || 0;
+    }
+
+    _exibirAcessos(total);
+  } catch(e) {
+    // Silencioso — não quebra o portal se API falhar
+    console.info('[visitas] indisponível:', e.message);
+    document.getElementById('acesso-badge').style.display = 'none';
+  }
+}
+
+function _exibirAcessos(total) {
+  const numEl    = document.getElementById('acesso-num');
+  const footerEl = document.getElementById('footer-acessos');
+  if (numEl) numEl.textContent = total.toLocaleString('pt-BR');
+  if (footerEl) {
+    const agora = new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    footerEl.textContent = `👁️ ${total.toLocaleString('pt-BR')} acesso${total !== 1 ? 's' : ''} ao portal · Atualizado em ${agora}`;
+  }
+}
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape')      lbFechar();
   if (e.key === 'ArrowLeft')   lbNavegar(-1);
   if (e.key === 'ArrowRight')  lbNavegar(1);
 });
 carregarDados();
+registrarAcesso();
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
