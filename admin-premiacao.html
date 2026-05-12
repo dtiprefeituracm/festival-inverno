@@ -4224,7 +4224,7 @@ async function uploadArquivo(file, bucket, onProgress) {
     body: JSON.stringify({ base64: b64, nome, tipo: file.type, bucket }),
   });
   const d = await resp.json();
-  if (!d.ok) throw new Error(d.erro || 'Falha no upload');
+  if (!d.ok) throw new Error(d.erro || d.error || d.message || 'Falha no upload (bucket inacessível)');
   return d.url;
 }
 
@@ -4234,7 +4234,7 @@ async function uploadFotoGanhador() {
   const status = document.getElementById('g-foto-upload-status');
   status.textContent = '⏳ Enviando...';
   try {
-    const url = await uploadArquivo(file, 'trofeus');
+    const url = await uploadArquivo(file, 'galeria');
     document.getElementById('g-foto').value = url;
     previewFotoGanhador();
     status.textContent = '✅ Upload concluído!';
