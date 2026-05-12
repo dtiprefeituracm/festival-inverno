@@ -274,8 +274,8 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
 .galeria-add-titulo { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 14px; }
 .galeria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .galeria-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; overflow: hidden; }
-.galeria-card img { width: 100%; height: 150px; object-fit: cover; display: block; background: #0f172a; }
-.galeria-card video { width: 100%; height: 150px; object-fit: cover; display: block; background: #0f172a; }
+.galeria-card img { width: 100%; height: 150px; object-fit: contain; display: block; background: #0f172a; }
+.galeria-card video { width: 100%; height: 150px; object-fit: contain; display: block; background: #0f172a; }
 .galeria-card-thumb-video { position: relative; }
 .galeria-card-thumb-video::after { content: '▶'; position: absolute; top: 50%; left: 50%;
   transform: translate(-50%,-50%); font-size: 28px; color: rgba(255,255,255,0.9);
@@ -4012,11 +4012,11 @@ function renderGaleria() {
       badge = `<span class="galeria-tipo-badge galeria-tipo-video">🎬 Vídeo</span>`;
       midia = `<div class="galeria-card-thumb-video">
         <video src="${f.url}" muted preload="metadata"
-          style="width:100%;height:150px;object-fit:cover;display:block;background:#0f172a;cursor:pointer;"
+          style="width:100%;height:150px;object-fit:contain;display:block;background:#0f172a;cursor:pointer;"
           onclick="window.open('${f.url}','_blank')"></video></div>`;
     } else {
       badge = `<span class="galeria-tipo-badge galeria-tipo-foto">📸 Foto</span>`;
-      midia = `<img src="${f.url}" alt="${f.legenda||''}" style="cursor:zoom-in;width:100%;height:150px;object-fit:cover;display:block;"
+      midia = `<img src="${f.url}" alt="${f.legenda||''}" style="cursor:zoom-in;width:100%;height:150px;object-fit:contain;display:block;background:#0f172a;"
         onclick="window.open('${f.url}','_blank')"
         onerror="this.style.background='#334155';this.style.height='60px';">`;
     }
