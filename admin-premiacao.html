@@ -3634,14 +3634,17 @@ function abrirModalGanhador(participante, modId) {
   document.getElementById('g-parceiro').value = membros.join(', ');
   document.getElementById('g-equipe').value   = participante.nome_equipe || '';
   document.getElementById('g-resultado-tecnico').value = '';
-  const posicaoAtual = parseInt(document.getElementById('g-posicao').value) || 1;
-  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId, posicaoAtual);
   const maxLugares = m.maxLugares || 2;
   const selPosicao = document.getElementById('g-posicao');
   const opt3 = selPosicao.querySelector('option[value="3"]');
   if (opt3) opt3.style.display = maxLugares < 3 ? 'none' : '';
-  if (parseInt(selPosicao.value) > maxLugares) selPosicao.value = '1';
-  const posicao = parseInt(selPosicao.value) || 1;
+  // Detecta automaticamente a próxima posição disponível para esta modalidade
+  const posOcupadas = new Set(todosGanhadores.filter(g => g.modalidade_id == modId).map(g => g.posicao));
+  let proximaPos = 1;
+  for (let p = 1; p <= maxLugares; p++) { if (!posOcupadas.has(p)) { proximaPos = p; break; } }
+  selPosicao.value = proximaPos;
+  const posicao = proximaPos;
+  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId, posicao);
   document.getElementById('g-premio').value   = m.premio?.[posicao] || '';
   _limparGFoto();
   document.getElementById('g-publicado').checked = false;
@@ -4224,7 +4227,7 @@ async function uploadArquivo(file, bucket, onProgress) {
     body: JSON.stringify({ base64: b64, nome, tipo: file.type, bucket }),
   });
   const d = await resp.json();
-  if (!d.ok) throw new Error(d.erro || d.error || d.message || 'Falha no upload (bucket inacessível)');
+  if (!d.ok) throw new Error(d.erro || 'Falha no upload');
   return d.url;
 }
 
@@ -4234,7 +4237,7 @@ async function uploadFotoGanhador() {
   const status = document.getElementById('g-foto-upload-status');
   status.textContent = '⏳ Enviando...';
   try {
-    const url = await uploadArquivo(file, 'galeria');
+    const url = await uploadArquivo(file, 'trofeus');
     document.getElementById('g-foto').value = url;
     previewFotoGanhador();
     status.textContent = '✅ Upload concluído!';
