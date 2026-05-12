@@ -288,7 +288,7 @@
   .modal-row:last-child { border-bottom: none; }
   .modal-label { color: var(--text3); }
   .modal-val { color: var(--navy); font-weight: 700; text-align: right; max-width: 60%; }
-  .modal-foto-grande { width: 100%; max-height: 480px; object-fit: contain; background: var(--sand); border-radius: 12px; margin: 12px 0; border: 2px solid var(--sand2); }
+  .modal-foto-grande { width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; margin: 12px 0; border: 2px solid var(--sand2); }
 
   /* ── Modal participante ── */
   .part-modal-foto { width: 100%; max-height: 260px; object-fit: cover; border-radius: 12px; margin: 10px 0; border: 2px solid var(--sand2); cursor: zoom-in; }
@@ -447,6 +447,50 @@
     .header-nav { padding: 0 6px; }
     .card-val { font-size: 30px; }
   }
+  /* ── Lightbox ── */
+  .lb-overlay { display:none; position:fixed; inset:0; z-index:9000;
+    background:rgba(5,12,30,0.96); align-items:center; justify-content:center;
+    flex-direction:column; padding:16px; }
+  .lb-overlay.aberto { display:flex; }
+  .lb-frame { position:relative; max-width:880px; width:100%;
+    background:white; border-radius:16px; overflow:hidden;
+    box-shadow:0 24px 80px rgba(0,0,0,0.7); display:flex; flex-direction:column; }
+  .lb-header { background:var(--navy); padding:12px 18px;
+    display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .lb-header-logo { font-size:18px; }
+  .lb-header-title { flex:1; min-width:0; }
+  .lb-header-evento { font-size:10px; color:rgba(255,255,255,0.55);
+    text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+  .lb-header-legenda { font-size:13px; font-weight:700; color:white;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+  .lb-close { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.12);
+    border:none; color:white; font-size:18px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
+  .lb-close:hover { background:rgba(255,255,255,0.25); }
+  .lb-img-wrap { position:relative; background:#0a0f1e; min-height:200px;
+    max-height:72vh; display:flex; align-items:center; justify-content:center; flex:1; overflow:hidden; }
+  .lb-img-wrap img { max-width:100%; max-height:72vh; object-fit:contain;
+    display:block; user-select:none; }
+  .lb-img-wrap video { max-width:100%; max-height:72vh; display:block; }
+  .lb-nav { position:absolute; top:50%; transform:translateY(-50%);
+    width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,0.15);
+    border:none; color:white; font-size:20px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; transition:background .15s; z-index:2; }
+  .lb-nav:hover { background:rgba(255,255,255,0.3); }
+  .lb-nav.prev { left:12px; }
+  .lb-nav.next { right:12px; }
+  .lb-nav:disabled { opacity:0.2; cursor:default; }
+  .lb-footer { background:var(--sand); border-top:2px solid var(--sand2);
+    padding:10px 18px; display:flex; align-items:center;
+    justify-content:space-between; gap:12px; flex-shrink:0; flex-wrap:wrap; }
+  .lb-footer-info { min-width:0; }
+  .lb-footer-nome { font-size:13px; font-weight:800; color:var(--navy);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lb-footer-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+  .lb-counter { font-size:11px; color:var(--text3); white-space:nowrap; flex-shrink:0; }
+  .lb-festival-stamp { font-size:10px; font-weight:700; color:var(--orange);
+    text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; flex-shrink:0; }
+
   @media print {
     body { background: white; }
     .header-nav, .busca-wrap, .btn, .modal-fechar { display: none !important; }
@@ -835,6 +879,38 @@
 <!-- ══════════════════════════════════════════ -->
 <!--  FOOTER                                  -->
 <!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════ -->
+<!--  LIGHTBOX                              -->
+<!-- ══════════════════════════════════════ -->
+<div class="lb-overlay" id="lb-overlay" onclick="lbFecharFora(event)">
+  <div class="lb-frame" id="lb-frame">
+    <div class="lb-header">
+      <div class="lb-header-logo">🏆</div>
+      <div class="lb-header-title">
+        <div class="lb-header-evento">Festival de Inverno 2026 · Costa Marques/RO</div>
+        <div class="lb-header-legenda" id="lb-legenda">—</div>
+      </div>
+      <button class="lb-close" onclick="lbFechar()">✕</button>
+    </div>
+    <div class="lb-img-wrap" id="lb-img-wrap">
+      <img id="lb-img" src="" alt="" style="display:none;">
+      <video id="lb-video" controls playsinline style="display:none;"></video>
+      <button class="lb-nav prev" id="lb-prev" onclick="lbNavegar(-1)">‹</button>
+      <button class="lb-nav next" id="lb-next" onclick="lbNavegar(1)">›</button>
+    </div>
+    <div class="lb-footer">
+      <div class="lb-footer-info">
+        <div class="lb-footer-nome" id="lb-nome"></div>
+        <div class="lb-footer-sub"  id="lb-sub"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
+        <span class="lb-counter" id="lb-counter"></span>
+        <span class="lb-festival-stamp">🎪 Festival de Inverno</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="footer">
   Portal da Transparência — Festival de Inverno 2026<br>
   SEMESP — Prefeitura Municipal de Costa Marques / RO<br>
@@ -1229,8 +1305,8 @@ function renderAlimentos(lista) {
 
     const foto = p.foto_alimento || fotoDoPool(p.id);
     const fotoHtml = foto
-      ? `<img src="${foto}" alt="Alimento" loading="lazy"
-           onclick="window.open('${foto}','_blank')" title="Clique para ampliar">`
+      ? `<img src="${foto}" alt="Alimento" loading="lazy" style="cursor:zoom-in;"
+           onclick="lbAbrir([{url:'${foto}',legenda:'🥦 Alimento doado',nome:'${p.nome_completo.replace(/'/g,"\'")}',sub:'${(p.cidade||'—')+' / '+(p.uf||'RO')}',tipo:'foto'}],0)">`
       : `<div class="alim-sem-foto">🥦<div class="alim-sem-foto-label">—</div></div>`;
 
     const kg      = kgMap[p.id] || 1;
@@ -1318,7 +1394,7 @@ function abrirModalPart(dados) {
     fotoWrap.innerHTML = `
       <div class="modal-section">🥦 Alimento doado na entrada</div>
       <img src="${dados.fotoAlimento}" class="part-modal-foto" alt="Foto do alimento"
-        onclick="window.open('${dados.fotoAlimento}','_blank')" title="Clique para ampliar">`;
+        onclick="lbAbrir([{url:dados.fotoAlimento,legenda:'🥦 '+dados.nomeCompleto,nome:dados.nomeCompleto,sub:(dados.cidade||'—')+' / '+(dados.uf||'RO'),tipo:'foto'}],0)" title="Clique para ampliar">`;
   } else if (dados.credenciado) {
     fotoWrap.innerHTML = `
       <div class="modal-section">🥦 Alimento doado na entrada</div>
@@ -1641,7 +1717,15 @@ function renderGaleria() {
     container.innerHTML = '<div class="vazio" style="grid-column:1/-1;">Nenhuma mídia nessa categoria ainda. ⏳</div>';
     return;
   }
-  container.innerHTML = lista.map(f => {
+  // Monta lista de items clicáveis para o lightbox (exclui instagram que abre externamente)
+  const _lbGaleria = lista
+    .filter(f => f.tipo !== 'instagram')
+    .map(f => ({ url: f.url, legenda: f.legenda || 'Galeria do Evento', nome: f.legenda || '', sub: f.categoria || '', tipo: f.tipo }));
+
+  container.innerHTML = lista.map((f, i) => {
+    // Índice dentro da lista do lightbox (apenas fotos/vídeos)
+    const lbIdx = _lbGaleria.findIndex(x => x.url === f.url);
+
     if (f.tipo==='instagram') {
       const lb = _igTipoPortal(f.url);
       const isReel = /\/reel\//.test(f.url);
@@ -1660,7 +1744,7 @@ function renderGaleria() {
       </div>`;
     }
     if (f.tipo==='video') {
-      return `<div class="galeria-item" onclick="window.open('${f.url}','_blank')" title="Abrir vídeo">
+      return `<div class="galeria-item" onclick="lbAbrir(_lbGaleria,${lbIdx})" title="Ver vídeo">
         <video src="${f.url}" muted preload="metadata" loading="lazy" style="pointer-events:none;"></video>
         <div class="galeria-legenda">
           <span class="galeria-tipo-pill galeria-tipo-vid">🎬 Vídeo</span>
@@ -1668,12 +1752,72 @@ function renderGaleria() {
         </div>
       </div>`;
     }
-    return `<div class="galeria-item" onclick="window.open('${f.url}','_blank')">
+    return `<div class="galeria-item" onclick="lbAbrir(_lbGaleria,${lbIdx})">
       <img src="${f.url}" alt="${f.legenda||'Foto do evento'}" loading="lazy">
       ${f.legenda ? `<div class="galeria-legenda"><span class="galeria-tipo-pill galeria-tipo-foto">📸 Foto</span><br>${f.legenda}</div>` : ''}
     </div>`;
   }).join('');
 }
+// ================================================================
+// LIGHTBOX
+// ================================================================
+let _lbItems = [], _lbIdx = 0;
+
+function lbAbrir(items, idx) {
+  _lbItems = items; _lbIdx = idx;
+  _lbRender();
+  document.getElementById('lb-overlay').classList.add('aberto');
+  document.body.style.overflow = 'hidden';
+}
+
+function lbFechar() {
+  document.getElementById('lb-overlay').classList.remove('aberto');
+  document.body.style.overflow = '';
+  const vid = document.getElementById('lb-video');
+  vid.pause(); vid.src = '';
+}
+
+function lbFecharFora(e) {
+  if (e.target === document.getElementById('lb-overlay')) lbFechar();
+}
+
+function lbNavegar(dir) {
+  _lbIdx = Math.max(0, Math.min(_lbItems.length - 1, _lbIdx + dir));
+  _lbRender();
+}
+
+function _lbRender() {
+  const item = _lbItems[_lbIdx] || {};
+  const img  = document.getElementById('lb-img');
+  const vid  = document.getElementById('lb-video');
+  const legEl= document.getElementById('lb-legenda');
+  const nomeEl=document.getElementById('lb-nome');
+  const subEl= document.getElementById('lb-sub');
+  const cntEl= document.getElementById('lb-counter');
+  const prev = document.getElementById('lb-prev');
+  const next = document.getElementById('lb-next');
+
+  // Reset
+  img.style.display = 'none'; vid.style.display = 'none';
+  vid.pause(); vid.src = '';
+
+  if (item.tipo === 'video') {
+    vid.src = item.url; vid.style.display = 'block';
+  } else {
+    img.src = item.url || ''; img.style.display = 'block';
+  }
+
+  legEl.textContent = item.legenda || item.nome || 'Galeria do Evento';
+  nomeEl.textContent = item.nome || item.legenda || '';
+  subEl.textContent  = item.sub  || '';
+  cntEl.textContent  = _lbItems.length > 1 ? `${_lbIdx + 1} / ${_lbItems.length}` : '';
+
+  prev.disabled = _lbIdx === 0;
+  next.disabled = _lbIdx === _lbItems.length - 1;
+  // Esconde botões se só tem 1 item
+  prev.style.display = next.style.display = _lbItems.length > 1 ? '' : 'none';
+}
+
 // ================================================================
 // NAVEGAÇÃO
 // ================================================================
@@ -1846,6 +1990,11 @@ function renderModalidades() {
 // ================================================================
 // INICIALIZAÇÃO
 // ================================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')      lbFechar();
+  if (e.key === 'ArrowLeft')   lbNavegar(-1);
+  if (e.key === 'ArrowRight')  lbNavegar(1);
+});
 carregarDados();
 
 document.addEventListener('keydown', e => {
