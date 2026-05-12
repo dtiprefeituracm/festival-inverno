@@ -519,6 +519,7 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
       <div class="form-group">
         <label>Selecione foto ou vídeo do dispositivo</label>
         <input type="file" id="gal-file" accept="image/*,video/*,video/mp4,video/mov,video/quicktime,video/webm"
+          multiple
           style="background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px;font-size:13px;width:100%;"
           onchange="uploadGaleriaArquivo()">
         <div id="gal-upload-status" style="font-size:12px;color:#94a3b8;margin-top:4px;"></div>
@@ -3634,17 +3635,14 @@ function abrirModalGanhador(participante, modId) {
   document.getElementById('g-parceiro').value = membros.join(', ');
   document.getElementById('g-equipe').value   = participante.nome_equipe || '';
   document.getElementById('g-resultado-tecnico').value = '';
+  const posicaoAtual = parseInt(document.getElementById('g-posicao').value) || 1;
+  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId, posicaoAtual);
   const maxLugares = m.maxLugares || 2;
   const selPosicao = document.getElementById('g-posicao');
   const opt3 = selPosicao.querySelector('option[value="3"]');
   if (opt3) opt3.style.display = maxLugares < 3 ? 'none' : '';
-  // Detecta automaticamente a próxima posição disponível para esta modalidade
-  const posOcupadas = new Set(todosGanhadores.filter(g => g.modalidade_id == modId).map(g => g.posicao));
-  let proximaPos = 1;
-  for (let p = 1; p <= maxLugares; p++) { if (!posOcupadas.has(p)) { proximaPos = p; break; } }
-  selPosicao.value = proximaPos;
-  const posicao = proximaPos;
-  document.getElementById('g-patrocinador').value = getPatrocinadorMod(modId, posicao);
+  if (parseInt(selPosicao.value) > maxLugares) selPosicao.value = '1';
+  const posicao = parseInt(selPosicao.value) || 1;
   document.getElementById('g-premio').value   = m.premio?.[posicao] || '';
   _limparGFoto();
   document.getElementById('g-publicado').checked = false;
@@ -4245,52 +4243,115 @@ async function uploadFotoGanhador() {
 }
 
 async function uploadGaleriaArquivo() {
-  const file   = document.getElementById('gal-file').files[0];
-  if (!file) return;
+  const files  = Array.from(document.getElementById('gal-file').files);
+  if (!files.length) return;
   const status = document.getElementById('gal-upload-status');
   const ind    = document.getElementById('gal-tipo-indicator');
-  const isVid  = _isVideoFile(file);
-  const emoji  = isVid ? '🎬' : '📸';
-  const mb     = (file.size / 1024 / 1024).toFixed(1);
 
-  if (ind) { ind.style.display = 'flex'; ind.textContent = `${emoji} ${file.name} (${mb} MB)`; }
-
-  // Barra de progresso para vídeos grandes
-  const mostrarProgresso = isVid || file.size > 2 * 1024 * 1024;
-  if (mostrarProgresso) {
-    status.innerHTML = `
-      <div style="margin-top:6px;">
+  // ── Arquivo único: comportamento original (preview + botão Adicionar) ──
+  if (files.length === 1) {
+    const file  = files[0];
+    const isVid = _isVideoFile(file);
+    const emoji = isVid ? '🎬' : '📸';
+    const mb    = (file.size / 1024 / 1024).toFixed(1);
+    if (ind) { ind.style.display = 'flex'; ind.textContent = `${emoji} ${file.name} (${mb} MB)`; }
+    const mostrarProg = isVid || file.size > 2 * 1024 * 1024;
+    if (mostrarProg) {
+      status.innerHTML = `<div style="margin-top:6px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
-          <span>⏳ Enviando ${isVid ? 'vídeo' : 'arquivo'} direto ao Supabase...</span>
+          <span>⏳ Enviando ${isVid ? 'vídeo' : 'arquivo'}...</span>
           <span id="gal-prog-pct">0%</span>
         </div>
         <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
           <div id="gal-prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width 0.2s;border-radius:4px;"></div>
-        </div>
-        <div style="font-size:10px;color:#475569;margin-top:4px;">Upload direto — sem limite de tamanho</div>
-      </div>`;
-  } else {
-    status.textContent = `⏳ Enviando ${emoji} (${mb} MB)...`;
+        </div></div>`;
+    } else {
+      status.textContent = `⏳ Enviando ${emoji} (${mb} MB)...`;
+    }
+    try {
+      const url = await uploadArquivo(file, 'galeria', pct => {
+        const bar = document.getElementById('gal-prog-bar');
+        const txt = document.getElementById('gal-prog-pct');
+        if (bar) bar.style.width = pct + '%';
+        if (txt) txt.textContent = pct + '%';
+      });
+      document.getElementById('gal-url').value = url;
+      const prev  = document.getElementById('gal-preview');
+      const prevV = document.getElementById('gal-preview-video');
+      if (isVid) { if(prev) prev.style.display='none'; if(prevV){prevV.src=url;prevV.style.display='block';} }
+      else       { if(prevV) prevV.style.display='none'; if(prev){prev.src=url;prev.style.display='block';} }
+      status.innerHTML = `✅ Upload concluído! Preencha a legenda e clique em "Adicionar".`;
+    } catch(e) {
+      status.innerHTML = `❌ Erro: ${e.message}`;
+      if (ind) ind.style.display = 'none';
+    }
+    return;
   }
 
-  try {
-    const url = await uploadArquivo(file, 'galeria', pct => {
-      const bar = document.getElementById('gal-prog-bar');
-      const txt = document.getElementById('gal-prog-pct');
-      if (bar) bar.style.width = pct + '%';
-      if (txt) txt.textContent = pct + '%';
-    });
+  // ── Múltiplos arquivos: fila automática — sobe e salva cada um sem interação ──
+  const categoria = document.getElementById('gal-categoria').value;
+  const legenda   = document.getElementById('gal-legenda').value.trim();
 
-    document.getElementById('gal-url').value = url;
-    const prev  = document.getElementById('gal-preview');
-    const prevV = document.getElementById('gal-preview-video');
-    if (isVid) { if(prev) prev.style.display='none'; if(prevV){prevV.src=url;prevV.style.display='block';} }
-    else       { if(prevV) prevV.style.display='none'; if(prev){prev.src=url;prev.style.display='block';} }
+  // Desabilita botão "Adicionar" durante o lote
+  const btnAdd = document.getElementById('btn-add-galeria');
+  if (btnAdd) btnAdd.disabled = true;
 
-    status.innerHTML = `✅ Upload concluído! Preencha a legenda e clique em "Adicionar".`;
-  } catch(e) {
-    status.innerHTML = `❌ Erro: ${e.message}`;
-    if (ind) ind.style.display = 'none';
+  let ok = 0, erros = [];
+  if (ind) ind.style.display = 'none';
+
+  for (let i = 0; i < files.length; i++) {
+    const file  = files[i];
+    const isVid = _isVideoFile(file);
+    const emoji = isVid ? '🎬' : '📸';
+    const mb    = (file.size / 1024 / 1024).toFixed(1);
+    const num   = `${i + 1}/${files.length}`;
+
+    status.innerHTML = `
+      <div style="background:#1e293b;border-radius:8px;padding:10px;margin-top:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;color:#e2e8f0;">${emoji} <strong>${num}</strong> — ${file.name}</span>
+          <span style="font-size:11px;color:#64748b;">${mb} MB</span>
+        </div>
+        <div style="background:#0f172a;border-radius:4px;height:6px;overflow:hidden;">
+          <div id="gal-lote-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width 0.15s;border-radius:4px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:5px;">
+          <span>✅ ${ok} salvo${ok!==1?'s':''} · ❌ ${erros.length} erro${erros.length!==1?'s':''}</span>
+          <span id="gal-lote-pct">0%</span>
+        </div>
+      </div>`;
+
+    try {
+      const url = await uploadArquivo(file, 'galeria', pct => {
+        const bar = document.getElementById('gal-lote-bar');
+        const txt = document.getElementById('gal-lote-pct');
+        if (bar) bar.style.width = pct + '%';
+        if (txt) txt.textContent = pct + '%';
+      });
+      const tipo  = isVid ? 'video' : 'foto';
+      const dados = { url, legenda: legenda || null, categoria, tipo, publicado: false, ordem: todasFotos.length + ok };
+      const res   = await apiPost('galeria_fotos', dados, 'inserir');
+      const id    = res?.id || (Array.isArray(res) && res[0]?.id);
+      if (id) todasFotos.push({ ...dados, id });
+      ok++;
+    } catch(e) {
+      erros.push(file.name + ': ' + e.message);
+    }
+  }
+
+  // Resultado final
+  renderGaleria();
+  if (btnAdd) btnAdd.disabled = false;
+  document.getElementById('gal-file').value = '';
+  if (ind) ind.style.display = 'none';
+
+  if (erros.length === 0) {
+    status.innerHTML = `✅ <strong>${ok} arquivo${ok!==1?'s':''}</strong> adicionado${ok!==1?'s':''} à galeria com sucesso!`;
+    toast(`📸 ${ok} foto${ok!==1?'s':''} adicionada${ok!==1?'s':''} à galeria!`);
+  } else {
+    status.innerHTML = `⚠️ <strong>${ok} enviado${ok!==1?'s':''}</strong>, ${erros.length} com erro:<br>
+      <span style="color:#f87171;font-size:11px;">${erros.join('<br>')}</span>`;
+    toast(`⚠️ ${ok} ok · ${erros.length} erro${erros.length!==1?'s':''}`, 'erro');
   }
 }
 
