@@ -586,7 +586,10 @@ body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; 
     <button class="btn-salvar" onclick="salvarFotoGaleria()" style="margin-top:0;" id="btn-add-galeria">📸 Adicionar à Galeria</button>
   </div>
 
-  <div class="secao-titulo">🎬 Mídia cadastrada <span class="secao-sub" id="cont-galeria"></span></div>
+  <div class="secao-titulo" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>🎬 Mídia cadastrada <span class="secao-sub" id="cont-galeria"></span></span>
+    <button onclick="recarregarGaleria()" style="padding:6px 12px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:11px;font-weight:600;cursor:pointer;">🔄 Recarregar</button>
+  </div>
 
   <div class="modo-row" id="gal-filtros" style="margin-bottom:14px;">
     <button onclick="filtrarGaleria('todos')"     id="gal-f-todos"     class="modo-btn ativo">Todos</button>
@@ -3969,6 +3972,20 @@ function filtrarGaleria(tipo) {
   renderGaleria();
 }
 
+async function recarregarGaleria() {
+  const div = document.getElementById('galeria-lista');
+  if (div) div.innerHTML = '<div class="loading-txt">Recarregando...</div>';
+  try {
+    const fotos = await apiGet('galeria_fotos', 'select=*');
+    todasFotos = Array.isArray(fotos) ? fotos : [];
+    renderGaleria();
+    toast(`📸 ${todasFotos.length} item(ns) carregado(s).`);
+  } catch(e) {
+    toast('Erro ao recarregar galeria.', 'erro');
+    console.error(e);
+  }
+}
+
 function renderGaleria() {
   const nV = todasFotos.filter(f=>f.tipo==='video').length;
   const nI = todasFotos.filter(f=>f.tipo==='instagram').length;
@@ -3986,14 +4003,15 @@ function renderGaleria() {
   if (!lista.length) { div.innerHTML='<div class="vazio" style="grid-column:1/-1;">Nenhuma mídia nessa categoria.</div>'; return; }
 
   div.innerHTML = lista.map(f => {
+    try {
     let midia='', badge='';
 
     // Verifica se a URL desta foto pertence a algum ganhador cadastrado
-    const ganhadorDono = todosGanhadores.find(g => g.foto_url === f.url);
+    const ganhadorDono = (todosGanhadores||[]).find(g => g.foto_url && g.foto_url === f.url);
     const medalhas = ['🥇','🥈','🥉'];
     const avisoGanhador = ganhadorDono ? (() => {
       const m  = MODALIDADES[ganhadorDono.modalidade_id] || {};
-      const md = medalhas[ganhadorDono.posicao - 1] || ganhadorDono.posicao + 'º';
+      const md = medalhas[(ganhadorDono.posicao||1) - 1] || (ganhadorDono.posicao||'?') + 'º';
       return `${md} ${m.nome||''} ${m.sub||''} — ${ganhadorDono.nome_exibicao||''}`.trim();
     })() : null;
 
@@ -4045,7 +4063,7 @@ function renderGaleria() {
 
     return `<div class="galeria-card">${midia}${faixaGanhador}
       <div class="galeria-card-body">
-        ${badge}<div class="cat-badge">${f.categoria}</div>
+        ${badge}<div class="cat-badge">${f.categoria||''}</div>
         <div class="galeria-legenda">${f.legenda||'(sem legenda)'}</div>
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
           <span class="pub-dot ${f.publicado?'verde':'cinza'}"></span>
@@ -4060,6 +4078,12 @@ function renderGaleria() {
           <button class="btn-sm btn-danger" onclick="excluirFoto('${f.id}')">🗑️</button>
         </div>
       </div></div>`;
+    } catch(itemErr) {
+      console.error('renderGaleria — erro no item id=' + f?.id, itemErr);
+      return `<div class="galeria-card" style="border:1px solid #ef4444;padding:12px;border-radius:10px;font-size:11px;color:#f87171;">
+        ⚠️ Erro ao renderizar item (id: ${f?.id||'?'})<br><span style="color:#64748b;">${itemErr.message}</span>
+      </div>`;
+    }
   }).join('');
 }
 
