@@ -3987,6 +3987,16 @@ function renderGaleria() {
 
   div.innerHTML = lista.map(f => {
     let midia='', badge='';
+
+    // Verifica se a URL desta foto pertence a algum ganhador cadastrado
+    const ganhadorDono = todosGanhadores.find(g => g.foto_url === f.url);
+    const medalhas = ['🥇','🥈','🥉'];
+    const avisoGanhador = ganhadorDono ? (() => {
+      const m  = MODALIDADES[ganhadorDono.modalidade_id] || {};
+      const md = medalhas[ganhadorDono.posicao - 1] || ganhadorDono.posicao + 'º';
+      return `${md} ${m.nome||''} ${m.sub||''} — ${ganhadorDono.nome_exibicao||''}`.trim();
+    })() : null;
+
     if (f.tipo==='instagram') {
       const p = _parseIg(f.url);
       const lb = _igLabel(p?.segmento);
@@ -4010,7 +4020,30 @@ function renderGaleria() {
         onclick="window.open('${f.url}','_blank')"
         onerror="this.style.background='#334155';this.style.height='60px';">`;
     }
-    return `<div class="galeria-card">${midia}
+
+    // Faixa de aviso sobreposta na thumbnail se a foto vier da premiação
+    const faixaGanhador = avisoGanhador ? `
+      <div style="position:relative;margin-top:-28px;z-index:2;pointer-events:none;">
+        <div style="background:linear-gradient(90deg,rgba(180,130,0,0.92),rgba(120,80,0,0.85));
+          padding:4px 8px;display:flex;align-items:center;gap:5px;">
+          <span style="font-size:11px;">🏆</span>
+          <span style="font-size:10px;font-weight:700;color:#fef3c7;white-space:nowrap;
+            overflow:hidden;text-overflow:ellipsis;max-width:180px;">${avisoGanhador}</span>
+        </div>
+      </div>` : '';
+
+    // Nota de advertência no corpo do card
+    const notaGanhador = avisoGanhador ? `
+      <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);
+        border-radius:6px;padding:5px 8px;margin-bottom:8px;display:flex;gap:6px;align-items:flex-start;">
+        <span style="font-size:13px;flex-shrink:0;">⚠️</span>
+        <span style="font-size:10px;color:#fbbf24;line-height:1.4;">
+          Esta foto pertence ao ganhador cadastrado na <strong>Premiação</strong>.
+          Excluir da galeria <strong>não apaga</strong> a foto da ficha do ganhador.
+        </span>
+      </div>` : '';
+
+    return `<div class="galeria-card">${midia}${faixaGanhador}
       <div class="galeria-card-body">
         ${badge}<div class="cat-badge">${f.categoria}</div>
         <div class="galeria-legenda">${f.legenda||'(sem legenda)'}</div>
@@ -4018,6 +4051,7 @@ function renderGaleria() {
           <span class="pub-dot ${f.publicado?'verde':'cinza'}"></span>
           <span style="font-size:10px;color:${f.publicado?'#22c55e':'#64748b'};">${f.publicado?'Publicado':'Rascunho'}</span>
         </div>
+        ${notaGanhador}
         <div class="galeria-actions">
           <button class="btn-sm ${f.publicado?'btn-unpub':'btn-pub'}" onclick="togglePublicarFoto('${f.id}',${!f.publicado})">
             ${f.publicado?'🔒':'🌐'} ${f.publicado?'Ocultar':'Publicar'}</button>
