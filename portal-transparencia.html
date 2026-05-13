@@ -190,7 +190,7 @@
   .secao-body { padding: 18px 20px; }
 
   /* ── Tabela ── */
-  .table-wrap { overflow-x: auto; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th {
     padding: 10px 12px; background: var(--navy);
@@ -356,7 +356,7 @@
   .cidade-nums { margin-left: auto; text-align: right; flex-shrink: 0; }
   .cidade-num-inscritos { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 900; color: var(--navy); line-height: 1; }
   .cidade-num-cred { font-size: 11px; color: var(--green); font-weight: 700; }
-  .cidade-bar-wrap { flex: 1; min-width: 80px; max-width: 160px; }
+  .cidade-bar-wrap { flex: 1; min-width: 60px; max-width: 160px; }
   .cidade-bar { height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--navy), var(--blue2)); transition: width 0.5s; }
 
   /* ── Aba Modalidades ── */
@@ -439,13 +439,98 @@
   }
 
   @media (max-width: 600px) {
-    .aba { padding: 14px; }
+    /* ── Geral ── */
+    .aba { padding: 10px; }
+    .secao-titulo { font-size: 16px; }
+
+    /* ── Header ── */
+    .header-top { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+    .header-logos img { height: 36px; }
+    .header-logos .header-divider { display: none; }
+    .header-text h1 { font-size: 16px; }
+    .header-text p  { font-size: 11px; }
+    .header-nav { padding: 0 4px; }
+    .nav-btn { font-size: 11px; padding: 10px 8px; }
+    .lgpd-badge { display: none; }
+    .acesso-badge { padding: 4px 8px; font-size: 11px; }
+
+    /* ── Cards de métricas ── */
+    .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .card-val { font-size: 28px; }
+    .card-inner { padding: 12px 14px; }
+
+    /* ── Cidades ── */
+    .cidade-card {
+      padding: 10px 12px;
+      gap: 10px;
+      flex-wrap: nowrap;
+    }
+    .cidade-rank { width: 30px; height: 30px; font-size: 13px; }
+    .cidade-nome { font-size: 14px; }
+    .cidade-bar-wrap { display: none; }
+    .cidade-num-inscritos { font-size: 22px; }
+
+    /* ── Modalidades ── */
+    .mod-card-header { padding: 12px 14px; gap: 8px; flex-wrap: wrap; }
+    .mod-card-titulo { font-size: 15px; }
+    .mod-card-body {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 12px 14px;
+    }
+    .mod-stat { padding: 8px; }
+    .mod-stat-val { font-size: 24px; }
+    .mod-participantes-lista { padding: 0 14px 12px; }
+    .mod-part-item { font-size: 11px; gap: 6px; }
+    details > summary { padding: 8px 14px; font-size: 13px; }
+
+    /* ── Ganhadores ── */
+    .ganhador-card { padding: 14px; gap: 12px; }
+    .ganhador-pos { font-size: 36px; }
+    .ganhador-nome { font-size: 16px; }
+    .ganhador-foto { width: 60px; height: 60px; }
+
+    /* ── Alimentos ── */
+    .alim-hero { padding: 20px 14px; }
+    .alim-hero-num { font-size: 64px; }
+    .alim-hero-label { font-size: 18px; }
+    .alim-hero-stats { gap: 20px; }
+    .alim-hero-stat-val { font-size: 26px; }
+    .alim-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .alim-card img { height: 130px; }
+    .alim-card-nome { font-size: 13px; }
+    .alim-busca { min-width: 0; }
+
+    /* ── Galeria ── */
+    .galeria-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .galeria-item img, .galeria-item video { height: 110px; }
+
+    /* ── Tabela participantes ── */
+    .table-wrap { font-size: 12px; }
+    .table-wrap th, .table-wrap td { padding: 8px 10px; }
+
+    /* ── Lightbox mobile ── */
+    .lb-frame { border-radius: 10px; }
+    .lb-header { padding: 10px 12px; }
+    .lb-header-legenda { font-size: 12px; }
+    .lb-footer { padding: 8px 12px; }
+    .lb-footer-nome { font-size: 12px; }
+    .lb-nav { width: 34px; height: 34px; font-size: 16px; }
+    .lb-nav.prev { left: 6px; }
+    .lb-nav.next { right: 6px; }
+
+    /* ── Busca ── */
+    .busca-wrap { padding: 10px 10px; }
+    .busca-input { font-size: 13px; }
+  }
+
+  /* ── Telas muito pequenas (< 380px) ── */
+  @media (max-width: 380px) {
     .cards { grid-template-columns: 1fr 1fr; }
-    .header-top { padding: 10px 14px; gap: 10px; }
-    .header-logos img { height: 38px; }
-    .header-text h1 { font-size: 17px; }
-    .header-nav { padding: 0 6px; }
-    .card-val { font-size: 30px; }
+    .alim-grid { grid-template-columns: 1fr; }
+    .galeria-grid { grid-template-columns: 1fr; }
+    .mod-card-body { grid-template-columns: 1fr 1fr; }
+    .cidade-nums { display: flex; flex-direction: column; align-items: flex-end; gap: 0; }
   }
   /* ── Contador de acessos ── */
   .acesso-badge {
@@ -530,7 +615,7 @@
       <img src="logo-festival.png" alt="Festival de Inverno 2026"
         style="height:64px;width:auto;object-fit:contain;background:none;border:none;padding:0;border-radius:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));">
       <div class="header-divider"></div>
-      <img src="gestao.png" alt="Prefeitura" onerror="this.style.display='none'">
+      <img src="gestao.png" alt="Prefeitura" style="height:64px;width:auto;object-fit:contain;background:none;border:none;padding:0;border-radius:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));" onerror="this.style.display='none'">
     </div>
     <div class="header-text">
       <h1>Portal da Transparência</h1>
